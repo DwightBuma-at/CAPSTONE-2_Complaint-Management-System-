@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Complaint Management System</title>
+  <!-- Bootstrap 5 CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+  <style>
+    body {
+      background: #f4f6f9;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(to right, #0066cc, #003366);
+      color: white;
+      text-align: center;
+    }
+    .btn-custom {
+      width: 240px;
+      margin: 10px;
+    }
+    /* Stylish description container */
+    .register-description {
+      margin-bottom: 1.5rem;
+      text-align: center;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      background: #e0f0ff;
+      box-shadow: 0 4px 12px rgba(0, 102, 204, 0.25);
+      color: #004080;
+      font-size: 1.1rem;
+      font-weight: 500;
+      line-height: 1.4;
+      user-select: none;
+    }
+    .register-description strong {
+      display: block;
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #007bff;
+      margin-bottom: 0.3rem;
+      text-shadow: 1px 1px 3px rgba(0, 123, 255, 0.4);
+    }
+    /* Detect address button style */
+    #detectAddressBtn {
+      margin-bottom: 0.8rem;
+      width: 100%;
+    }
+
+    .btn-formal {
+      background-color: #004080; /* Dark blue */
+      color: white;
+      border: none;
+      width: 200px;
+      margin: 10px;
+    }
+
+    .btn-formal:hover {
+      background-color: #003366; /* Slightly darker on hover */
+      color: white;
+    }
+
+    .submit-hover:hover {
+      background-color: #e0a800 !important; /* darker warning color */
+      color: #212529 !important;            /* optional text color tweak */
+      transform: scale(1.05);
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+    }
+
+    .register-link a {
+    color: #ffc107; /* bright yellow/orange color */
+    text-decoration: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-block;
+    position: relative;
+  }
+
+  /* Underline effect on hover */
+  .register-link a::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -3px;
+    left: 0;
+    background-color: #ffc107;
+    transition: width 0.3s ease;
+  }
+
+  .register-link a:hover {
+    color: #ffca28; /* lighter shade on hover */
+    transform: scale(1.05);
+  }
+
+  .register-link a:hover::after {
+    width: 100%;
+  }
+
+  .modal-tall .modal-content {
+    min-height: 550px; /* You can increase to 600px or 650px if needed */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+  }
+
+  .modal-tall .modal-content {
+    min-height: 550px; /* Adjust height as needed */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Push content to top & bottom */
+    padding: 2rem 1.5rem;
+  }
+
+  .modal-tall .modal-body {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .animated-underline {
+  position: relative;
+  background: none;
+  border: none;
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  padding: 0;
+}
+
+.animated-underline::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -3px;
+  left: 0;
+  background-color: #ffc107; /* Yellow underline */
+  transition: width 0.3s ease;
+}
+
+.animated-underline:hover {
+  color: black; /* Keep text color black on hover */
+  transform: scale(1.05);
+}
+
+.animated-underline:hover::after {
+  width: 100%;
+}
+
+  #reportComplaintModal .modal-body,
+  #reportComplaintModal .form-label,
+  #reportComplaintModal .form-control,
+  #reportComplaintModal select,
+  #reportComplaintModal textarea {
+    color: #000 !important;
+  }
+
+  .modal-tall .modal-content {
+    min-height: 750px;
+  }
+
+  .status-indicator .circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.status-indicator .line {
+  height: 6px;
+  border-radius: 3px;
+  background-color: red;
+}
+
+  </style>
+</head>
+<body>
+
+<!-- User Info Button (Center Top) -->
+<div class="position-fixed top-0 start-50 translate-middle-x mt-3 z-3">
+  <button 
+    type="button" 
+    class="btn btn-outline-light fw-semibold px-4 py-2 rounded-pill shadow" 
+    data-bs-toggle="modal" 
+    data-bs-target="#userProfileModal"
+    id="userProfileBtn"
+  >
+    <i class="bi bi-person-circle me-2"></i> <span id="userFullNameLabel">Your Name</span>
+  </button>
+</div>
+
+<!-- User Logout Confirmation Modal -->
+<div class="modal fade" id="userLogoutModal" tabindex="-1" aria-labelledby="userLogoutModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow rounded-4">
+      <div class="modal-header bg-danger text-white rounded-top-4">
+        <h5 class="modal-title fw-bold" id="userLogoutModalLabel">
+          <i class="bi bi-box-arrow-right me-2"></i>Confirm Logout
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <p class="mb-0 fs-5">Are you sure you want to log out?</p>
+      </div>
+      <div class="modal-footer border-0 justify-content-center">
+        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger rounded-pill px-4" onclick="handleLogout()">Logout</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- User Profile Modal -->
+<div class="modal fade" id="userProfileModal" tabindex="-1" aria-labelledby="userProfileModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow rounded-4">
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h5 class="modal-title fw-bold" id="userProfileModalLabel">User Profile</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item"><strong>Email:</strong> <span id="userEmailData"></span></li>
+          <li class="list-group-item"><strong>Full Name:</strong> <span id="userFullNameData"></span></li>
+          <li class="list-group-item"><strong>Phone Number:</strong> <span id="userPhoneData"></span></li>
+          <li class="list-group-item"><strong>Barangay:</strong> <span id="userAddressData"></span></li>
+        </ul>
+      </div>
+      <div class="modal-footer border-0 d-flex justify-content-end">
+        <button class="btn btn-danger fw-semibold px-4 py-2 rounded-3" data-bs-toggle="modal"       data-bs-target="#userLogoutModal">
+        <i class="bi bi-box-arrow-right me-2"></i>Logout
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- View Transactions Modal -->
+<div class="modal fade" id="viewTransactionsModal" tabindex="-1" aria-labelledby="viewTransactionsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-tall">
+    <div class="modal-content border-0 rounded-4 shadow" style="height: 750px;">
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h5 class="modal-title fw-bold" id="viewTransactionsModalLabel">Transaction List</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <!-- Search Bar -->
+        <div class="mb-3">
+          <input type="text" id="transactionSearch" class="form-control" placeholder="Search transactions..." />
+        </div>
+        <!-- Transactions Table -->
+        <div class="table-responsive">
+          <table class="table table-hover table-bordered align-middle text-center" id="transactionTable">
+            <thead>
+              <tr>
+                <th>Transaction ID</th>
+                <th>Date Reported</th>
+                <th>Reported to Barangay</th>
+                <th>Complaint Type</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="transactionTableBody">
+              <!-- Transaction rows will be dynamically inserted using JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Completed Transactions Modal -->
+<div class="modal fade" id="transactionHistoryModal" tabindex="-1" aria-labelledby="transactionHistoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-tall">
+    <div class="modal-content border-0 rounded-4 shadow" style="height: 750px;">
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h5 class="modal-title fw-bold" id="transactionHistoryModalLabel">Complaint Transactions History</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="lead">Below are the completed complaint transactions submitted to the barangay.</p>
+
+        <div class="table-responsive" style="max-height: 550px; overflow-y: auto;">
+          <table class="table table-bordered table-striped align-middle text-center">
+            <thead class="table-dark">
+              <tr>
+                <th>Transaction ID</th>
+                <th>Date Reported</th>
+                <th>Date Completed</th>
+                <th>Reported to Barangay</th>
+                <th>Complaint Type</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>TXN-00123</td>
+                <td>2025-06-01</td>
+                <td>2025-06-07</td>
+                <td>Barangay 33-D</td>
+                <td>Noisy Neighborhood</td>
+                <td><span class="badge bg-success">Completed</span></td>
+              </tr>
+              <tr>
+                <td>TXN-00124</td>
+                <td>2025-06-02</td>
+                <td>2025-06-08</td>
+                <td>Barangay 33-D</td>
+                <td>Garbage Not Collected</td>
+                <td><span class="badge bg-success">Completed</span></td>
+              </tr>
+              <!-- Add more rows as needed -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer border-0 d-flex justify-content-end">
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- More Transaction Details Modal -->
+<div class="modal fade" id="transactionDetailsModal" tabindex="-1" aria-labelledby="transactionDetailsModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow" style="height: 750px;">
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h5 class="modal-title fw-bold" id="transactionDetailsModalLabel">Transaction Details</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+      <div class="overflow-auto" style="max-height: 600px;">
+
+        
+        <!-- Top content -->
+        <div class="flex-shrink-0">
+          <p><strong>Transaction ID:</strong> <span id="detailsTransactionID"></span></p>
+          <p><strong>Description:</strong> <span id="detailsDescription"></span></p>
+          <p><strong>Location:</strong> <span id="detailsLocation"></span></p>
+          <div class="mt-3">
+            <strong>Attached Image:</strong><br/>
+              <button class="btn btn-outline-primary btn-sm mb-2 mt-1" onclick="toggleAttachedImage()">View Attached Image</button><br/>
+              <img id="detailsImage" src="" alt="Complaint Image" class="img-fluid rounded shadow" style="max-height: 300px; display: none;">
+          </div>
+
+          <!-- STATUS INDICATOR -->
+          <div class="status-indicator mt-4 d-flex justify-content-around align-items-center">
+            <div class="text-center">
+              <div class="circle bg-success text-white mb-1 rounded-circle d-flex justify-content-center align-items-center" style="width: 50px; height: 50px;">
+                <i class="bi bi-send-fill"></i>
+              </div>
+              <div class="fw-semibold">Reported</div>
+            </div>
+            <div class="line flex-grow-1 mx-2 bg-danger" style="height: 5px;"></div>
+            <div class="text-center">
+              <div class="circle bg-danger text-white mb-1 rounded-circle d-flex justify-content-center align-items-center" style="width: 50px; height: 50px;">
+                <i class="bi bi-arrow-repeat"></i>
+              </div>
+              <div class="fw-semibold">In-Progress</div>
+            </div>
+            <div class="line flex-grow-1 mx-2 bg-danger" style="height: 5px;"></div>
+            <div class="text-center">
+              <div class="circle bg-danger text-white mb-1 rounded-circle d-flex justify-content-center align-items-center" style="width: 50px; height: 50px;">
+                <i class="bi bi-check-circle-fill"></i>
+              </div>
+              <div class="fw-semibold">Resolved</div>
+            </div>
+          </div>
+
+          <!-- Toggle Button -->
+          <div class="text-start mt-4">
+            <button id="toggleHistoryBtn" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold">View Transaction History</button>
+          </div>
+        </div>
+
+        <!-- Scrollable History Content -->
+        <div id="transactionHistoryBox" class="mt-3 flex-grow-1 overflow-auto" style="display: none;">
+          <div class="p-3 bg-light border rounded-3" style="border-left: 4px solid #007bff;">
+            <p class="mb-1 fw-semibold small text-muted">May 31, 2025</p>
+            <p class="mb-1 fw-semibold text-primary"><i class="bi bi-info-circle-fill me-1"></i>REPORTED</p>
+            <p class="mb-1">Your report has been successfully accepted and is now in review for processing.</p>
+            <p class="mb-0">Details: <span id="historyDetailsText">This is my complaint</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+
+<!-- Report/Complaint Form Modal -->
+<div class="modal fade" id="reportComplaintModal" tabindex="-1" aria-labelledby="reportComplaintModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h5 class="modal-title fw-semibold" id="reportComplaintModalLabel">Report / Complaint Form</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body px-4 py-4">
+        <form id="complaintForm">
+          <div class="mb-3">
+            <label for="complaintBarangay" class="form-label">Reporting to</label>
+            <select class="form-select" id="complaintBarangay" required>
+              <option value="">-- Select Barangay --</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="complaintType" class="form-label">Complaint Type</label>
+            <select class="form-select" id="complaintType" required>
+              <option value="">-- Select Type --</option>
+              <option value="Damaged Roads">Damaged Roads</option>
+              <option value="Broken Streetlights">Broken Streetlights</option>
+              <option value="Garbage Collection">Garbage Collection</option>
+              <option value="Noise Disturbance">Noise Disturbance</option>
+              <option value="Flooding">Flooding</option>
+              <option value="Illegal Parking">Illegal Parking</option>
+              <option value="Curfew Violations">Curfew Violations</option>
+              <option value="Loitering">Loitering</option>
+              <option value="Drug-related Activity">Drug-related Activity</option>
+              <option value="Vandalism">Vandalism</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="mb-3" id="otherComplaintContainer" style="display: none;">
+            <label for="otherComplaint" class="form-label">Specify Issue</label>
+            <input type="text" class="form-control" id="otherComplaint" placeholder="Enter your issue">
+          </div>
+
+          <div class="mb-3">
+            <label for="complaintDescription" class="form-label">Description of the complaint/issue and date and time of the incident</label>
+            <textarea class="form-control" id="complaintDescription" rows="5" required></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label for="complaintLocation" class="form-label">Location</label>
+            <div class="input-group">
+              <input type="text" class="form-control rounded-start-pill" id="complaintLocation" placeholder="Enter the location" required>
+              <button type="button" id="mapViewBtn" class="btn btn-primary rounded-end-pill px-3">Map</button>
+            </div>
+          </div>
+
+          <div id="mapContainer" class="mb-4" style="display:none; height: 300px; border-radius: 8px; overflow: hidden;">
+            <iframe id="mapFrame" width="100%" height="100%" style="border:0;" loading="lazy" allowfullscreen></iframe>
+          </div>
+
+          <div class="mb-4">
+            <label for="complaintImage" class="form-label">Upload Image (optional)</label>
+            <input class="form-control" type="file" id="complaintImage" accept="image/*">
+          </div>
+
+          <div class="d-grid">
+            <button type="submit" class="btn btn-success">Submit Complaint</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div> 
+
+<!-- AFTER/ SUBMITING REPORT - Tracking Number Modal -->
+<div class="modal fade" id="trackingModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg rounded-4 text-center p-4">
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold text-primary w-100">Tracking Number Issued</h5>
+        <!-- Removed the close button here -->
+      </div>
+      <div class="modal-body">
+        <p class="fw-semibold mb-2">Please save your tracking number below to check the status of your report:</p>
+        <h4 id="trackingNumberText" class="fw-bold text-dark d-inline-block me-2"></h4>
+        <button class="btn btn-outline-secondary btn-sm" onclick="copyTrackingNumber()">
+          <i class="bi bi-clipboard me-1"></i> Copy
+        </button>
+
+        <div class="mt-4">
+          <p class="text-muted small fst-italic mb-2">
+            You may use this tracking number to follow up on your complaint or report.
+          </p>
+          <div class="alert alert-warning rounded-3 px-3 py-2" role="alert" style="font-size: 0.9rem;">
+            <strong>Kind Reminder:</strong><br />
+            Processing time may take up to <strong>3–10 business days</strong>, depending on the urgency and specific circumstances of the report or complaint. We sincerely appreciate your patience and understanding as we do our utmost to address your concern as promptly and effectively as possible.
+          </div>
+        </div>
+        <div class="mt-3">
+          <button class="btn btn-primary px-4" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- About Us Button at top left -->
+<div class="about-us-button position-fixed top-0 start-0 m-3 z-3">
+  <button 
+    type="button" 
+    class="btn btn-primary btn-sm rounded-pill d-flex align-items-center justify-content-center shadow" 
+    style="width: 110px; height: 40px; font-weight: 600;"
+    data-bs-toggle="modal" data-bs-target="#aboutUsModal"
+  >
+    <i class="bi bi-info-circle me-2"></i> About Us
+  </button>
+</div>
+
+
+  <!-- Social/Contact Buttons at top right -->
+<div class="contact-buttons d-flex gap-3 position-fixed top-0 end-0 m-3">
+  <a href="https://www.facebook.com/YourPage" target="_blank" aria-label="Facebook" class="btn btn-primary btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width:40px; height:40px;">
+    <i class="bi bi-facebook fs-4"></i>
+  </a>
+  <a href="mailto:your.email@example.com" aria-label="Email" class="btn btn-danger btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width:40px; height:40px;">
+    <i class="bi bi-envelope-fill fs-4"></i>
+  </a>
+  <a href="tel:+639171234567" aria-label="Phone" class="btn btn-success btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width:40px; height:40px;">
+    <i class="bi bi-telephone-fill fs-4"></i>
+  </a>
+</div>
+
+  <section class="hero">
+  <div class="container">
+    <h1 class="display-4 fw-bold mb-4">Welcome to Complaint Management System</h1>
+    <p class="lead mb-5">Easily report and track your barangay concerns</p>
+
+    <div class="d-flex flex-column flex-md-row justify-content-center">
+      <a href="#" class="btn btn-warning btn-lg btn-custom submit-hover" id="btnSubmitReport">Submit a Report</a>
+      <a href="#" id="viewTransactionDirect" class="btn btn-outline-light btn-lg btn-custom">View Transaction</a>
+    </div>
+    <div class="d-flex justify-content-center mt-3"> <a href="#" class="btn btn-secondary btn-lg btn-custom" data-bs-toggle="modal" data-bs-target="#transactionHistoryModal">Transaction History</a>
+    </div>
+  </div>
+</section>
+
+
+<!-- About Us Modal -->
+<div class="modal fade" id="aboutUsModal" tabindex="-1" aria-labelledby="aboutUsModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content shadow-lg rounded-4 border-0">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-semibold fs-3" id="aboutUsModalLabel" style="color: #2c3e50;">About Us</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body fs-6" style="color: #212529; line-height: 1.7;">
+        <p><strong>The Complaint Management System (CMS)</strong> is a centralized web-based platform developed for the barangays of Davao City. It is specifically designed to empower residents by allowing them to easily submit concerns and complaints within their own barangay area.</p>
+        <p>Only barangays that are enrolled in the CMS can receive and manage complaints, ensuring that submissions are securely routed to the appropriate local authorities. This targeted approach helps barangay officials act more swiftly and efficiently on reports that directly affect their community.</p>
+        <p>The primary goal of CMS is to strengthen community relations by improving communication between the public and barangay officials. Through this system, we aim to promote transparency, accountability, and responsiveness—making sure every voice is heard, and every concern is addressed.</p>
+        <p>Thank you for being a part of this movement towards smarter and more connected barangay governance. Together, we can build a more informed, involved, and empowered community.</p>
+      </div>
+      <div class="modal-footer border-0 pt-0 d-flex justify-content-end">
+        <button type="button" class="btn btn-primary fw-semibold px-4 py-2 rounded-3" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Register Modal -->
+<div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header bg-gradient text-white rounded-top-4 position-relative" 
+           style="background: linear-gradient(135deg, #0066cc, #004080); border-bottom: none; padding: 1rem;">
+        <!-- Gray close button -->
+        <button type="button" class="btn-close position-absolute top-0 end-0 m-3" 
+                data-bs-dismiss="modal" aria-label="Close" style="filter: brightness(0.7);"></button>
+      </div>
+      <div class="modal-body px-4 py-4">
+        <!-- Stylish description here -->
+        <p class="register-description">
+          <strong>Create an Account</strong>
+          Please fill out the form below to create your account. Make sure your information is accurate so we can serve you better.
+        </p>
+        <form id="registerForm">
+          <div class="form-floating mb-3">
+            <input type="email" class="form-control rounded-3" id="email" placeholder="name@example.com" required />
+            <label for="email">Email address</label>
+          </div>
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control rounded-3" id="fullName" placeholder="Juan Dela Cruz" required />
+            <label for="fullName">Full Name</label>
+          </div>
+          <div class="form-floating mb-1">
+            <input type="tel" class="form-control rounded-3" id="phone" placeholder="09XXXXXXXXX" required />
+            <label for="phone">Phone Number</label>
+          </div>
+          <div id="phoneError" class="text-danger mb-3" style="font-size: 0.9rem;"></div>
+
+          <!-- New Detect Address button -->
+          <button type="button" class="btn btn-formal" id="detectAddressBtn">Detect My Address</button>
+
+          <div class="form-floating mb-4">
+            <textarea class="form-control rounded-3" placeholder="Enter your address here" id="address" style="height: 100px" required></textarea>
+            <label for="address">Address</label>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 fw-semibold py-2 rounded-3">Register</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>  
+
+<!-- Important Reminders Modal -->
+<div class="modal fade" id="disclaimerModal" tabindex="-1" aria-labelledby="disclaimerModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-lg">
+    <div class="modal-content shadow-lg rounded-4 border-0" style="font-family: 'Poppins', sans-serif;">
+
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-semibold fs-3" id="disclaimerModalLabel" style="color: #2c3e50;">Important Reminders Before Submitting</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body fs-6" style="color: #212529; max-height: 400px; overflow-y: auto; line-height: 1.6; display: flex; flex-direction: column; justify-content: flex-start;">
+        <div>
+          <p>Please ensure the following before submitting your report to the barangay:</p>
+
+          <ul>
+            <li><strong>Upload Step:</strong> Click the “Upload Image” button even if you don’t have a photo to attach. This step is required to proceed.</li>
+            <li><strong>Complete Details:</strong> Provide clear and accurate information such as:
+              <ul>
+                <li>Name and/or address of the person or place being reported.</li>
+                <li>Include nearby landmarks (e.g., beside Barangay Hall, near sari-sari store).</li>
+                <li>Specify the date and time the incident happened.</li>
+              </ul>
+            </li>
+            <li><strong>Barangay Jurisdiction:</strong> Make sure your report is within the scope of your selected barangay. Reports outside the jurisdiction may not be processed.</li>
+          </ul>
+
+          <p>Reports that do not follow these guidelines may be delayed or not acted upon. Thank you for helping us improve community safety and service.</p>
+        </div>
+
+        <!-- Checkbox inside scrollable area -->
+        <div class="form-check mt-3" style="flex-shrink: 0;">
+          <input class="form-check-input" type="checkbox" id="disclaimerCheckbox">
+          <label 
+            class="form-check-label fw-bold" 
+            for="disclaimerCheckbox" 
+            style="user-select: none; font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1rem; color: #212529;">Yes, I have read and understood the reminders.
+          </label>
+        </div>
+
+      <div class="modal-footer border-0 pt-0 d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-outline-danger fw-semibold px-4 py-2 rounded-3" data-bs-dismiss="modal" style="font-size: 1rem;">Cancel</button>
+        <button type="button" class="btn btn-primary fw-semibold px-4 py-2 rounded-3" id="disclaimerAcceptBtn" disabled>Proceed</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+
+  function copyTrackingNumber() {
+  const trackingNumber = document.getElementById("trackingNumberText").textContent;
+  navigator.clipboard.writeText(trackingNumber).then(() => {
+    alert("Tracking number copied to clipboard!");
+  });
+}
+
+
+  function toggleAttachedImage() {
+  const img = document.getElementById('detailsImage');
+  const btn = event.target;
+
+  if (img.style.display === 'none') {
+    img.style.display = 'block';
+    btn.textContent = 'Hide Attached Image';
+  } else {
+    img.style.display = 'none';
+    btn.textContent = 'View Attached Image';
+  }
+}
+
+// ✅ Submit Complaint and Append to Transaction List
+document.getElementById("complaintForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const barangay = document.getElementById("complaintBarangay").value;
+  const type = document.getElementById("complaintType").value;
+  const otherType = document.getElementById("otherComplaint").value.trim();
+  const complaintType = type === "Other" ? otherType : type;
+  const description = document.getElementById("complaintDescription").value.trim();
+  const location = document.getElementById("complaintLocation").value.trim();
+  const imageFile = document.getElementById("complaintImage").files[0];
+  const imageURL = imageFile ? URL.createObjectURL(imageFile) : "https://via.placeholder.com/300x200";
+
+  if (!barangay || !complaintType || !description || !location) {
+    alert("Please complete all required fields.");
+    return;
+  }
+
+const rawId = Date.now().toString();
+const transactionId = `TXN-${rawId.slice(-6)}`;
+
+const now = new Date();
+const datePart = now.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit'
+});
+const timePart = now.toLocaleTimeString('en-US', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: true
+});
+const today = `${datePart} ${timePart}`;
+
+document.getElementById("trackingNumberText").textContent = transactionId;
+
+const tableBody = document.getElementById("transactionTableBody");
+const newRow = document.createElement("tr");
+newRow.innerHTML = `
+  <td>${transactionId}</td>
+  <td>${today}</td>
+  <td>${barangay}</td>
+  <td>${complaintType}</td>
+  <td><span class="badge bg-warning text-dark">Reported</span></td>
+  <td>
+    <button class="btn btn-sm btn-primary" 
+      onclick="openTransactionDetails(this)"
+      data-id="${transactionId}"
+      data-type="${complaintType}"
+      data-description="${description}"
+      data-location="${location}"
+      data-image="${imageURL}">
+      More Details
+    </button>
+  </td>
+`;
+
+  tableBody.insertBefore(newRow, tableBody.firstChild);
+  this.reset();
+
+  const reportModal = bootstrap.Modal.getInstance(document.getElementById("reportComplaintModal"));
+  reportModal.hide();
+
+  const trackingModal = new bootstrap.Modal(document.getElementById("trackingModal"));
+  trackingModal.show();
+});
+
+
+
+// Toggle Transaction History (Show/Hide)
+document.addEventListener('DOMContentLoaded', () => {
+  const toggleBtn = document.getElementById('toggleHistoryBtn');
+  const historyBox = document.getElementById('transactionHistoryBox');
+
+  toggleBtn.addEventListener('click', () => {
+    const isVisible = historyBox.style.display === 'block';
+    historyBox.style.display = isVisible ? 'none' : 'block';
+    toggleBtn.textContent = isVisible ? 'View Transaction History' : 'Hide Transaction History';
+  });
+});
+
+// Open Transaction Details Modal & Populate Fields
+function openTransactionDetails(button) {
+  document.getElementById('detailsTransactionID').textContent = button.getAttribute('data-id');
+  document.getElementById('detailsDescription').textContent = button.getAttribute('data-description');
+  document.getElementById('detailsLocation').textContent = button.getAttribute('data-location');
+  document.getElementById('detailsImage').src = button.getAttribute('data-image');
+
+  const modal = new bootstrap.Modal(document.getElementById('transactionDetailsModal'));
+  modal.show();
+}
+
+// Fallback Listener for Transaction Details on Modal Show
+document.addEventListener('DOMContentLoaded', () => {
+  const detailsModal = document.getElementById('transactionDetailsModal');
+
+  detailsModal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+
+    document.getElementById('detailsTransactionID').textContent = button.getAttribute('data-id');
+    document.getElementById('detailsComplaintType').textContent = button.getAttribute('data-type');
+    document.getElementById('detailsDescription').textContent = button.getAttribute('data-description');
+    document.getElementById('detailsLocation').textContent = button.getAttribute('data-location');
+    document.getElementById('detailsImage').src = button.getAttribute('data-image');
+  });
+});
+
+// Show View Transactions Modal from Home Button
+const btnViewTransaction = document.getElementById('viewTransactionDirect');
+btnViewTransaction?.addEventListener('click', (e) => {
+  e.preventDefault();
+  const transactionModal = new bootstrap.Modal(document.getElementById('viewTransactionsModal'));
+  transactionModal.show();
+});
+
+// Filter/Search Transactions by Keyword
+document.addEventListener('DOMContentLoaded', () => {
+  const searchInput = document.getElementById('transactionSearch');
+  const tableBody = document.getElementById('transactionTableBody');
+
+  searchInput.addEventListener('keyup', function () {
+    const searchTerm = this.value.toLowerCase();
+    const rows = tableBody.getElementsByTagName('tr');
+
+    Array.from(rows).forEach(row => {
+      const rowText = row.textContent.toLowerCase();
+      row.style.display = rowText.includes(searchTerm) ? '' : 'none';
+    });
+  });
+});
+
+// Populate User Profile Info from Local Storage
+const userData = {
+  email: localStorage.getItem('userEmail') || 'guest@example.com',
+  fullName: localStorage.getItem('userFullName') || 'Guest User',
+  phone: localStorage.getItem('userPhone') || 'N/A',
+  address: localStorage.getItem('userAddress') || 'Unknown'
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('userFullNameLabel').innerText = userData.fullName;
+  document.getElementById('userEmailData').innerText = userData.email;
+  document.getElementById('userFullNameData').innerText = userData.fullName;
+  document.getElementById('userPhoneData').innerText = userData.phone;
+  document.getElementById('userAddressData').innerText = userData.address;
+});
+
+// Logout Function
+function handleLogout() {
+  localStorage.clear();
+  window.location.href = 'index.html';
+}
+
+// Enable "Proceed" Button After Disclaimer Checkbox is Checked
+const checkbox = document.getElementById('disclaimerCheckbox');
+const acceptBtn = document.getElementById('disclaimerAcceptBtn');
+checkbox.addEventListener('change', () => {
+  acceptBtn.disabled = !checkbox.checked;
+});
+
+// Phone Number Format Restriction (Only 11-digit)
+const phoneInput = document.getElementById('phone');
+phoneInput.addEventListener('input', function () {
+  let digitsOnly = this.value.replace(/\D/g, '');
+  if (digitsOnly.length > 11) {
+    digitsOnly = digitsOnly.slice(0, 11);
+  }
+  this.value = digitsOnly;
+});
+
+// Name Format Restriction (Letters Only)
+const nameInput = document.getElementById('fullName');
+nameInput.addEventListener('input', function () {
+  this.value = this.value.replace(/[^.A-Za-zñÑ\s\-]/g, '');
+});
+
+// Philippine Mobile Prefix Validator
+const validPrefixes = ['0817','0905','0906','0915','0916','0917','0926','0927','0935','0936','0945','0955','0965','0975','0994','0995','0907','0908','0909','0910','0912','0918','0919','0920','0921','0928','0929','0930','0938','0939','0946','0947','0948','0949','0950','0961','0968','0970','0979','0998','0999','0922','0923','0924','0925','0931','0932','0933','0934'];
+
+// Registration Form Validation
+document.getElementById("registerForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const email = document.getElementById('email').value.trim();
+  const fullName = document.getElementById('fullName').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const address = document.getElementById('address').value.trim();
+  const phoneError = document.getElementById('phoneError');
+  phoneError.textContent = '';
+
+  if (!email || !fullName || !phone || !address) {
+    alert("Please fill in all the fields before submitting.");
+    return;
+  }
+
+  if (phone.length !== 11 || !phone.startsWith('09')) {
+    phoneError.textContent = "Please provide a valid 11-digit phone number starting with '09'.";
+    return;
+  }
+
+  const prefix = phone.slice(0, 4);
+  if (!validPrefixes.includes(prefix)) {
+    phoneError.textContent = "Invalid mobile number prefix. Please provide a valid Philippine mobile number.";
+    return;
+  }
+
+  alert("Registration submitted! (Handle saving logic here)");
+  const modal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+  modal.hide();
+  this.reset();
+});
+
+// Detect Current Address via Geolocation
+document.getElementById('detectAddressBtn').addEventListener('click', () => {
+  const addressField = document.getElementById('address');
+
+  if (!navigator.geolocation) {
+    alert('Geolocation is not supported by your browser');
+    return;
+  }
+
+  addressField.value = 'Detecting your location...';
+
+  navigator.geolocation.getCurrentPosition(success, error, {
+    enableHighAccuracy: true,
+    timeout: 10000,
+    maximumAge: 0
+  });
+
+  function success(position) {
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`)
+      .then(response => response.json())
+      .then(data => {
+        const addr = data.address || {};
+        let displayAddress = [addr.road, addr.suburb, addr.city || addr.town || addr.village, addr.state, addr.postcode, addr.country].filter(Boolean).join(', ');
+        addressField.value = displayAddress || 'Unable to detect address, please enter manually.';
+      })
+      .catch(() => {
+        addressField.value = 'Unable to detect address, please enter manually.';
+      });
+  }
+
+  function error(err) {
+    const messages = {
+      1: "Permission denied. Please allow location access.",
+      2: "Position unavailable. Try again later.",
+      3: "Location request timed out. Try again.",
+      default: "An unknown error occurred."
+    };
+    alert(messages[err.code] || messages.default);
+    addressField.value = '';
+  }
+});
+
+// Show Disclaimer First, Then Report Modal
+document.addEventListener('DOMContentLoaded', () => {
+  const disclaimerModal = new bootstrap.Modal(document.getElementById('disclaimerModal'));
+  const reportModal = new bootstrap.Modal(document.getElementById('reportComplaintModal'));
+
+  const btnSubmitReport = document.querySelector('a.btn-warning.btn-lg');
+  const btnViewTransaction = document.getElementById('viewTransactionDirect');
+  const btnAccept = document.getElementById('disclaimerAcceptBtn');
+
+  let actionToPerform = null;
+
+  btnSubmitReport?.addEventListener('click', (e) => {
+    e.preventDefault();
+    actionToPerform = 'submitReport';
+    disclaimerModal.show();
+  });
+
+  btnAccept?.addEventListener('click', () => {
+    disclaimerModal.hide();
+    if (actionToPerform === 'submitReport') {
+      setTimeout(() => {
+        reportModal.show();
+      }, 500);
+    }
+    actionToPerform = null;
+  });
+});
+
+// Populate Barangay Dropdown Dynamically
+const barangayList = ["Agdao", "Baguio", "Baguio Proper", "Bunawan", "Buhangin", "Calinan", "Catalunan Grande", "Communal", "Gusgusan", "Lamanan", "Lizada", "Malagos", "Mambaling", "Manambulan", "Marilog", "Matina Aplaya", "Matina Crossing", "Matina Pangi", "Matina Proper", "Pampanga", "Paquibato Proper", "Poblacion", "Talomo", "Tugbok Proper", "Toril", "Tugbok"]
+  .concat(Array.from({ length: 182 }, (_, i) => `Barangay ${i + 1}`));
+
+document.addEventListener('DOMContentLoaded', () => {
+  const select = document.getElementById("complaintBarangay");
+  barangayList.forEach(b => {
+    const option = document.createElement("option");
+    option.value = b;
+    option.textContent = b;
+    select.appendChild(option);
+  });
+});
+
+// Toggle Show/Hide of "Other" Complaint Input Field
+document.addEventListener('DOMContentLoaded', () => {
+  const complaintType = document.getElementById('complaintType');
+  const otherContainer = document.getElementById('otherComplaintContainer');
+  const otherInput = document.getElementById('otherComplaint');
+
+  complaintType.addEventListener('change', () => {
+    if (complaintType.value === 'Other') {
+      otherContainer.style.display = 'block';
+      otherInput.placeholder = 'Please specify your complaint';
+      otherInput.required = true;
+    } else {
+      otherContainer.style.display = 'none';
+      otherInput.value = '';
+      otherInput.required = false;
+    }
+  });
+});
+
+function handleLogout() {
+  localStorage.clear();
+  window.location.href = 'index.html';
+}
+
+</script>
+
+
+
+</body>
+</html>

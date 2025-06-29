@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Complaints</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+  <style>
+    body {
+      background-color: #f4f6f9;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .sidebar {
+      height: 100vh;
+      background-color: #2c3e50;
+      padding-top: 1rem;
+      color: white;
+    }
+    .sidebar a {
+      color: white;
+      text-decoration: none;
+      display: block;
+      padding: 0.75rem 1.25rem;
+      transition: background 0.2s;
+    }
+    .sidebar a:hover,
+    .sidebar a.active {
+      background-color: #1a252f;
+    }
+    .content {
+      padding: 2rem;
+    }
+    .card {
+      border: none;
+      border-radius: 1rem;
+    }
+    .table td, .table th {
+      vertical-align: middle;
+    }
+
+    .status-badge {
+      display: inline-block;
+      min-width: 100px;
+      text-align: center;
+      padding: 0.5em 0.75em;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container-fluid">
+    <div class="row">
+      
+      <!-- Sidebar -->
+      <div class="col-md-2 sidebar d-flex flex-column">
+        <div class="text-center mb-4">
+        <h4 class="mb-1"><i class="bi bi-shield-lock"></i> Admin</h4>
+        <div class="small text-light bg-dark rounded-pill py-1 px-3 d-inline-block mt-2" id="barangayIndicator">
+          Barangay: Unknown
+        </div>
+      </div>
+
+        <a href="{% url 'admin' %}" class="{% if request.path == '/admin.html' %}active{% endif %}">
+          <i class="bi bi-speedometer2 me-2"></i>Dashboard
+        </a>
+
+        <a href="{% url 'admin_complaints' %}" class="{% if request.path == '/admin-complaints/' %}active{% endif %}">
+          <i class="bi bi-file-earmark-text me-2"></i>Complaints
+        </a>
+
+        <a href="{% url 'admin_users' %}" class="{% if request.path == '/admin-users/' %}active{% endif %}">
+          <i class="bi bi-people me-2"></i>Users
+        </a>
+
+        <a href="#" data-bs-toggle="modal" data-bs-target="#logoutModal" class="mt-auto text-danger">
+          <i class="bi bi-box-arrow-right me-2"></i>Logout
+        </a>
+
+      </div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <!-- Top Navbar -->
+        <nav class="navbar navbar-expand navbar-light bg-white shadow-sm px-4 d-flex justify-content-between">
+          <span class="navbar-brand fw-semibold">Complaint Management</span>
+        </nav>
+
+        <!-- Complaints Table -->
+        <div class="content">
+          <h3 class="mb-4">All Complaints</h3>
+
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <table class="table table-bordered table-hover text-center align-middle w-100">
+                  <thead class="table-primary">
+                    <tr>
+                      <th>Transaction ID</th>
+                      <th>Date Reported</th>
+                      <th>Name of the User</th>
+                      <th>Complaint Type</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="complaintsTableBody">
+                    <tr>
+                      <td>TXN-0001</td>
+                      <td>03/15/2025 08:30 AM </td>
+                      <td>
+                        <button class="btn btn-link text-decoration-none p-0 user-info-btn"
+                                data-bs-toggle="modal"
+                                data-bs-target="#adminUserProfileModal"
+                                data-name="Dwight"
+                                data-email="dwight@example.com"
+                                data-phone="09171234567"
+                                data-barangay="Buhangin">
+                          Dwight
+                        </button>
+                      </td>
+
+                      <td>
+                        <button class="btn btn-link text-decoration-none p-0 complaint-type-btn"
+                                data-bs-toggle="modal"
+                                data-bs-target="#adminComplaintDetailsModal"
+                                data-id="TXN-0001"
+                                data-description="Overflowing garbage in the main street."
+                                data-location="Zone 3, Barangay Buhangin"
+                                data-image="https://via.placeholder.com/300x200">
+                          Garbage Issue
+                        </button>
+                      </td>
+                      <td><span class="badge status-badge bg-warning text-dark">Pending</span></td>
+                      <td>
+                        <div class="dropdown">
+                          <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Action
+                          </button>
+                          <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" data-action="Reported">Reported</a></li>
+                            <li><a class="dropdown-item" href="#" data-action="In-Progress">In-Progress</a></li>
+                            <li><a class="dropdown-item" href="#" data-action="Completed">Completed</a></li>
+                            <li><a class="dropdown-item text-danger" href="#" data-action="Spam">Mark as Spam</a></li>
+                          </ul>
+                        </div>
+                      </td>
+                    </tr>
+                    <!-- More complaints will be dynamically added here -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+<!-- Admin User Profile Modal -->
+<div class="modal fade" id="adminUserProfileModal" tabindex="-1" aria-labelledby="adminUserProfileModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow rounded-4">
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h5 class="modal-title fw-bold" id="adminUserProfileModalLabel">User Profile</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item"><strong>Email:</strong> <span id="adminUserEmail"></span></li>
+          <li class="list-group-item"><strong>Full Name:</strong> <span id="adminUserName"></span></li>
+          <li class="list-group-item"><strong>Phone Number:</strong> <span id="adminUserPhone"></span></li>
+          <li class="list-group-item"><strong>Barangay:</strong> <span id="adminUserBarangay"></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Admin Complaint Details Modal (Styled Like User Side) -->
+<div class="modal fade" id="adminComplaintDetailsModal" tabindex="-1" aria-labelledby="adminComplaintDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4" style="min-height: 450px;">
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h5 class="modal-title fw-bold" id="adminComplaintDetailsModalLabel">Transaction Details</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body px-4 py-4">
+        <div class="mb-3">
+          <p><strong>Transaction ID:</strong> <span id="adminDetailsID" class="text-dark"></span></p>
+          <p><strong>Description:</strong> <span id="adminDetailsDesc" class="text-dark"></span></p>
+          <p><strong>Location:</strong> <span id="adminDetailsLoc" class="text-dark"></span></p>
+        </div>
+
+        <div class="mt-4">
+          <strong>Attached Image:</strong><br/>
+          <img id="adminDetailsImg" src="" alt="Complaint Image" class="img-fluid rounded shadow" style="max-height: 300px; display: none;">
+          <p id="adminNoImageText" class="text-muted fst-italic mt-2" style="display: none;">No image uploaded for this complaint.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Logout Confirmation Modal -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="logoutModalLabel"><i class="bi bi-box-arrow-right me-2"></i>Confirm Logout</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <p class="mb-0">Are you sure you want to log out?</p>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" onclick="handleLogout()">Logout</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+
+  // Show user info modal
+document.querySelectorAll(".user-info-btn").forEach(button => {
+  button.addEventListener("click", () => {
+    document.getElementById("adminUserName").textContent = button.getAttribute("data-name");
+    document.getElementById("adminUserEmail").textContent = button.getAttribute("data-email");
+    document.getElementById("adminUserPhone").textContent = button.getAttribute("data-phone");
+    document.getElementById("adminUserBarangay").textContent = button.getAttribute("data-barangay");
+  });
+});  
+
+  document.addEventListener("DOMContentLoaded", () => {
+    // Update barangay label
+    const barangay = localStorage.getItem("adminBarangay") || "Unknown";
+    document.getElementById("barangayIndicator").textContent = `Barangay: ${barangay}`;
+
+    // Dropdown status change
+    document.querySelectorAll(".dropdown-menu .dropdown-item").forEach(item => {
+      item.addEventListener("click", function (e) {
+        e.preventDefault();
+        const newStatus = this.getAttribute("data-action");
+        const row = this.closest("tr");
+        const badge = row.querySelector(".status-badge");
+
+        badge.textContent = newStatus;
+        badge.className = "badge status-badge";
+
+        switch (newStatus) {
+          case "Reported":
+            badge.classList.add("bg-primary");
+            break;
+          case "In-Progress":
+            badge.classList.add("bg-info", "text-dark");
+            break;
+          case "Completed":
+            badge.classList.add("bg-success");
+            break;
+          case "Spam":
+            badge.classList.add("bg-danger");
+            break;
+          default:
+            badge.classList.add("bg-secondary");
+        }
+      });
+    });
+
+    // Show complaint detail modal
+    const detailButtons = document.querySelectorAll(".complaint-type-btn");
+
+    detailButtons.forEach(button => {
+      button.addEventListener("click", () => {
+        const imgSrc = button.getAttribute("data-image");
+
+        const img = document.getElementById("adminDetailsImg");
+        const note = document.getElementById("adminNoImageText");
+
+        document.getElementById("adminDetailsID").textContent = button.getAttribute("data-id");
+        document.getElementById("adminDetailsDesc").textContent = button.getAttribute("data-description");
+        document.getElementById("adminDetailsLoc").textContent = button.getAttribute("data-location");
+
+        img.src = imgSrc;
+        img.style.display = "none"; // always hide by default
+
+        if (!imgSrc || imgSrc.trim() === "" || imgSrc.includes("placeholder")) {
+          note.style.display = "block";
+          btn.style.display = "none"; // ❌ Delete this line
+        } else {
+          note.style.display = "none";
+        }
+      });
+    });
+  });
+
+  function handleLogout() {
+    if (confirm("Are you sure you want to log out?")) {
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+  }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const barangay = localStorage.getItem("adminBarangay") || "Unknown";
+      document.getElementById("barangayIndicator").textContent = `Barangay: ${barangay}`;
+    });
+
+    function handleLogout() {
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+  </script>
+
+</body>
+</html>
