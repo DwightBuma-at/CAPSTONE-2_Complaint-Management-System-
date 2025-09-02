@@ -24,12 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-x6r&=8w9%$#0#4kbmi%4+4i13kzwnh_o8#-9s9r36p^z+^s0g&'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-x6r&=8w9%$#0#4kbmi%4+4i13kzwnh_o8#-9s9r36p^z+^s0g&')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if os.getenv('ALLOWED_HOSTS') else []
 
 
 # Application definition
@@ -46,6 +46,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add WhiteNoise for static files
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -78,21 +79,36 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# Use Supabase PostgreSQL database for user registration tracking
-print("🚀 Using Supabase PostgreSQL database for user registration tracking.")
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres.dfcaiybfnrhyitofdxug',
-        'PASSWORD': 'Lotusnotes216641021',  # Your Supabase database password
-        'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',
-        'PORT': '5432',
-        'OPTIONS': {
-            'sslmode': 'require',
-        },
+# Database Configuration - Use Railway PostgreSQL in production, Supabase for development
+if os.getenv('RAILWAY_ENVIRONMENT'):
+    # Production: Use Railway PostgreSQL
+    print("🚀 Using Railway PostgreSQL database for production.")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('PGDATABASE'),
+            'USER': os.getenv('PGUSER'),
+            'PASSWORD': os.getenv('PGPASSWORD'),
+            'HOST': os.getenv('PGHOST'),
+            'PORT': os.getenv('PGPORT', '5432'),
+        }
     }
-}
+else:
+    # Development: Use Supabase PostgreSQL database for user registration tracking
+    print("🚀 Using Supabase PostgreSQL database for development.")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'postgres',
+            'USER': 'postgres.dfcaiybfnrhyitofdxug',
+            'PASSWORD': 'Lotusnotes216641021',  # Your Supabase database password
+            'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',
+            'PORT': '5432',
+            'OPTIONS': {
+                'sslmode': 'require',
+            },
+        }
+    }
 
 
 # Password validation
@@ -129,8 +145,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # For production
 STATICFILES_DIRS = [BASE_DIR / "myapp" / "static"]
+
+# Static files storage for production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -148,8 +168,8 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
 # =========================
 # Supabase Configuration
 # =========================
-SUPABASE_URL = "https://dfcaiybfnrhyitofdxug.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmY2FpeWJmbnJoeWl0b2ZkeHVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NjIzNzgsImV4cCI6MjA2NDQzODM3OH0.DfOwFq0X1PqWhhaTS2sxKl1sL4WPO0uR-p5qLFvjy6E"
+SUPABASE_URL = os.getenv('SUPABASE_URL', "https://dfcaiybfnrhyitofdxug.supabase.co")
+SUPABASE_KEY = os.getenv('SUPABASE_KEY', "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmY2FpeWJmbnJoeWl0b2ZkeHVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NjIzNzgsImV4cCI6MjA2NDQzODM3OH0.DfOwFq0X1PqWhhaTS2sxKl1sL4WPO0uR-p5qLFvjy6E")
 
 # =========================
 # Email / SMS configuration
@@ -175,9 +195,9 @@ TWILIO_FROM = os.getenv("TWILIO_FROM", "")   # e.g. +15005550006
 # =========================
 # Gmail SMTP Configuration - REAL EMAIL SENDING
 # =========================
-# Your Gmail credentials (replace with your actual Gmail address)
-EMAIL_HOST_USER = "complaintmanagementsystem5@gmail.com"  # ✅ System Gmail address
-EMAIL_HOST_PASSWORD = "ocjr swyw mnrb pwts"  # ✅ System 16-character app password
+# Use environment variables for email credentials
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', "complaintmanagementsystem5@gmail.com")  # ✅ System Gmail address
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', "ocjr swyw mnrb pwts")  # ✅ System 16-character app password
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
@@ -185,4 +205,14 @@ EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 print("📧 Email mode: SMTP (Gmail) - REAL EMAIL SENDING ENABLED")
-print("✅ Gmail configuration is properly set up with: complaintmanagementsystem5@gmail.com")
+print(f"✅ Gmail configuration is properly set up with: {EMAIL_HOST_USER}")
+
+# =========================
+# Security Settings for Production
+# =========================
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
