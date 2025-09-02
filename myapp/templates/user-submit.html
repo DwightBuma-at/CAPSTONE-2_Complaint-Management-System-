@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Submit Complaint — CMS</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b1020;--card:#121a33;--muted:#9aa4bf;--text:#eaf0ff;--brand:#3b82f6;--brand-2:#22d3ee;
+    --accent:#f59e0b;--danger:#ef4444;--ok:#10b981;--shadow:0 10px 25px rgba(0,0,0,.35);--radius:18px;
+  }
+  body{margin:0;font-family:Inter,sans-serif;background:var(--bg);color:var(--text);}
+  .wrap{max-width:800px;margin:0 auto;padding:20px;}
+  h1{text-align:center;}
+  form{background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+       border:1px solid rgba(255,255,255,.08);border-radius:var(--radius);box-shadow:var(--shadow);
+       padding:20px;}
+  label{font-weight:600;display:block;margin:12px 0 6px;}
+  select,input,textarea{
+    width:100%;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);
+    background:#0b1226;color:#fff;outline:none;
+  }
+  button{
+    margin-top:20px;width:100%;height:46px;border:none;border-radius:14px;
+    background:linear-gradient(90deg, var(--brand), var(--brand-2));
+    color:#031026;font-weight:800;cursor:pointer;box-shadow:var(--shadow);
+  }
+  .back-link{color:var(--brand-2);text-decoration:none;display:inline-block;margin-bottom:20px;}
+  
+  /* Tracking Number Modal Styles */
+  .notification-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+  
+  .notification-modal.show {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  .notification-content {
+    background: linear-gradient(135deg, var(--card), rgba(255, 255, 255, 0.05));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    padding: 40px;
+    text-align: center;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: var(--shadow);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+  }
+  
+  .notification-modal.show .notification-content {
+    transform: scale(1);
+  }
+  
+  .tracking-title {
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 15px;
+    color: var(--brand);
+    text-align: center;
+  }
+  
+  .tracking-instruction {
+    font-size: 16px;
+    color: var(--text);
+    margin-bottom: 25px;
+    line-height: 1.5;
+    text-align: left;
+  }
+  
+  .tracking-number-container {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+  }
+  
+  .tracking-number {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: 1px;
+  }
+  
+  .copy-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 8px 16px;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+  }
+  
+  .copy-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+  
+  .copy-icon {
+    width: 16px;
+    height: 16px;
+    background: var(--muted);
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z'/%3E%3C/svg%3E") no-repeat center;
+    mask-size: contain;
+  }
+  
+  .follow-up-note {
+    font-size: 14px;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 25px;
+    text-align: left;
+  }
+  
+  .reminder-box {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+    text-align: left;
+  }
+  
+  .reminder-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  
+  .reminder-text {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  
+  .reminder-text strong {
+    color: var(--accent);
+  }
+  
+  .notification-btn {
+    background: linear-gradient(90deg, var(--brand), var(--brand-2));
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 16px;
+  }
+  
+  .notification-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="user.html" class="back-link">← Back to Dashboard</a>
+  <h1>Submit Complaint</h1>
+  <form id="complaintForm">
+    <label>Reporting to (Select Barangay)</label>
+    <select id="barangay" required disabled>
+      <option value="">Loading available barangays...</option>
+    </select>
+
+
+
+    <label>Complaint Type</label>
+    <select id="complaintType" required>
+      <option value="">Select Type</option>
+      <option>Garbage Issue</option>
+      <option>Noise Disturbance</option>
+      <option>Illegal Parking</option>
+      <option>Street Light Problem</option>
+      <option value="other">Other</option>
+    </select>
+
+    <div id="otherIssueDiv" style="display:none;">
+      <label>Specify Issue</label>
+      <input type="text" id="otherIssue">
+    </div>
+
+    <label>Description</label>
+    <textarea id="description" rows="4" required></textarea>
+
+    <label>Location</label>
+    <input type="text" id="location" required>
+
+    <label>Upload Image</label>
+    <input type="file" id="imageUpload" accept="image/*" required>
+
+    <button type="submit">Submit Complaint</button>
+  </form>
+</div>
+
+<!-- Tracking Number Modal -->
+<div id="notificationModal" class="notification-modal">
+  <div class="notification-content">
+    <div class="tracking-title">Tracking Number Issued</div>
+    <div class="tracking-instruction">Please save your tracking number below to check the status of your report:</div>
+    
+    <div class="tracking-number-container">
+      <div class="tracking-number" id="trackingNumber">TXN-488772</div>
+      <button class="copy-btn" onclick="copyTrackingNumber()">
+        <div class="copy-icon"></div>
+        Copy
+      </button>
+    </div>
+    
+    <div class="follow-up-note">You may use this tracking number to follow up on your complaint or report.</div>
+    
+    <div class="reminder-box">
+      <div class="reminder-title">Kind Reminder</div>
+      <div class="reminder-text">Processing time may take up to <strong>3-10 business days</strong>, depending on the urgency and specific circumstances of the report or complaint. We sincerely appreciate your patience and understanding as we do our utmost to address your concern as promptly and effectively as possible.</div>
+    </div>
+    
+    <button class="notification-btn" onclick="closeNotification()">Close</button>
+  </div>
+</div>
+<script>
+// Load registered barangays when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  loadRegisteredBarangays();
+});
+
+// Function to load all registered barangays with admins
+async function loadRegisteredBarangays() {
+  try {
+    const response = await fetch('/api/barangays/registered/', {
+      method: 'GET',
+      credentials: 'same-origin'
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && data.barangays && data.barangays.length > 0) {
+        const barangaySelect = document.getElementById('barangay');
+        
+        // Clear the loading option
+        barangaySelect.innerHTML = '';
+        
+        // Add default option
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Select Barangay';
+        barangaySelect.appendChild(defaultOption);
+        
+        // Add all registered barangays
+        data.barangays.forEach(barangay => {
+          const option = document.createElement('option');
+          option.value = barangay;
+          option.textContent = barangay;
+          barangaySelect.appendChild(option);
+        });
+        
+        // Enable the select
+        barangaySelect.disabled = false;
+        
+        console.log('Registered barangays loaded:', data.barangays);
+      } else {
+        console.error('No registered barangays found');
+        document.getElementById('barangay').innerHTML = '<option value="">No barangays available</option>';
+      }
+    } else {
+      console.error('Failed to load registered barangays');
+      document.getElementById('barangay').innerHTML = '<option value="">Failed to load barangays</option>';
+    }
+  } catch (error) {
+    console.error('Error loading registered barangays:', error);
+    document.getElementById('barangay').innerHTML = '<option value="">Error loading barangays</option>';
+  }
+}
+
+document.getElementById('complaintType').addEventListener('change', function(){
+  document.getElementById('otherIssueDiv').style.display = this.value === 'other' ? 'block' : 'none';
+});
+
+document.getElementById('complaintForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  // Gather form data
+  const barangay = document.getElementById('barangay').value;
+  const complaintTypeSelect = document.getElementById('complaintType');
+  let complaintType = complaintTypeSelect.value;
+  if (complaintType === 'other') {
+    complaintType = document.getElementById('otherIssue').value || 'Other';
+  }
+  const description = document.getElementById('description').value;
+  const location = document.getElementById('location').value;
+
+  // Handle image upload and send to backend
+  const imageInput = document.getElementById('imageUpload');
+  const file = imageInput.files[0];
+  
+  // Check file size (max 5MB)
+  const maxFileSize = 5 * 1024 * 1024; // 5MB in bytes
+  if (file && file.size > maxFileSize) {
+    alert('File size is too large. Please select an image smaller than 5MB.');
+    return;
+  }
+  
+  if (file) {
+    // Show compression loading state
+    const submitBtn = document.querySelector('button[type="submit"]');
+    submitBtn.textContent = 'Compressing image...';
+    submitBtn.disabled = true;
+    
+    // Compress image before sending
+    compressImage(file, function(compressedImageData) {
+      saveToBackend(compressedImageData);
+    });
+  } else {
+    saveToBackend(null);
+  }
+
+  function compressImage(file, callback) {
+    const maxWidth = 800;
+    const maxHeight = 600;
+    const quality = 0.7;
+    
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = function() {
+      // Calculate new dimensions
+      let { width, height } = img;
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+      if (height > maxHeight) {
+        width = (width * maxHeight) / height;
+        height = maxHeight;
+      }
+      
+      // Set canvas dimensions
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Draw and compress image
+      ctx.drawImage(img, 0, 0, width, height);
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+      
+      console.log('Image compressed successfully');
+      callback(compressedDataUrl);
+    };
+    
+    img.onerror = function() {
+      console.error('Error loading image for compression');
+      // Fallback to original file
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        callback(evt.target.result);
+      };
+      reader.readAsDataURL(file);
+    };
+    
+    img.src = URL.createObjectURL(file);
+  }
+
+  function saveToBackend(imageData) {
+    const requestData = {
+      barangay: barangay,
+      complaint_type: complaintType,
+      description: description,
+      location: location,
+      image: imageData
+    };
+    
+    console.log('Submitting complaint data:', requestData); // Debug logging
+    
+    // Show loading state
+    const submitBtn = document.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Submitting...';
+    submitBtn.disabled = true;
+    
+    fetch('/api/complaints/create/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestData)
+    })
+    .then(async (res) => {
+      console.log('Response status:', res.status); // Debug logging
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('Server error response:', text); // Debug logging
+        throw new Error(text || 'Failed to submit complaint');
+      }
+      return res.json();
+    })
+    .then((data) => {
+      console.log('Success response:', data); // Debug logging
+      document.getElementById('trackingNumber').textContent = data.tracking_id;
+      showNotification();
+    })
+    .catch((err) => {
+      console.error('Error submitting complaint:', err); // Debug logging
+      alert('Error: ' + err.message);
+    })
+    .finally(() => {
+      // Reset button state
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+    });
+  }
+});
+
+function showNotification() {
+      const modal = document.getElementById('notificationModal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+    document.body.style.overflow = 'hidden';
+}
+
+function copyTrackingNumber() {
+  const trackingNumber = document.getElementById('trackingNumber').textContent;
+  navigator.clipboard.writeText(trackingNumber).then(function() {
+    // Change button text temporarily to show success
+    const copyBtn = document.querySelector('.copy-btn');
+    const originalText = copyBtn.innerHTML;
+    copyBtn.innerHTML = '<div class="copy-icon"></div>Copied!';
+    copyBtn.style.background = 'rgba(16, 185, 129, 0.2)';
+    copyBtn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+    
+    setTimeout(() => {
+      copyBtn.innerHTML = originalText;
+      copyBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+      copyBtn.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+    }, 2000);
+  }).catch(function(err) {
+    console.error('Could not copy text: ', err);
+  });
+}
+
+function closeNotification() {
+  const modal = document.getElementById('notificationModal');
+  modal.classList.remove('show');
+  setTimeout(() => {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+    // Redirect to view transactions after closing notification
+    window.location.href = 'user-view.html';
+  }, 300);
+}
+
+// User Authentication Check - Only redirect if API call fails
+async function checkUserAuth() {
+  try {
+    // Try to fetch user data from the server to verify session
+    const response = await fetch('/api/user/check-auth/', {
+      method: 'GET',
+      credentials: 'same-origin'
+    });
+    
+    if (response.status === 401) {
+      // User is not authenticated, redirect to login
+      window.location.href = '/index.html?show_login=true';
+      return;
+    }
+    
+    if (response.ok) {
+      const userData = await response.json();
+      // Check if user is an admin (admin should not access user pages)
+      if (userData.role === 'admin') {
+        window.location.href = '/index.html?show_login=true';
+        return;
+      }
+      console.log('User authenticated:', userData.email);
+    }
+  } catch (error) {
+    console.error('Auth check failed:', error);
+    // Don't redirect on network errors, let the user continue
+  }
+}
+
+// Run authentication check when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  checkUserAuth();
+});
+</script>
+</body>
+</html>

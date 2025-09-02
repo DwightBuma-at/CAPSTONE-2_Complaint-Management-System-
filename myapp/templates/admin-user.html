@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Users — CMS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#121a33;
+      --muted:#9aa4bf;
+      --text:#eaf0ff;
+      --brand:#3b82f6;
+      --brand-2:#22d3ee;
+      --accent:#f59e0b;
+      --danger:#ef4444;
+      --ok:#10b981;
+      --shadow:0 10px 25px rgba(0,0,0,.35);
+      --radius:18px;
+      --border:1px solid rgba(255,255,255,.10);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    .layout{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+    .sidebar{
+      background:linear-gradient(180deg,#181f36,#0b1020);
+      color:var(--text);
+      padding:28px 18px 18px 18px;
+      position:sticky; top:0; height:100vh;
+      box-shadow: 2px 0 18px rgba(0,0,0,.18);
+      z-index:10;
+    }
+    .brand{display:flex;align-items:center;gap:10px;margin-bottom:18px;text-decoration:none;color:var(--text)}
+    .shield{width:38px;height:38px;border-radius:12px;background:conic-gradient(from 210deg,var(--brand),var(--brand-2),var(--brand));box-shadow:0 8px 20px rgba(34,211,238,.28)}
+    .brand span{font-weight:800;letter-spacing:.2px}
+    .badge{display:inline-block;background:rgba(34,211,238,.10);border:1px solid rgba(34,211,238,.18);padding:6px 12px;border-radius:999px;font-weight:700;color:#b7f9ff;margin:6px 0 18px}
+    .nav a{
+      display:flex;align-items:center;gap:12px;color:var(--muted);text-decoration:none;padding:12px 12px;border-radius:12px;margin:4px 0;font-weight:600;transition:.18s;
+    }
+    .nav a:hover{background:rgba(34,211,238,.08);color:#fff}
+    .nav .active{background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#031026;box-shadow:0 2px 8px rgba(34,211,238,.10);}
+    .logout{position:absolute;bottom:16px;left:18px;right:18px}
+    .logout a{display:flex;gap:8px;align-items:center;color:#fca5a5;text-decoration:none;padding:10px 12px;border-radius:12px;font-weight:700;}
+    .logout a:hover{background:rgba(239,68,68,.10);color:#fff}
+    .content{padding:32px 36px}
+    .top h1{margin:0 0 8px;font-size:clamp(1.4rem,2.2vw,2rem);font-weight:800;letter-spacing:.2px}
+    .top .sub{color:var(--muted);margin:0 0 18px 0}
+    .controls{display:grid;grid-template-columns:1.2fr .8fr auto;gap:10px;margin:8px 0 18px}
+    .input,.select{
+      width:100%;height:44px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:#181f36;color:var(--text);padding:0 12px;outline:none;
+    }
+    .input:focus,.select:focus{box-shadow:0 0 0 3px var(--brand-2);border-color:var(--brand)}
+    .card{background:var(--card);border:var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .card-head{padding:18px 18px 0}
+    .card-body{padding:18px}
+    .tablewrap{overflow:auto;border-radius:14px;border:1px solid rgba(255,255,255,.10);background:var(--card)}
+    table{width:100%;border-collapse:collapse;background:transparent}
+    th,td{padding:14px 10px;text-align:left;border-bottom:1px solid rgba(255,255,255,.06);white-space:nowrap}
+    th{background:rgba(34,211,238,.10);color:#b7f9ff;font-weight:800}
+    .btn{
+      display:inline-flex;align-items:center;gap:8px;justify-content:center;
+      height:40px;padding:0 16px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#031026;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(34,211,238,.10);transition:.18s;
+    }
+    .btn:hover{filter:brightness(1.08)}
+    .btn.ghost{background:#181f36;color:var(--text);border:1px solid rgba(255,255,255,.12)}
+    .btn.small{height:34px;padding:0 12px;font-size:.92rem}
+    .btn.danger{background:linear-gradient(90deg,var(--danger),#dc2626);}
+    .footerbar{display:flex;align-items:center;justify-content:space-between;margin-top:10px;color:var(--muted)}
+    .user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand-2));display:grid;place-items:center;color:#fff;font-weight:700;font-size:.8rem}
+    .add-user-btn{background:linear-gradient(90deg,var(--ok),#059669);color:#fff;border:none;padding:10px 20px;border-radius:12px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(16,185,129,.3);transition:.18s}
+    .add-user-btn:hover{filter:brightness(1.1)}
+    @media (max-width:980px){
+      .layout{grid-template-columns:80px 1fr}
+      .brand span,.nav span,.badge{display:none}
+      .sidebar{padding:18px 8px}
+      .content{padding:18px 6vw}
+      .controls{grid-template-columns:1fr auto}
+    }
+    @media (max-width:720px){
+      .controls{grid-template-columns:1fr;gap:8px}
+      th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5){display:none}
+    }
+    /* Modal styles */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .modal.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal.hidden {
+      display: none;
+    }
+    .modal-content {
+      background: var(--card);
+      border: var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      width: 90%;
+      max-width: 500px;
+      transform: scale(.9);
+      transition: transform .3s ease;
+    }
+    .modal.show .modal-content {
+      transform: scale(1);
+    }
+    .modal-close{background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;padding:0;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all .2s ease}
+    .modal-close:hover{background:rgba(255,255,255,.1);color:var(--text)}
+    .confirmation-header{display:flex;align-items:center;gap:16px;padding:24px 24px 16px 24px;border-bottom:1px solid rgba(255,255,255,.1)}
+    .confirmation-icon{font-size:1.5rem;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(34,211,238,.2);color:#b7f9ff}
+    .confirmation-header h3{margin:0;color:var(--text);font-size:1.25rem;flex:1}
+    .confirmation-body{padding:20px 24px}
+    .confirmation-body p{margin:0;color:var(--muted);font-size:1rem;line-height:1.5}
+    .confirmation-actions{display:flex;gap:12px;padding:16px 24px 24px 24px;justify-content:flex-end}
+    @media (max-width:768px){.confirmation-actions{flex-direction:column}.confirmation-actions .btn{width:100%}}
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <a class="brand" href="admin-dashboard.html" aria-label="Admin Home">
+        <div class="shield" aria-hidden="true"></div>
+        <span>Admin</span>
+      </a>
+      <div class="badge" id="adminBarangayBadge">Barangay: Loading...</div>
+      <nav class="nav">
+        <a href="/admin-dashboard.html">🏠 <span>Dashboard</span></a>
+        <a href="/admin-complaints.html">🧾 <span>Complaints</span></a>
+        <a href="/admin-history.html">📋 <span>History</span></a>
+        <a href="/admin-user.html" class="active">👥 <span>Users</span></a>
+        <a href="/admin-chat.html">💬 <span>Message</span></a>
+      </nav>
+      <div class="logout">
+        <a href="#" onclick="logout();return false">⎋ <span>Logout</span></a>
+      </div>
+    </aside>
+    <!-- MAIN -->
+    <main class="content">
+      <div class="top">
+        <h1>User Management</h1>
+        <p class="sub">Manage registered users and their access to the system</p>
+      </div>
+      
+      <!-- FILTERS -->
+      <section class="controls">
+        <input id="q" class="input" placeholder="Search by name, email, or barangay…">
+      </section>
+      
+      <!-- CARD -->
+      <section class="card">
+        <div class="card-head">
+          <h3 style="margin:0 0 10px;font-weight:700;letter-spacing:.1px">All Users</h3>
+        </div>
+        <div class="card-body">
+          <div class="tablewrap">
+            <table id="tbl">
+              <thead>
+                <tr>
+                  <th>Joined Date</th>
+                  <th>Email</th>
+                  <th>Full Name</th>
+                  <th>Barangay</th>
+                  <th style="min-width:120px">Action</th>
+                </tr>
+              </thead>
+              <tbody id="tbody">
+                <tr><td colspan="5" style="text-align:center;color:var(--muted)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="footerbar">
+            <div id="countNote">—</div>
+            <div>
+              <button class="btn small ghost" id="prevBtn" onclick="gotoPage('prev')" disabled>‹ Prev</button>
+              <span style="margin:0 8px;color:var(--muted)" id="pageNote">Page 1</span>
+              <button class="btn small ghost" id="nextBtn" onclick="gotoPage('next')" disabled>Next ›</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmationModal" class="modal hidden">
+    <div class="modal-content confirmation-content">
+      <div class="confirmation-header">
+        <div class="confirmation-icon" id="confirmationIcon">❓</div>
+        <h3 id="confirmationTitle">Logout Confirmation</h3>
+        <button class="modal-close" onclick="closeConfirmation()">&times;</button>
+      </div>
+      <div class="confirmation-body">
+        <p id="confirmationMessage">Are you sure you want to logout?</p>
+      </div>
+      <div class="confirmation-actions">
+        <button class="btn ghost" onclick="closeConfirmation()">NO</button>
+        <button class="btn" id="confirmYesBtn">YES</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ======= State ======= */
+let page = 1, pageSize = 8, totalCount = 0;
+let allData = [];
+let filtered = [];
+
+/* Load real users from database */
+async function loadUsers(){
+  try {
+    console.log('🔄 Loading users from API...');
+    const response = await fetch('/api/admin/users/', {
+      method: 'GET',
+      credentials: 'same-origin'
+    });
+    
+    console.log('📡 API Response status:', response.status);
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('📊 API Response data:', data);
+      
+      if (data.users && Array.isArray(data.users)) {
+        allData = data.users.map(user => ({
+          id: user.id,
+          name: user.full_name,
+          email: user.email,
+          barangay: user.barangay,
+          status: user.status,
+          joinedDate: user.joined_date
+        }));
+        totalCount = allData.length;
+        filtered = allData.slice(0);
+        console.log('✅ Loaded users:', allData);
+        render();
+      } else {
+        console.error('❌ Invalid response format:', data);
+        document.getElementById('tbody').innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">Invalid response format.</td></tr>`;
+      }
+    } else {
+      const errorText = await response.text();
+      console.error('❌ Failed to load users:', response.status, errorText);
+      document.getElementById('tbody').innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">Error loading users (${response.status}).</td></tr>`;
+    }
+  } catch (error) {
+    console.error('❌ Error loading users:', error);
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">Error loading users: ${error.message}</td></tr>`;
+  }
+}
+
+/* ======= Rendering ======= */
+function render(){
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  if(filtered.length===0){ tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">No users found.</td></tr>`; return; }
+  
+  const start = (page-1)*pageSize, end = Math.min(start+pageSize, filtered.length);
+  for(let i=start;i<end;i++){
+    const r = filtered[i];
+    tbody.innerHTML += `
+      <tr>
+        <td>${r.joinedDate}</td>
+        <td>${r.email}</td>
+        <td>${r.name}</td>
+        <td>${r.barangay}</td>
+        <td>
+          <button class="btn small danger" onclick="deleteUser(${r.id})">Remove</button>
+        </td>
+      </tr>
+    `;
+  }
+  
+  document.getElementById('countNote').textContent = `${filtered.length} total • showing ${Math.min(pageSize, Math.max(0, filtered.length-(page-1)*pageSize))} user(s)`;
+  document.getElementById('pageNote').textContent = `Page ${page}`;
+  document.getElementById('prevBtn').disabled = page<=1;
+  document.getElementById('nextBtn').disabled = end>=filtered.length;
+}
+
+/* ======= Filters ======= */
+function applyFilters(){
+  const q = document.getElementById('q').value.toLowerCase();
+  
+  filtered = allData.filter(r=>{
+    const hay = (r.name+' '+r.email+' '+r.barangay).toLowerCase();
+    if(q && !hay.includes(q)) return false;
+    return true;
+  });
+  page=1;
+  render();
+}
+
+function resetFilters(){
+  document.getElementById('q').value='';
+  applyFilters();
+}
+
+document.addEventListener('input', (e)=>{
+  if(['q'].includes(e.target.id)) applyFilters();
+});
+
+/* ======= User Actions ======= */
+async function deleteUser(id){
+  const user = allData.find(u => u.id === id);
+  if(user && confirm(`Are you sure you want to remove ${user.name}?`)) {
+    try {
+      const response = await fetch(`/api/admin/users/${id}/delete/`, {
+        method: 'DELETE',
+        credentials: 'same-origin'
+      });
+      
+      if (response.ok) {
+        allData = allData.filter(u => u.id !== id);
+        applyFilters();
+        alert('User removed successfully!');
+      } else {
+        alert('Failed to remove user. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Error removing user. Please try again.');
+    }
+  }
+}
+
+
+
+/* ======= Pager ======= */
+function gotoPage(dir){
+  if(dir==='prev' && page>1) page--;
+  if(dir==='next' && (page*pageSize)<filtered.length) page++;
+  render();
+}
+
+/* ======= Load Admin Barangay ======= */
+async function loadAdminBarangay() {
+  try {
+    // Check if we have cached barangay data
+    const cachedBarangay = localStorage.getItem('adminBarangay');
+    if (cachedBarangay) {
+      document.getElementById('adminBarangayBadge').textContent = `Barangay: ${cachedBarangay}`;
+      return; // Use cached data, no need to make API call
+    }
+
+    // Get email from localStorage (this is set during login)
+    const userData = localStorage.getItem('userData');
+    if (!userData) {
+      document.getElementById('adminBarangayBadge').textContent = 'Barangay: Not logged in';
+      return;
+    }
+
+    const adminData = JSON.parse(userData);
+    const email = adminData.email;
+
+    if (!email) {
+      document.getElementById('adminBarangayBadge').textContent = 'Barangay: Email not found';
+      return;
+    }
+
+    // Fetch admin data from database
+    const response = await fetch('/api/admin/get-data/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: email })
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success && result.admin_data.barangay) {
+        const barangay = result.admin_data.barangay;
+        // Cache the barangay data
+        localStorage.setItem('adminBarangay', barangay);
+        document.getElementById('adminBarangayBadge').textContent = `Barangay: ${barangay}`;
+      } else {
+        document.getElementById('adminBarangayBadge').textContent = 'Barangay: Unknown';
+      }
+    } else {
+      console.error('Failed to fetch admin data from database');
+      document.getElementById('adminBarangayBadge').textContent = 'Barangay: Database Error';
+    }
+  } catch (error) {
+    console.error('Error loading admin barangay from database:', error);
+    document.getElementById('adminBarangayBadge').textContent = 'Barangay: Error';
+  }
+}
+
+/* ======= Init ======= */
+// Check admin authentication
+async function checkAdminAuth() {
+  try {
+    const response = await fetch('/api/admin/me/');
+    const data = await response.json();
+    
+    if (!data.authenticated) {
+      // Redirect to index with login modal
+      window.location.href = '/index.html?show_login=true';
+      return;
+    }
+  } catch (error) {
+    console.error('Auth check failed:', error);
+    // Redirect to index with login modal
+    window.location.href = '/index.html?show_login=true';
+  }
+}
+
+function init(){
+  loadAdminBarangay();
+  loadUsers();
+  
+  // Check if user is authenticated
+  checkAdminAuth();
+}
+
+/* ======= Modal Functions ======= */
+function openModal(modalId){
+    const m=document.getElementById(modalId);
+    if(!m)return;
+    m.classList.remove('hidden');
+    setTimeout(()=>m.classList.add('show'),10);
+    document.body.style.overflow='hidden';
+  }
+  function closeModal(modalId){
+    const m=document.getElementById(modalId);
+    if(!m)return;
+    m.classList.remove('show');
+    setTimeout(()=>m.classList.add('hidden'),300);
+    document.body.style.overflow='';
+  }
+  function showConfirmation(message,title='Confirmation',onConfirm){
+    document.getElementById('confirmationTitle').textContent=title;
+    document.getElementById('confirmationMessage').textContent=message;
+    const yesBtn=document.getElementById('confirmYesBtn');
+    yesBtn.replaceWith(yesBtn.cloneNode(true));
+    document.getElementById('confirmYesBtn').addEventListener('click',function(){
+      closeConfirmation();
+      if(typeof onConfirm==='function'){onConfirm();}
+    });
+    openModal('confirmationModal');
+  }
+  function closeConfirmation(){
+    closeModal('confirmationModal');
+  }
+  function logout(){
+    showConfirmation('Are you sure you want to logout?','Logout Confirmation',function(){
+      // Clear localStorage
+      localStorage.removeItem('userData');
+      localStorage.removeItem('adminBarangay'); // Clear cached barangay data
+      window.location.href = '/index.html';
+    });
+  }
+
+// Initialize the page
+init();
+</script>
+</body>
+</html>

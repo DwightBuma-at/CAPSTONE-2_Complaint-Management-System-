@@ -1,1027 +1,1929 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Complaint Management System</title>
-  <!-- Bootstrap 5 CDN -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>User Dashboard — CMS</title>
+
+
+
+
+  <!-- Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+
+
+
   <style>
-    body {
-      background: #f4f6f9;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    :root{
+      --bg:#0b1020;
+      --card:#121a33;
+      --muted:#9aa4bf;
+      --text:#eaf0ff;
+      --brand:#3b82f6;
+      --brand-2:#22d3ee;
+      --accent:#f59e0b;
+      --ring: rgba(59,130,246,.35);
+      --ok:#10b981;
+      --danger:#ef4444;
+      --shadow: 0 10px 25px rgba(0,0,0,.35);
+      --radius: 18px;
     }
-    .hero {
-      min-height: 100vh;
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(34,211,238,.25), transparent 60%),
+                  radial-gradient(900px 500px at 90% 10%, rgba(59,130,246,.25), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      line-height:1.6;
+    }
+
+
+
+
+    /* Header */
+    .nav{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter: saturate(160%) blur(8px);
+      background: linear-gradient(180deg, rgba(11,16,32,.85), rgba(11,16,32,.50));
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .wrap{max-width:1200px;margin:0 auto;padding:0 20px}
+    .nav__inner{display:flex;align-items:center;justify-content:space-between;height:72px;}
+    .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)}
+    .logo{
+      width:38px;height:38px;border-radius:12px;
+      background: conic-gradient(from 210deg, var(--brand), var(--brand-2), var(--brand));
+      box-shadow: 0 6px 18px rgba(34,211,238,.35);
+    }
+    .brand span{font-weight:800;letter-spacing:.2px}
+    .nav__inner{display:flex;align-items:center;justify-content:space-between}
+    .nav__links{display:flex;gap:26px;align-items:center}
+    .nav__links a{color:var(--muted);text-decoration:none;font-weight:600}
+    .nav__links a:hover{color:#fff}
+    .nav__auth{display:flex;gap:12px;align-items:center}
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;
+      height:46px;padding:0 18px;border:none;border-radius:14px;
+      background: linear-gradient(90deg, var(--brand), var(--brand-2));
+      color:#031026;font-weight:800;cursor:pointer;box-shadow: var(--shadow);
+    }
+    .btn--ghost{background:transparent;border:1px solid rgba(255,255,255,.15);color:#fff}
+    .btn--small{height:36px;padding:0 14px;font-size:0.9rem}
+         .btn--icon{height:40px;width:40px;padding:0;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:1.2rem;transition:all 0.2s ease}
+     .btn--icon:hover{background:rgba(255,255,255,.2);transform:scale(1.05)}
+     .btn--message{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:1rem;font-weight:600;padding:12px 24px;transition:all 0.2s ease}
+     .btn--message:hover{background:rgba(255,255,255,.2);transform:scale(1.05)}
+    .hamburger{display:none;background:none;border:none;color:#fff;font-size:28px}
+
+
+
+
+    /* Dashboard */
+    .dashboard{padding:72px 0 48px}
+    .dashboard__header{text-align:center;margin-bottom:48px}
+    .welcome{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(34,211,238,.15);color:#b7f9ff;font-weight:700;font-size:.85rem}
+    .dashboard h1{font-size:clamp(2rem,5vw,3.5rem);line-height:1.12;margin:.6rem 0}
+    .dashboard .lead{color:#c6d0ea;max-width:60ch;margin:0 auto}
+
+
+
+
+    /* User Profile */
+    .user-profile{margin-bottom:48px}
+    .profile-card{
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.1);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:32px;
+      max-width:500px;
+      margin:0 auto;
+    }
+    .profile-header{
+      display:flex;
+      align-items:center;
+      gap:20px;
+    }
+    .profile-avatar-container{
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .profile-avatar{
+      width:80px;
+      height:80px;
+      border-radius:50%;
+      background:linear-gradient(135deg, var(--brand), var(--brand-2));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .profile-avatar:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 25px rgba(34,211,238,.3);
+    }
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+    .avatar-edit-btn {
+      width: 100%;
+      height: 32px;
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      border: none;
+      border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(to right, #0066cc, #003366);
-      color: white;
-      text-align: center;
+      cursor: pointer;
+      font-size: 12px;
+      color: #031026;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
     }
-    .btn-custom {
-      width: 240px;
-      margin: 10px;
+    .avatar-edit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(34,211,238,.4);
+      background: linear-gradient(135deg, var(--brand-2), var(--brand));
     }
-    /* Stylish description container */
-    .register-description {
-      margin-bottom: 1.5rem;
-      text-align: center;
-      padding: 1rem 1.5rem;
+    .avatar-text{
+      font-size:2rem;
+      color:#031026;
+    }
+    .profile-info h3{
+      margin:0 0 8px 0;
+      color:var(--text);
+      font-size:1.5rem;
+    }
+    .profile-info p{
+      margin:0 0 12px 0;
+      color:var(--muted);
+      font-size:1rem;
+    }
+         .profile-badges{
+       display:flex;
+       align-items:center;
+       gap:12px;
+       margin-top:8px;
+     }
+     .barangay-badge{
+       display:inline-block;
+       padding:6px 12px;
+       background:rgba(34,211,238,.2);
+       color:#b7f9ff;
+       border:1px solid rgba(34,211,238,.3);
+       border-radius:20px;
+       font-size:.85rem;
+       font-weight:600;
+       text-transform:uppercase;
+       letter-spacing:0.5px;
+     }
+
+    /* Profile Picture Upload Modal */
+    .profile-upload-content {
+      max-width: 400px;
+      padding: 0;
+    }
+    .profile-upload-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 24px 24px 16px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .profile-upload-icon {
+      font-size: 1.5rem;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(34, 211, 238, 0.2);
+      color: #b7f9ff;
+    }
+    .profile-upload-header h3 {
+      margin: 0;
+      color: var(--text);
+      font-size: 1.25rem;
+      flex: 1;
+    }
+    .profile-upload-body {
+      padding: 20px 24px;
+    }
+    .profile-upload-body p {
+      margin: 0 0 20px 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+    .file-upload-area {
+      border: 2px dashed rgba(34, 211, 238, 0.3);
       border-radius: 12px;
-      background: #e0f0ff;
-      box-shadow: 0 4px 12px rgba(0, 102, 204, 0.25);
-      color: #004080;
-      font-size: 1.1rem;
-      font-weight: 500;
-      line-height: 1.4;
-      user-select: none;
+      padding: 30px 20px;
+      text-align: center;
+      background: rgba(34, 211, 238, 0.05);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 20px;
     }
-    .register-description strong {
-      display: block;
-      font-size: 1.8rem;
-      font-weight: 900;
-      color: #007bff;
-      margin-bottom: 0.3rem;
-      text-shadow: 1px 1px 3px rgba(0, 123, 255, 0.4);
+    .file-upload-area:hover {
+      border-color: rgba(34, 211, 238, 0.6);
+      background: rgba(34, 211, 238, 0.1);
     }
-    /* Detect address button style */
-    #detectAddressBtn {
-      margin-bottom: 0.8rem;
+    .file-upload-area.dragover {
+      border-color: var(--brand);
+      background: rgba(34, 211, 238, 0.15);
+    }
+    .file-upload-icon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      color: var(--brand);
+    }
+    .file-upload-text {
+      color: var(--text);
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    .file-upload-hint {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .file-input {
+      display: none;
+    }
+    .preview-container {
+      display: none;
+      margin-top: 20px;
+      text-align: center;
+    }
+    .preview-image {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--brand);
+      margin-bottom: 10px;
+    }
+    .profile-upload-actions {
+      display: flex;
+      gap: 12px;
+      padding: 16px 24px 24px 24px;
+      justify-content: flex-end;
+    }
+    .profile-upload-actions .btn {
+      margin-top: 0;
+      min-width: 80px;
+    }
+    .upload-progress {
+      display: none;
+      margin-top: 15px;
+      text-align: center;
+    }
+    .progress-bar {
       width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--brand), var(--brand-2));
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .progress-text {
+      color: var(--muted);
+      font-size: 0.9rem;
     }
 
-    .btn-formal {
-      background-color: #004080; /* Dark blue */
-      color: white;
+
+
+
+    /* Dashboard Grid */
+    .dashboard__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:28px;margin-top:48px}
+    .dashboard-card{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:32px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .dashboard-card:hover{
+      transform: translateY(-4px);
+      box-shadow: 0 15px 35px rgba(0,0,0,.45);
+    }
+    .dashboard-card h3{
+      font-size:1.5rem;
+      margin:0 0 16px 0;
+      color:var(--text);
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .dashboard-card p{
+      color:var(--muted);
+      margin:0 0 24px 0;
+      line-height:1.6;
+    }
+    .dashboard-card .btn{
+      width:100%;
+      margin-top:16px;
+    }
+
+
+
+
+    /* Icons */
+    .icon{
+      width:24px;
+      height:24px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:8px;
+      background:linear-gradient(135deg, var(--brand), var(--brand-2));
+      color:#031026;
+      font-weight:bold;
+    }
+
+
+
+
+    /* Logout Button */
+    .logout-btn{
+      background:linear-gradient(90deg, var(--danger), #dc2626);
+      color:#fff;
+    }
+
+
+
+
+    /* Modal Base Styles */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+   
+    .modal.show {
+      opacity: 1;
+      visibility: visible;
+    }
+   
+    .modal.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+   
+    .modal-content {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      width: 90%;
+      max-width: 500px;
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+   
+    .modal.show .modal-content {
+      transform: scale(1);
+    }
+   
+    .modal-close {
+      background: none;
       border: none;
-      width: 200px;
-      margin: 10px;
+      color: var(--muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+   
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
     }
 
-    .btn-formal:hover {
-      background-color: #003366; /* Slightly darker on hover */
-      color: white;
+
+
+
+    /* Responsive */
+    @media (max-width:768px){
+      .dashboard__grid{grid-template-columns:1fr;gap:20px}
+      .dashboard-card{padding:24px}
+      .nav__links{display:none}
+      .hamburger{display:block}
+      .profile-card{padding:24px}
+      .profile-header{flex-direction:column;text-align:center;gap:16px}
+      .profile-avatar{width:70px;height:70px}
+      .avatar-text{font-size:1.5rem}
+      .profile-upload-actions {
+        flex-direction: column;
+      }
+      .profile-upload-actions .btn {
+        width: 100%;
+      }
     }
 
-    .submit-hover:hover {
-      background-color: #e0a800 !important; /* darker warning color */
-      color: #212529 !important;            /* optional text color tweak */
-      transform: scale(1.05);
-      transition: all 0.2s ease-in-out;
-      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+
+
+
+    /* Notification Modal Styles */
+    .notification-content {
+      max-width: 450px;
+      padding: 0;
+    }
+   
+    .notification-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 24px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 20px;
+    }
+   
+    .notification-icon {
+      font-size: 2rem;
+      margin-right: 16px;
+    }
+   
+    .notification-header h3 {
+      margin: 0;
+      color: var(--text);
+      font-size: 1.3rem;
+      font-weight: 700;
+      flex: 1;
+    }
+   
+    .notification-body {
+      padding: 0 24px 20px;
+    }
+   
+    .notification-body p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.5;
+      text-align: center;
+    }
+   
+    .notification-actions {
+      padding: 0 24px 24px;
+    }
+   
+    .notification-actions .btn {
+      margin-top: 0;
     }
 
-    .register-link a {
-    color: #ffc107; /* bright yellow/orange color */
-    text-decoration: none;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: inline-block;
-    position: relative;
-  }
 
-  /* Underline effect on hover */
-  .register-link a::after {
-    content: "";
-    position: absolute;
-    width: 0;
-    height: 2px;
-    bottom: -3px;
-    left: 0;
-    background-color: #ffc107;
-    transition: width 0.3s ease;
-  }
 
-  .register-link a:hover {
-    color: #ffca28; /* lighter shade on hover */
-    transform: scale(1.05);
-  }
 
-  .register-link a:hover::after {
-    width: 100%;
-  }
+    /* Confirmation Modal Styles */
+    .confirmation-content {
+      max-width: 450px;
+      padding: 0;
+    }
+   
+    .confirmation-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 24px 24px 16px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+   
+    .confirmation-icon {
+      font-size: 1.5rem;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(34, 211, 238, 0.2);
+      color: #b7f9ff;
+    }
+   
+    .confirmation-header h3 {
+      margin: 0;
+      color: var(--text);
+      font-size: 1.25rem;
+      flex: 1;
+    }
+   
+    .confirmation-body {
+      padding: 20px 24px;
+    }
+   
+    .confirmation-body p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+   
+    .confirmation-actions {
+      display: flex;
+      gap: 12px;
+      padding: 16px 24px 24px 24px;
+      justify-content: flex-end;
+    }
+   
+    .confirmation-actions .btn {
+      margin-top: 0;
+      min-width: 80px;
+    }
+   
+         @media (max-width: 768px) {
+       .confirmation-actions {
+         flex-direction: column;
+       }
+      
+       .confirmation-actions .btn {
+         width: 100%;
+       }
+     }
 
-  .modal-tall .modal-content {
-    min-height: 550px; /* You can increase to 600px or 650px if needed */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 2rem 1.5rem;
-  }
+     /* Messages Modal Styles */
+     .messages-content {
+       max-width: 500px;
+       padding: 0;
+     }
+    
+     .messages-header {
+       display: flex;
+       align-items: center;
+       gap: 16px;
+       padding: 24px 24px 16px 24px;
+       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+     }
+    
+     .messages-icon {
+       font-size: 1.5rem;
+       width: 40px;
+       height: 40px;
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       border-radius: 50%;
+       background: rgba(34, 211, 238, 0.2);
+       color: #b7f9ff;
+     }
+    
+     .messages-header h3 {
+       margin: 0;
+       color: var(--text);
+       font-size: 1.25rem;
+       flex: 1;
+     }
+    
+     .messages-body {
+       padding: 0;
+     }
+    
+     .messages-list {
+       max-height: 400px;
+       overflow-y: auto;
+     }
+    
+     .message-item {
+       display: flex;
+       align-items: center;
+       gap: 16px;
+       padding: 16px 24px;
+       cursor: pointer;
+       transition: all 0.2s ease;
+       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+     }
+    
+     .message-item:hover {
+       background: rgba(255, 255, 255, 0.05);
+     }
+    
+     .message-avatar {
+       width: 48px;
+       height: 48px;
+       border-radius: 50%;
+       background: linear-gradient(135deg, var(--brand), var(--brand-2));
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       font-size: 1.5rem;
+       flex-shrink: 0;
+     }
+    
+     .message-info {
+       flex: 1;
+       min-width: 0;
+     }
+    
+     .message-name {
+       color: var(--text);
+       font-weight: 600;
+       font-size: 1rem;
+       margin-bottom: 4px;
+     }
+    
+     .message-preview {
+       color: var(--muted);
+       font-size: 0.9rem;
+       white-space: nowrap;
+       overflow: hidden;
+       text-overflow: ellipsis;
+     }
+    
+     .message-time {
+       color: var(--muted);
+       font-size: 0.8rem;
+       font-weight: 500;
+       flex-shrink: 0;
+     }
 
-  .modal-tall .modal-content {
-    min-height: 550px; /* Adjust height as needed */
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between; /* Push content to top & bottom */
-    padding: 2rem 1.5rem;
-  }
+     /* Sheet styles for chat modal */
+     .sheet {
+       background: var(--card);
+       border: var(--border);
+       border-radius: var(--radius);
+       box-shadow: var(--shadow);
+       display: flex;
+       flex-direction: column;
+       max-height: 90vh;
+       width: 90%;
+       max-width: 800px;
+     }
+     
+     .sheet-head {
+       display: flex;
+       align-items: center;
+       justify-content: space-between;
+       padding: 20px 24px;
+       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+       flex-shrink: 0;
+     }
+     
+          .sheet-body {
+       flex: 1;
+       padding: 20px 24px;
+       overflow: hidden;
+     }
 
-  .modal-tall .modal-body {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-  }
+     /* Toast Notification Styles */
+     .toast {
+       position: fixed;
+       top: 20px;
+       right: 20px;
+       background: var(--card);
+       border: 1px solid rgba(255, 255, 255, 0.1);
+       border-radius: var(--radius);
+       padding: 12px 20px;
+       color: var(--text);
+       font-weight: 600;
+       box-shadow: var(--shadow);
+       z-index: 10000;
+       transform: translateX(100%);
+       opacity: 0;
+       transition: all 0.3s ease;
+       max-width: 300px;
+       word-wrap: break-word;
+     }
+     
+     .toast.show {
+       transform: translateX(0);
+       opacity: 1;
+     }
+     
+     .toast.success {
+       border-left: 4px solid var(--ok);
+     }
+     
+     .toast.error {
+       border-left: 4px solid var(--danger);
+     }
+     
+     .toast.info {
+       border-left: 4px solid var(--brand);
+     }
 
-  .animated-underline {
-  position: relative;
-  background: none;
-  border: none;
-  color: black;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 1rem;
-  padding: 0;
-}
+     /* Unread Message Badge Styles */
+     .unread-badge {
+       display: inline-flex;
+       align-items: center;
+       justify-content: center;
+       min-width: 20px;
+       height: 20px;
+       padding: 0 6px;
+       background: linear-gradient(90deg, var(--danger), #dc2626);
+       color: white;
+       border-radius: 10px;
+       font-size: 0.75rem;
+       font-weight: 700;
+       margin-left: 8px;
+       box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+     }
 
-.animated-underline::after {
-  content: "";
-  position: absolute;
-  width: 0;
-  height: 2px;
-  bottom: -3px;
-  left: 0;
-  background-color: #ffc107; /* Yellow underline */
-  transition: width 0.3s ease;
-}
-
-.animated-underline:hover {
-  color: black; /* Keep text color black on hover */
-  transform: scale(1.05);
-}
-
-.animated-underline:hover::after {
-  width: 100%;
-}
-
-  #reportComplaintModal .modal-body,
-  #reportComplaintModal .form-label,
-  #reportComplaintModal .form-control,
-  #reportComplaintModal select,
-  #reportComplaintModal textarea {
-    color: #000 !important;
-  }
-
-  .modal-tall .modal-content {
-    min-height: 750px;
-  }
-
-  .status-indicator .circle {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-.status-indicator .line {
-  height: 6px;
-  border-radius: 3px;
-  background-color: red;
-}
-
+     .chat-name {
+       display: flex;
+       align-items: center;
+       font-weight: 600;
+       font-size: 1rem;
+       margin-bottom: 4px;
+     }
   </style>
 </head>
 <body>
-
-<!-- User Info Button (Center Top) -->
-<div class="position-fixed top-0 start-50 translate-middle-x mt-3 z-3">
-  <button 
-    type="button" 
-    class="btn btn-outline-light fw-semibold px-4 py-2 rounded-pill shadow" 
-    data-bs-toggle="modal" 
-    data-bs-target="#userProfileModal"
-    id="userProfileBtn"
-  >
-    <i class="bi bi-person-circle me-2"></i> <span id="userFullNameLabel">Your Name</span>
-  </button>
-</div>
-
-<!-- User Logout Confirmation Modal -->
-<div class="modal fade" id="userLogoutModal" tabindex="-1" aria-labelledby="userLogoutModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow rounded-4">
-      <div class="modal-header bg-danger text-white rounded-top-4">
-        <h5 class="modal-title fw-bold" id="userLogoutModalLabel">
-          <i class="bi bi-box-arrow-right me-2"></i>Confirm Logout
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body text-center">
-        <p class="mb-0 fs-5">Are you sure you want to log out?</p>
-      </div>
-      <div class="modal-footer border-0 justify-content-center">
-        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-danger rounded-pill px-4" onclick="handleLogout()">Logout</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- User Profile Modal -->
-<div class="modal fade" id="userProfileModal" tabindex="-1" aria-labelledby="userProfileModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow rounded-4">
-      <div class="modal-header bg-primary text-white rounded-top-4">
-        <h5 class="modal-title fw-bold" id="userProfileModalLabel">User Profile</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item"><strong>Email:</strong> <span id="userEmailData"></span></li>
-          <li class="list-group-item"><strong>Full Name:</strong> <span id="userFullNameData"></span></li>
-          <li class="list-group-item"><strong>Phone Number:</strong> <span id="userPhoneData"></span></li>
-          <li class="list-group-item"><strong>Barangay:</strong> <span id="userAddressData"></span></li>
-        </ul>
-      </div>
-      <div class="modal-footer border-0 d-flex justify-content-end">
-        <button class="btn btn-danger fw-semibold px-4 py-2 rounded-3" data-bs-toggle="modal"       data-bs-target="#userLogoutModal">
-        <i class="bi bi-box-arrow-right me-2"></i>Logout
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- View Transactions Modal -->
-<div class="modal fade" id="viewTransactionsModal" tabindex="-1" aria-labelledby="viewTransactionsModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-centered modal-tall">
-    <div class="modal-content border-0 rounded-4 shadow" style="height: 750px;">
-      <div class="modal-header bg-primary text-white rounded-top-4">
-        <h5 class="modal-title fw-bold" id="viewTransactionsModalLabel">Transaction List</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body p-4">
-        <!-- Search Bar -->
-        <div class="mb-3">
-          <input type="text" id="transactionSearch" class="form-control" placeholder="Search transactions..." />
+  <!-- Header -->
+  <header class="nav">
+    <div class="wrap">
+      <nav class="nav__inner">
+        <a href="#" class="brand" onclick="return false;">
+          <div class="logo"></div>
+          <span>CMS</span>
+        </a>
+        <div class="nav__auth">
+          <button class="btn logout-btn btn--small" onclick="logout()">Logout</button>
         </div>
-        <!-- Transactions Table -->
-        <div class="table-responsive">
-          <table class="table table-hover table-bordered align-middle text-center" id="transactionTable">
-            <thead>
-              <tr>
-                <th>Transaction ID</th>
-                <th>Date Reported</th>
-                <th>Reported to Barangay</th>
-                <th>Complaint Type</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="transactionTableBody">
-              <!-- Transaction rows will be dynamically inserted using JavaScript -->
-            </tbody>
-          </table>
-        </div>
-      </div>
+      </nav>
     </div>
-  </div>
-</div>
+  </header>
 
 
-<!-- Completed Transactions Modal -->
-<div class="modal fade" id="transactionHistoryModal" tabindex="-1" aria-labelledby="transactionHistoryModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-centered modal-tall">
-    <div class="modal-content border-0 rounded-4 shadow" style="height: 750px;">
-      <div class="modal-header bg-primary text-white rounded-top-4">
-        <h5 class="modal-title fw-bold" id="transactionHistoryModalLabel">Complaint Transactions History</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+
+
+  <!-- Dashboard -->
+  <main class="dashboard">
+    <div class="wrap">
+      <div class="dashboard__header">
+        <span class="welcome">Welcome Back!</span>
+        <h1>User Dashboard</h1>
+        <p class="lead">Manage your complaints and track their progress</p>
       </div>
-      <div class="modal-body p-4">
-        <p class="lead">Below are the completed complaint transactions submitted to the barangay.</p>
-
-        <div class="table-responsive" style="max-height: 550px; overflow-y: auto;">
-          <table class="table table-bordered table-striped align-middle text-center">
-            <thead class="table-dark">
-              <tr>
-                <th>Transaction ID</th>
-                <th>Date Reported</th>
-                <th>Date Completed</th>
-                <th>Reported to Barangay</th>
-                <th>Complaint Type</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>TXN-00123</td>
-                <td>2025-06-01</td>
-                <td>2025-06-07</td>
-                <td>Barangay 33-D</td>
-                <td>Noisy Neighborhood</td>
-                <td><span class="badge bg-success">Completed</span></td>
-              </tr>
-              <tr>
-                <td>TXN-00124</td>
-                <td>2025-06-02</td>
-                <td>2025-06-08</td>
-                <td>Barangay 33-D</td>
-                <td>Garbage Not Collected</td>
-                <td><span class="badge bg-success">Completed</span></td>
-              </tr>
-              <!-- Add more rows as needed -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="modal-footer border-0 d-flex justify-content-end">
-      </div>
-    </div>
-  </div>
-</div>
 
 
 
-<!-- More Transaction Details Modal -->
-<div class="modal fade" id="transactionDetailsModal" tabindex="-1" aria-labelledby="transactionDetailsModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-  <div class="modal-dialog modal-xl modal-dialog-centered">
-    <div class="modal-content border-0 rounded-4 shadow" style="height: 750px;">
-      <div class="modal-header bg-primary text-white rounded-top-4">
-        <h5 class="modal-title fw-bold" id="transactionDetailsModalLabel">Transaction Details</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body p-4">
-      <div class="overflow-auto" style="max-height: 600px;">
 
-        
-        <!-- Top content -->
-        <div class="flex-shrink-0">
-          <p><strong>Transaction ID:</strong> <span id="detailsTransactionID"></span></p>
-          <p><strong>Description:</strong> <span id="detailsDescription"></span></p>
-          <p><strong>Location:</strong> <span id="detailsLocation"></span></p>
-          <div class="mt-3">
-            <strong>Attached Image:</strong><br/>
-              <button class="btn btn-outline-primary btn-sm mb-2 mt-1" onclick="toggleAttachedImage()">View Attached Image</button><br/>
-              <img id="detailsImage" src="" alt="Complaint Image" class="img-fluid rounded shadow" style="max-height: 300px; display: none;">
-          </div>
+             <!-- User Profile Section -->
+       <div class="user-profile">
+         <div style="display: flex; align-items: flex-start; gap: 20px; max-width: 700px; margin: 0 auto;">
+           <div class="profile-card">
+                        <div class="profile-header">
+                <div class="profile-avatar-container">
+                  <div class="profile-avatar" onclick="openProfileUploadModal()">
+                    <img src="" alt="Profile Picture" id="profilePicture" style="display: none;">
+                    <span class="avatar-text" id="avatarText">👤</span>
+                  </div>
+                  <button class="avatar-edit-btn" onclick="openProfileUploadModal()">
+                    Edit
+                  </button>
+                </div>
+                            <div class="profile-info">
+                  <h3 id="userFullName">User Name</h3>
+                  <p id="userEmail">user@email.com</p>
+                  <div class="profile-badges">
+                    <span class="barangay-badge" id="userBarangay">Barangay</span>
+                  </div>
+                </div>
+             </div>
+           </div>
+           
+           <!-- Message Button -->
+           <div style="margin-top: 32px;">
+             <button class="btn btn--message" onclick="showMessageNotification()">Message</button>
+           </div>
+         </div>
+       </div>
 
-          <!-- STATUS INDICATOR -->
-          <div class="status-indicator mt-4 d-flex justify-content-around align-items-center">
-            <div class="text-center">
-              <div class="circle bg-success text-white mb-1 rounded-circle d-flex justify-content-center align-items-center" style="width: 50px; height: 50px;">
-                <i class="bi bi-send-fill"></i>
-              </div>
-              <div class="fw-semibold">Reported</div>
-            </div>
-            <div class="line flex-grow-1 mx-2 bg-danger" style="height: 5px;"></div>
-            <div class="text-center">
-              <div class="circle bg-danger text-white mb-1 rounded-circle d-flex justify-content-center align-items-center" style="width: 50px; height: 50px;">
-                <i class="bi bi-arrow-repeat"></i>
-              </div>
-              <div class="fw-semibold">In-Progress</div>
-            </div>
-            <div class="line flex-grow-1 mx-2 bg-danger" style="height: 5px;"></div>
-            <div class="text-center">
-              <div class="circle bg-danger text-white mb-1 rounded-circle d-flex justify-content-center align-items-center" style="width: 50px; height: 50px;">
-                <i class="bi bi-check-circle-fill"></i>
-              </div>
-              <div class="fw-semibold">Resolved</div>
-            </div>
-          </div>
 
-          <!-- Toggle Button -->
-          <div class="text-start mt-4">
-            <button id="toggleHistoryBtn" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold">View Transaction History</button>
-          </div>
+
+
+      <div class="dashboard__grid">
+        <!-- Submit Complaint Card -->
+        <div class="dashboard-card">
+          <h3>
+            <span class="icon">📝</span>
+            Submit a Complaint
+          </h3>
+          <p>Report an issue or submit a new complaint. We'll process it and keep you updated on the progress.</p>
+          <button class="btn" onclick="openComplaintForm()">Submit Complaint</button>
         </div>
 
-        <!-- Scrollable History Content -->
-        <div id="transactionHistoryBox" class="mt-3 flex-grow-1 overflow-auto" style="display: none;">
-          <div class="p-3 bg-light border rounded-3" style="border-left: 4px solid #007bff;">
-            <p class="mb-1 fw-semibold small text-muted">May 31, 2025</p>
-            <p class="mb-1 fw-semibold text-primary"><i class="bi bi-info-circle-fill me-1"></i>REPORTED</p>
-            <p class="mb-1">Your report has been successfully accepted and is now in review for processing.</p>
-            <p class="mb-0">Details: <span id="historyDetailsText">This is my complaint</span></p>
-          </div>
+
+
+
+        <!-- View Transaction Card -->
+        <div class="dashboard-card">
+          <h3>
+            <span class="icon">👁️</span>
+            View Transaction
+          </h3>
+          <p>Track the progress of your submitted complaints. See current status and updates in real-time.</p>
+          <button class="btn" onclick="window.location.href='user-view.html'">View Progress</button>
+        </div>
+
+
+
+
+        <!-- Transaction History Card -->
+        <div class="dashboard-card">
+          <h3>
+            <span class="icon">📊</span>
+            Transaction History
+          </h3>
+          <p>View completed transactions and resolved complaints. Access your full complaint history.</p>
+          <button class="btn" onclick="viewHistory()">View History</button>
         </div>
       </div>
     </div>
-  </div>
-</div>
-</div>
+  </main>
 
 
-<!-- Report/Complaint Form Modal -->
-<div class="modal fade" id="reportComplaintModal" tabindex="-1" aria-labelledby="reportComplaintModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content border-0 shadow-lg rounded-4">
-      <div class="modal-header bg-primary text-white rounded-top-4">
-        <h5 class="modal-title fw-semibold" id="reportComplaintModalLabel">Report / Complaint Form</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+
+
+  <!-- Custom Notification Modal -->
+  <div id="notificationModal" class="modal hidden">
+    <div class="modal-content notification-content">
+      <div class="notification-header">
+        <div class="notification-icon" id="notificationIcon">✅</div>
+        <h3 id="notificationTitle">Success</h3>
+        <button class="modal-close" onclick="closeNotification()">&times;</button>
       </div>
-      <div class="modal-body px-4 py-4">
-        <form id="complaintForm">
-          <div class="mb-3">
-            <label for="complaintBarangay" class="form-label">Reporting to</label>
-            <select class="form-select" id="complaintBarangay" required>
-              <option value="">-- Select Barangay --</option>
-            </select>
-          </div>
-
-          <div class="mb-3">
-            <label for="complaintType" class="form-label">Complaint Type</label>
-            <select class="form-select" id="complaintType" required>
-              <option value="">-- Select Type --</option>
-              <option value="Damaged Roads">Damaged Roads</option>
-              <option value="Broken Streetlights">Broken Streetlights</option>
-              <option value="Garbage Collection">Garbage Collection</option>
-              <option value="Noise Disturbance">Noise Disturbance</option>
-              <option value="Flooding">Flooding</option>
-              <option value="Illegal Parking">Illegal Parking</option>
-              <option value="Curfew Violations">Curfew Violations</option>
-              <option value="Loitering">Loitering</option>
-              <option value="Drug-related Activity">Drug-related Activity</option>
-              <option value="Vandalism">Vandalism</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-
-          <div class="mb-3" id="otherComplaintContainer" style="display: none;">
-            <label for="otherComplaint" class="form-label">Specify Issue</label>
-            <input type="text" class="form-control" id="otherComplaint" placeholder="Enter your issue">
-          </div>
-
-          <div class="mb-3">
-            <label for="complaintDescription" class="form-label">Description of the complaint/issue and date and time of the incident</label>
-            <textarea class="form-control" id="complaintDescription" rows="5" required></textarea>
-          </div>
-
-          <div class="mb-3">
-            <label for="complaintLocation" class="form-label">Location</label>
-            <div class="input-group">
-              <input type="text" class="form-control rounded-start-pill" id="complaintLocation" placeholder="Enter the location" required>
-              <button type="button" id="mapViewBtn" class="btn btn-primary rounded-end-pill px-3">Map</button>
-            </div>
-          </div>
-
-          <div id="mapContainer" class="mb-4" style="display:none; height: 300px; border-radius: 8px; overflow: hidden;">
-            <iframe id="mapFrame" width="100%" height="100%" style="border:0;" loading="lazy" allowfullscreen></iframe>
-          </div>
-
-          <div class="mb-4">
-            <label for="complaintImage" class="form-label">Upload Image (optional)</label>
-            <input class="form-control" type="file" id="complaintImage" accept="image/*">
-          </div>
-
-          <div class="d-grid">
-            <button type="submit" class="btn btn-success">Submit Complaint</button>
-          </div>
-        </form>
+      <div class="notification-body">
+        <p id="notificationMessage">Operation completed successfully.</p>
+      </div>
+      <div class="notification-actions">
+        <button class="btn btn--full" onclick="closeNotification()">OK</button>
       </div>
     </div>
   </div>
-</div> 
 
-<!-- AFTER/ SUBMITING REPORT - Tracking Number Modal -->
-<div class="modal fade" id="trackingModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content shadow-lg rounded-4 text-center p-4">
-      <div class="modal-header border-0">
-        <h5 class="modal-title fw-bold text-primary w-100">Tracking Number Issued</h5>
-        <!-- Removed the close button here -->
+
+
+
+  <!-- Confirmation Modal -->
+  <div id="confirmationModal" class="modal hidden">
+    <div class="modal-content confirmation-content">
+      <div class="confirmation-header">
+        <div class="confirmation-icon" id="confirmationIcon">❓</div>
+        <h3 id="confirmationTitle">Confirmation</h3>
+        <button class="modal-close" onclick="closeConfirmation()">&times;</button>
       </div>
-      <div class="modal-body">
-        <p class="fw-semibold mb-2">Please save your tracking number below to check the status of your report:</p>
-        <h4 id="trackingNumberText" class="fw-bold text-dark d-inline-block me-2"></h4>
-        <button class="btn btn-outline-secondary btn-sm" onclick="copyTrackingNumber()">
-          <i class="bi bi-clipboard me-1"></i> Copy
-        </button>
-
-        <div class="mt-4">
-          <p class="text-muted small fst-italic mb-2">
-            You may use this tracking number to follow up on your complaint or report.
-          </p>
-          <div class="alert alert-warning rounded-3 px-3 py-2" role="alert" style="font-size: 0.9rem;">
-            <strong>Kind Reminder:</strong><br />
-            Processing time may take up to <strong>3–10 business days</strong>, depending on the urgency and specific circumstances of the report or complaint. We sincerely appreciate your patience and understanding as we do our utmost to address your concern as promptly and effectively as possible.
-          </div>
-        </div>
-        <div class="mt-3">
-          <button class="btn btn-primary px-4" data-bs-dismiss="modal">Close</button>
-        </div>
+      <div class="confirmation-body">
+        <p id="confirmationMessage">Are you sure you want to proceed?</p>
+      </div>
+      <div class="confirmation-actions">
+        <button class="btn btn--ghost" onclick="closeConfirmation()">NO</button>
+        <button class="btn" id="confirmYesBtn">YES</button>
       </div>
     </div>
   </div>
-</div>
-
-
-<!-- About Us Button at top left -->
-<div class="about-us-button position-fixed top-0 start-0 m-3 z-3">
-  <button 
-    type="button" 
-    class="btn btn-primary btn-sm rounded-pill d-flex align-items-center justify-content-center shadow" 
-    style="width: 110px; height: 40px; font-weight: 600;"
-    data-bs-toggle="modal" data-bs-target="#aboutUsModal"
-  >
-    <i class="bi bi-info-circle me-2"></i> About Us
-  </button>
-</div>
-
-
-  <!-- Social/Contact Buttons at top right -->
-<div class="contact-buttons d-flex gap-3 position-fixed top-0 end-0 m-3">
-  <a href="https://www.facebook.com/YourPage" target="_blank" aria-label="Facebook" class="btn btn-primary btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width:40px; height:40px;">
-    <i class="bi bi-facebook fs-4"></i>
-  </a>
-  <a href="mailto:your.email@example.com" aria-label="Email" class="btn btn-danger btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width:40px; height:40px;">
-    <i class="bi bi-envelope-fill fs-4"></i>
-  </a>
-  <a href="tel:+639171234567" aria-label="Phone" class="btn btn-success btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width:40px; height:40px;">
-    <i class="bi bi-telephone-fill fs-4"></i>
-  </a>
-</div>
-
-  <section class="hero">
-  <div class="container">
-    <h1 class="display-4 fw-bold mb-4">Welcome to Complaint Management System</h1>
-    <p class="lead mb-5">Easily report and track your barangay concerns</p>
-
-    <div class="d-flex flex-column flex-md-row justify-content-center">
-      <a href="#" class="btn btn-warning btn-lg btn-custom submit-hover" id="btnSubmitReport">Submit a Report</a>
-      <a href="#" id="viewTransactionDirect" class="btn btn-outline-light btn-lg btn-custom">View Transaction</a>
-    </div>
-    <div class="d-flex justify-content-center mt-3"> <a href="#" class="btn btn-secondary btn-lg btn-custom" data-bs-toggle="modal" data-bs-target="#transactionHistoryModal">Transaction History</a>
-    </div>
-  </div>
-</section>
-
-
-<!-- About Us Modal -->
-<div class="modal fade" id="aboutUsModal" tabindex="-1" aria-labelledby="aboutUsModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content shadow-lg rounded-4 border-0">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-semibold fs-3" id="aboutUsModalLabel" style="color: #2c3e50;">About Us</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body fs-6" style="color: #212529; line-height: 1.7;">
-        <p><strong>The Complaint Management System (CMS)</strong> is a centralized web-based platform developed for the barangays of Davao City. It is specifically designed to empower residents by allowing them to easily submit concerns and complaints within their own barangay area.</p>
-        <p>Only barangays that are enrolled in the CMS can receive and manage complaints, ensuring that submissions are securely routed to the appropriate local authorities. This targeted approach helps barangay officials act more swiftly and efficiently on reports that directly affect their community.</p>
-        <p>The primary goal of CMS is to strengthen community relations by improving communication between the public and barangay officials. Through this system, we aim to promote transparency, accountability, and responsiveness—making sure every voice is heard, and every concern is addressed.</p>
-        <p>Thank you for being a part of this movement towards smarter and more connected barangay governance. Together, we can build a more informed, involved, and empowered community.</p>
-      </div>
-      <div class="modal-footer border-0 pt-0 d-flex justify-content-end">
-        <button type="button" class="btn btn-primary fw-semibold px-4 py-2 rounded-3" data-bs-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Register Modal -->
-<div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg rounded-4">
-      <div class="modal-header bg-gradient text-white rounded-top-4 position-relative" 
-           style="background: linear-gradient(135deg, #0066cc, #004080); border-bottom: none; padding: 1rem;">
-        <!-- Gray close button -->
-        <button type="button" class="btn-close position-absolute top-0 end-0 m-3" 
-                data-bs-dismiss="modal" aria-label="Close" style="filter: brightness(0.7);"></button>
-      </div>
-      <div class="modal-body px-4 py-4">
-        <!-- Stylish description here -->
-        <p class="register-description">
-          <strong>Create an Account</strong>
-          Please fill out the form below to create your account. Make sure your information is accurate so we can serve you better.
-        </p>
-        <form id="registerForm">
-          <div class="form-floating mb-3">
-            <input type="email" class="form-control rounded-3" id="email" placeholder="name@example.com" required />
-            <label for="email">Email address</label>
-          </div>
-          <div class="form-floating mb-3">
-            <input type="text" class="form-control rounded-3" id="fullName" placeholder="Juan Dela Cruz" required />
-            <label for="fullName">Full Name</label>
-          </div>
-          <div class="form-floating mb-1">
-            <input type="tel" class="form-control rounded-3" id="phone" placeholder="09XXXXXXXXX" required />
-            <label for="phone">Phone Number</label>
-          </div>
-          <div id="phoneError" class="text-danger mb-3" style="font-size: 0.9rem;"></div>
-
-          <!-- New Detect Address button -->
-          <button type="button" class="btn btn-formal" id="detectAddressBtn">Detect My Address</button>
-
-          <div class="form-floating mb-4">
-            <textarea class="form-control rounded-3" placeholder="Enter your address here" id="address" style="height: 100px" required></textarea>
-            <label for="address">Address</label>
-          </div>
-          <button type="submit" class="btn btn-primary w-100 fw-semibold py-2 rounded-3">Register</button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>  
-
-<!-- Important Reminders Modal -->
-<div class="modal fade" id="disclaimerModal" tabindex="-1" aria-labelledby="disclaimerModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-  <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-lg">
-    <div class="modal-content shadow-lg rounded-4 border-0" style="font-family: 'Poppins', sans-serif;">
-
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-semibold fs-3" id="disclaimerModalLabel" style="color: #2c3e50;">Important Reminders Before Submitting</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-
-      <div class="modal-body fs-6" style="color: #212529; max-height: 400px; overflow-y: auto; line-height: 1.6; display: flex; flex-direction: column; justify-content: flex-start;">
-        <div>
-          <p>Please ensure the following before submitting your report to the barangay:</p>
-
-          <ul>
-            <li><strong>Upload Step:</strong> Click the “Upload Image” button even if you don’t have a photo to attach. This step is required to proceed.</li>
-            <li><strong>Complete Details:</strong> Provide clear and accurate information such as:
-              <ul>
-                <li>Name and/or address of the person or place being reported.</li>
-                <li>Include nearby landmarks (e.g., beside Barangay Hall, near sari-sari store).</li>
-                <li>Specify the date and time the incident happened.</li>
-              </ul>
-            </li>
-            <li><strong>Barangay Jurisdiction:</strong> Make sure your report is within the scope of your selected barangay. Reports outside the jurisdiction may not be processed.</li>
-          </ul>
-
-          <p>Reports that do not follow these guidelines may be delayed or not acted upon. Thank you for helping us improve community safety and service.</p>
-        </div>
-
-        <!-- Checkbox inside scrollable area -->
-        <div class="form-check mt-3" style="flex-shrink: 0;">
-          <input class="form-check-input" type="checkbox" id="disclaimerCheckbox">
-          <label 
-            class="form-check-label fw-bold" 
-            for="disclaimerCheckbox" 
-            style="user-select: none; font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1rem; color: #212529;">Yes, I have read and understood the reminders.
-          </label>
-        </div>
-
-      <div class="modal-footer border-0 pt-0 d-flex justify-content-end gap-2">
-        <button type="button" class="btn btn-outline-danger fw-semibold px-4 py-2 rounded-3" data-bs-dismiss="modal" style="font-size: 1rem;">Cancel</button>
-        <button type="button" class="btn btn-primary fw-semibold px-4 py-2 rounded-3" id="disclaimerAcceptBtn" disabled>Proceed</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-  <!-- Bootstrap JS Bundle -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
-
-  function copyTrackingNumber() {
-  const trackingNumber = document.getElementById("trackingNumberText").textContent;
-  navigator.clipboard.writeText(trackingNumber).then(() => {
-    alert("Tracking number copied to clipboard!");
-  });
-}
-
-
-  function toggleAttachedImage() {
-  const img = document.getElementById('detailsImage');
-  const btn = event.target;
-
-  if (img.style.display === 'none') {
-    img.style.display = 'block';
-    btn.textContent = 'Hide Attached Image';
-  } else {
-    img.style.display = 'none';
-    btn.textContent = 'View Attached Image';
-  }
-}
-
-// ✅ Submit Complaint and Append to Transaction List
-document.getElementById("complaintForm").addEventListener("submit", function (e) {
-  e.preventDefault();
-
-  const barangay = document.getElementById("complaintBarangay").value;
-  const type = document.getElementById("complaintType").value;
-  const otherType = document.getElementById("otherComplaint").value.trim();
-  const complaintType = type === "Other" ? otherType : type;
-  const description = document.getElementById("complaintDescription").value.trim();
-  const location = document.getElementById("complaintLocation").value.trim();
-  const imageFile = document.getElementById("complaintImage").files[0];
-  const imageURL = imageFile ? URL.createObjectURL(imageFile) : "https://via.placeholder.com/300x200";
-
-  if (!barangay || !complaintType || !description || !location) {
-    alert("Please complete all required fields.");
-    return;
-  }
-
-const rawId = Date.now().toString();
-const transactionId = `TXN-${rawId.slice(-6)}`;
-
-const now = new Date();
-const datePart = now.toLocaleDateString('en-US', {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit'
-});
-const timePart = now.toLocaleTimeString('en-US', {
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: true
-});
-const today = `${datePart} ${timePart}`;
-
-document.getElementById("trackingNumberText").textContent = transactionId;
-
-const tableBody = document.getElementById("transactionTableBody");
-const newRow = document.createElement("tr");
-newRow.innerHTML = `
-  <td>${transactionId}</td>
-  <td>${today}</td>
-  <td>${barangay}</td>
-  <td>${complaintType}</td>
-  <td><span class="badge bg-warning text-dark">Reported</span></td>
-  <td>
-    <button class="btn btn-sm btn-primary" 
-      onclick="openTransactionDetails(this)"
-      data-id="${transactionId}"
-      data-type="${complaintType}"
-      data-description="${description}"
-      data-location="${location}"
-      data-image="${imageURL}">
-      More Details
-    </button>
-  </td>
-`;
-
-  tableBody.insertBefore(newRow, tableBody.firstChild);
-  this.reset();
-
-  const reportModal = bootstrap.Modal.getInstance(document.getElementById("reportComplaintModal"));
-  reportModal.hide();
-
-  const trackingModal = new bootstrap.Modal(document.getElementById("trackingModal"));
-  trackingModal.show();
-});
-
-
-
-// Toggle Transaction History (Show/Hide)
-document.addEventListener('DOMContentLoaded', () => {
-  const toggleBtn = document.getElementById('toggleHistoryBtn');
-  const historyBox = document.getElementById('transactionHistoryBox');
-
-  toggleBtn.addEventListener('click', () => {
-    const isVisible = historyBox.style.display === 'block';
-    historyBox.style.display = isVisible ? 'none' : 'block';
-    toggleBtn.textContent = isVisible ? 'View Transaction History' : 'Hide Transaction History';
-  });
-});
-
-// Open Transaction Details Modal & Populate Fields
-function openTransactionDetails(button) {
-  document.getElementById('detailsTransactionID').textContent = button.getAttribute('data-id');
-  document.getElementById('detailsDescription').textContent = button.getAttribute('data-description');
-  document.getElementById('detailsLocation').textContent = button.getAttribute('data-location');
-  document.getElementById('detailsImage').src = button.getAttribute('data-image');
-
-  const modal = new bootstrap.Modal(document.getElementById('transactionDetailsModal'));
-  modal.show();
-}
-
-// Fallback Listener for Transaction Details on Modal Show
-document.addEventListener('DOMContentLoaded', () => {
-  const detailsModal = document.getElementById('transactionDetailsModal');
-
-  detailsModal.addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
-
-    document.getElementById('detailsTransactionID').textContent = button.getAttribute('data-id');
-    document.getElementById('detailsComplaintType').textContent = button.getAttribute('data-type');
-    document.getElementById('detailsDescription').textContent = button.getAttribute('data-description');
-    document.getElementById('detailsLocation').textContent = button.getAttribute('data-location');
-    document.getElementById('detailsImage').src = button.getAttribute('data-image');
-  });
-});
-
-// Show View Transactions Modal from Home Button
-const btnViewTransaction = document.getElementById('viewTransactionDirect');
-btnViewTransaction?.addEventListener('click', (e) => {
-  e.preventDefault();
-  const transactionModal = new bootstrap.Modal(document.getElementById('viewTransactionsModal'));
-  transactionModal.show();
-});
-
-// Filter/Search Transactions by Keyword
-document.addEventListener('DOMContentLoaded', () => {
-  const searchInput = document.getElementById('transactionSearch');
-  const tableBody = document.getElementById('transactionTableBody');
-
-  searchInput.addEventListener('keyup', function () {
-    const searchTerm = this.value.toLowerCase();
-    const rows = tableBody.getElementsByTagName('tr');
-
-    Array.from(rows).forEach(row => {
-      const rowText = row.textContent.toLowerCase();
-      row.style.display = rowText.includes(searchTerm) ? '' : 'none';
-    });
-  });
-});
-
-// Populate User Profile Info from Local Storage
-const userData = {
-  email: localStorage.getItem('userEmail') || 'guest@example.com',
-  fullName: localStorage.getItem('userFullName') || 'Guest User',
-  phone: localStorage.getItem('userPhone') || 'N/A',
-  address: localStorage.getItem('userAddress') || 'Unknown'
-};
-
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('userFullNameLabel').innerText = userData.fullName;
-  document.getElementById('userEmailData').innerText = userData.email;
-  document.getElementById('userFullNameData').innerText = userData.fullName;
-  document.getElementById('userPhoneData').innerText = userData.phone;
-  document.getElementById('userAddressData').innerText = userData.address;
-});
-
-// Logout Function
-function handleLogout() {
-  localStorage.clear();
-  window.location.href = 'index.html';
-}
-
-// Enable "Proceed" Button After Disclaimer Checkbox is Checked
-const checkbox = document.getElementById('disclaimerCheckbox');
-const acceptBtn = document.getElementById('disclaimerAcceptBtn');
-checkbox.addEventListener('change', () => {
-  acceptBtn.disabled = !checkbox.checked;
-});
-
-// Phone Number Format Restriction (Only 11-digit)
-const phoneInput = document.getElementById('phone');
-phoneInput.addEventListener('input', function () {
-  let digitsOnly = this.value.replace(/\D/g, '');
-  if (digitsOnly.length > 11) {
-    digitsOnly = digitsOnly.slice(0, 11);
-  }
-  this.value = digitsOnly;
-});
-
-// Name Format Restriction (Letters Only)
-const nameInput = document.getElementById('fullName');
-nameInput.addEventListener('input', function () {
-  this.value = this.value.replace(/[^.A-Za-zñÑ\s\-]/g, '');
-});
-
-// Philippine Mobile Prefix Validator
-const validPrefixes = ['0817','0905','0906','0915','0916','0917','0926','0927','0935','0936','0945','0955','0965','0975','0994','0995','0907','0908','0909','0910','0912','0918','0919','0920','0921','0928','0929','0930','0938','0939','0946','0947','0948','0949','0950','0961','0968','0970','0979','0998','0999','0922','0923','0924','0925','0931','0932','0933','0934'];
-
-// Registration Form Validation
-document.getElementById("registerForm").addEventListener("submit", function (e) {
-  e.preventDefault();
-
-  const email = document.getElementById('email').value.trim();
-  const fullName = document.getElementById('fullName').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-  const address = document.getElementById('address').value.trim();
-  const phoneError = document.getElementById('phoneError');
-  phoneError.textContent = '';
-
-  if (!email || !fullName || !phone || !address) {
-    alert("Please fill in all the fields before submitting.");
-    return;
-  }
-
-  if (phone.length !== 11 || !phone.startsWith('09')) {
-    phoneError.textContent = "Please provide a valid 11-digit phone number starting with '09'.";
-    return;
-  }
-
-  const prefix = phone.slice(0, 4);
-  if (!validPrefixes.includes(prefix)) {
-    phoneError.textContent = "Invalid mobile number prefix. Please provide a valid Philippine mobile number.";
-    return;
-  }
-
-  alert("Registration submitted! (Handle saving logic here)");
-  const modal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
-  modal.hide();
-  this.reset();
-});
-
-// Detect Current Address via Geolocation
-document.getElementById('detectAddressBtn').addEventListener('click', () => {
-  const addressField = document.getElementById('address');
-
-  if (!navigator.geolocation) {
-    alert('Geolocation is not supported by your browser');
-    return;
-  }
-
-  addressField.value = 'Detecting your location...';
-
-  navigator.geolocation.getCurrentPosition(success, error, {
-    enableHighAccuracy: true,
-    timeout: 10000,
-    maximumAge: 0
-  });
-
-  function success(position) {
-    const lat = position.coords.latitude;
-    const lon = position.coords.longitude;
-
-    fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`)
-      .then(response => response.json())
-      .then(data => {
-        const addr = data.address || {};
-        let displayAddress = [addr.road, addr.suburb, addr.city || addr.town || addr.village, addr.state, addr.postcode, addr.country].filter(Boolean).join(', ');
-        addressField.value = displayAddress || 'Unable to detect address, please enter manually.';
-      })
-      .catch(() => {
-        addressField.value = 'Unable to detect address, please enter manually.';
+
+
+
+
+     <!-- Messages Modal -->
+   <div id="messagesModal" class="modal hidden">
+     <div class="modal-content messages-content">
+       <div class="messages-header">
+         <div class="messages-icon">💬</div>
+         <h3>Chats</h3>
+         <button class="modal-close" onclick="closeMessagesModal()">&times;</button>
+       </div>
+       <div class="messages-body">
+         <div class="messages-list" id="userChatList">
+           <!-- Chat items will be loaded dynamically -->
+           <div class="chat-empty-state" id="chatEmptyState" style="display: none;">
+             <div style="text-align: center; padding: 40px 20px; color: var(--muted);">
+               <div style="font-size: 3rem; margin-bottom: 16px;">💬</div>
+               <h3 style="margin: 0 0 8px 0; color: var(--text);">No Chats Available</h3>
+               <p style="margin: 0; font-size: 0.9rem;">Chat with admins will appear here when they message you about your complaints.</p>
+             </div>
+           </div>
+             </div>
+           </div>
+             </div>
+           </div>
+
+   <!-- User Chat Modal -->
+   <div id="userChatModal" class="modal hidden">
+     <div class="sheet" style="max-width: 800px; height: 80vh;">
+       <div class="sheet-head">
+         <div style="display: flex; align-items: center; gap: 12px;">
+           <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--brand), var(--brand-2)); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">👤</div>
+           <div>
+             <strong id="chatAdminName" style="color: var(--text); font-size: 1.1rem;">Admin Name</strong>
+             <div style="font-size: 0.9rem; color: var(--muted); margin-top: 2px;">
+               Complaint #<span id="chatComplaintId">ID</span> • <span id="chatComplaintType">Type</span>
+             </div>
+           </div>
+         </div>
+         <button class="btn small ghost" onclick="closeUserChatModal()">Close</button>
+       </div>
+       <div class="sheet-body" style="display: flex; flex-direction: column; height: calc(100% - 80px);">
+         <!-- Chat Messages Area -->
+         <div id="userChatMessages" style="flex: 1; overflow-y: auto; padding: 16px; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; margin-bottom: 16px; background: rgba(255,255,255,.02);">
+           <!-- Messages will be loaded here -->
+         </div>
+
+         <!-- Message Input Area -->
+         <div style="display: flex; gap: 12px; align-items: flex-end;">
+           <div style="flex: 1;">
+             <textarea
+               id="userMessageInput"
+               placeholder="Type your message here..."
+               style="width: 100%; min-height: 60px; max-height: 120px; padding: 12px; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; background: rgba(255,255,255,.05); color: var(--text); resize: vertical; outline: none; font-family: inherit;"
+               onkeydown="handleUserMessageKeydown(event)"
+             ></textarea>
+           </div>
+           <button class="btn" onclick="sendUserMessage()" id="sendUserMessageBtn">
+             Send
+           </button>
+         </div>
+       </div>
+     </div>
+   </div>
+
+   <!-- Profile Picture Upload Modal -->
+   <div id="profileUploadModal" class="modal hidden">
+     <div class="modal-content profile-upload-content">
+       <div class="profile-upload-header">
+         <div class="profile-upload-icon">🖼️</div>
+         <h3>Change Profile Picture</h3>
+         <button class="modal-close" onclick="closeProfileUploadModal()">&times;</button>
+       </div>
+       <div class="profile-upload-body">
+         <p>Click the area above to select a new profile picture, or drag and drop a file.</p>
+         <div class="file-upload-area" id="dropZone">
+           <input type="file" id="fileInput" class="file-input" accept="image/*">
+           <div class="file-upload-icon">📁</div>
+           <div class="file-upload-text">Click to browse or drag & drop</div>
+           <div class="file-upload-hint">PNG, JPG, GIF up to 5MB</div>
+         </div>
+         <div class="preview-container" id="previewContainer">
+           <img src="https://via.placeholder.com/100" alt="Profile Preview" class="preview-image">
+           <p class="file-upload-text">No file selected</p>
+         </div>
+         <div class="upload-progress">
+           <div class="progress-bar">
+             <div class="progress-fill" id="uploadProgressFill"></div>
+           </div>
+           <div class="progress-text">Uploading...</div>
+         </div>
+       </div>
+       <div class="profile-upload-actions">
+         <button class="btn btn--ghost" onclick="closeProfileUploadModal()">Cancel</button>
+         <button class="btn" id="uploadProfileBtn">Upload</button>
+       </div>
+     </div>
+   </div>
+
+
+
+
+  <script>
+    // Modal Functions
+    function openModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.remove('hidden');
+        // Use setTimeout to ensure the modal is visible before adding the show class
+        setTimeout(() => {
+          modal.classList.add('show');
+        }, 10);
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+      }
+    }
+
+
+
+
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => {
+          modal.classList.add('hidden');
+        }, 300);
+        document.body.style.overflow = ''; // Restore scrolling
+      }
+    }
+
+
+
+
+    // Notification Modal Functions
+    function showNotification(message, type = 'success') {
+      const modal = document.getElementById('notificationModal');
+      const icon = document.getElementById('notificationIcon');
+      const title = document.getElementById('notificationTitle');
+      const messageEl = document.getElementById('notificationMessage');
+     
+      // Set content based on type
+      if (type === 'success') {
+        icon.textContent = '✅';
+        title.textContent = 'Success';
+        title.style.color = 'var(--ok)';
+      } else if (type === 'error') {
+        icon.textContent = '❌';
+        title.textContent = 'Error';
+        title.style.color = 'var(--danger)';
+      } else if (type === 'info') {
+        icon.textContent = 'ℹ️';
+        title.textContent = 'Information';
+        title.style.color = 'var(--brand)';
+      }
+     
+      messageEl.textContent = message;
+     
+      // Show the notification
+      openModal('notificationModal');
+    }
+   
+    function closeNotification() {
+      closeModal('notificationModal');
+    }
+
+         // Message notification function
+     function showMessageNotification() {
+       openModal('messagesModal');
+     }
+
+     // Messages Modal Functions
+     function closeMessagesModal() {
+       closeModal('messagesModal');
+     }
+
+     // Global variables for user chat
+     let currentUserChat = null;
+     let userChatData = [];
+
+     // Load user chat data dynamically
+     async function loadUserChats() {
+       try {
+         const response = await fetch('/api/user/chat/list/');
+         const data = await response.json();
+         
+         if (response.status === 401) {
+           // User is not authenticated, redirect to login
+           window.location.href = '/index.html?show_login=true';
+           return;
+         }
+         
+         if (data.success) {
+           if (data.chats && data.chats.length > 0) {
+             userChatData = data.chats;
+             renderUserChats(data.chats);
+           } else {
+             // Show empty state
+             document.getElementById('chatEmptyState').style.display = 'block';
+           }
+         } else {
+           throw new Error(data.error || 'Failed to load chats');
+         }
+         
+       } catch (error) {
+         console.error('Error loading user chats:', error);
+         // Don't show error notification for authentication issues
+         if (!error.message.includes('Authentication required')) {
+           showNotification('Failed to load chats: ' + error.message);
+         }
+         // Show empty state on error
+         document.getElementById('chatEmptyState').style.display = 'block';
+       }
+     }
+
+     function renderUserChats(chats) {
+       const chatList = document.getElementById('userChatList');
+       const emptyState = document.getElementById('chatEmptyState');
+       
+       if (!chats || chats.length === 0) {
+         emptyState.style.display = 'block';
+         return;
+       }
+       
+       emptyState.style.display = 'none';
+       
+       // Clear existing chats
+       const existingChats = chatList.querySelectorAll('.message-item');
+       existingChats.forEach(chat => chat.remove());
+       
+       // Render new chats
+       chats.forEach(chat => {
+         const chatItem = document.createElement('div');
+         chatItem.className = 'message-item';
+         chatItem.onclick = () => openUserChat(chat.conversation_id);
+         
+         // Format the last activity time
+         const lastActivity = formatChatTime(chat.last_activity);
+         
+         chatItem.innerHTML = `
+           <div class="message-avatar">🏘️</div>
+           <div class="message-info">
+             <div class="message-name">
+               ${chat.admin_name}
+               ${chat.unread_count > 0 ? `<span class="unread-badge">${chat.unread_count}</span>` : ''}
+             </div>
+             <div class="message-preview">${chat.last_message}</div>
+             <div style="font-size: 0.8rem; color: var(--muted); margin-top: 2px;">
+               Complaint #${chat.complaint_id} • ${chat.complaint_type}
+             </div>
+           </div>
+           <div class="message-time">${lastActivity}</div>
+         `;
+         
+         chatList.appendChild(chatItem);
+       });
+     }
+
+     function formatChatTime(timestamp) {
+       const date = new Date(timestamp);
+       const now = new Date();
+       const diffInHours = (now - date) / (1000 * 60 * 60);
+       
+       if (diffInHours < 1) {
+         return 'Just now';
+       } else if (diffInHours < 24) {
+         return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+       } else if (diffInHours < 48) {
+         return 'Yesterday';
+       } else {
+         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+       }
+     }
+
+     function openUserChat(conversationId) {
+       // Find the chat data
+       const chatData = userChatData.find(chat => chat.conversation_id === conversationId);
+       if (!chatData) {
+         showNotification('Chat data not found');
+         return;
+       }
+       
+       // Set current chat data
+       currentUserChat = {
+         conversationId: conversationId,
+         complaintId: chatData.complaint_id,
+         adminName: chatData.admin_name,
+         complaintType: chatData.complaint_type
+       };
+       
+       // Update chat modal header
+       document.getElementById('chatAdminName').textContent = currentUserChat.adminName;
+       document.getElementById('chatComplaintId').textContent = currentUserChat.complaintId;
+       document.getElementById('chatComplaintType').textContent = currentUserChat.complaintType;
+       
+       // Clear previous messages
+       document.getElementById('userChatMessages').innerHTML = '';
+       
+       // Load chat messages
+       loadUserChatMessages(currentUserChat.complaintId);
+       
+       // Close messages modal and open chat modal
+       closeMessagesModal();
+       openModal('userChatModal');
+       
+       // Focus on message input
+       setTimeout(() => {
+         document.getElementById('userMessageInput').focus();
+       }, 300);
+       
+       // Refresh chat list to update unread counts
+       setTimeout(() => {
+         loadUserChats();
+       }, 500);
+     }
+
+     function closeUserChatModal() {
+       closeModal('userChatModal');
+       currentUserChat = null;
+     }
+
+     async function loadUserChatMessages(complaintId) {
+       try {
+         const response = await fetch(`/api/user/chat/${complaintId}/messages/`);
+         const data = await response.json();
+         
+         if (response.status === 401) {
+           // User is not authenticated, redirect to login
+           window.location.href = '/index.html?show_login=true';
+           return;
+         }
+         
+         if (data.success) {
+           if (data.messages && data.messages.length > 0) {
+             renderUserChatMessages(data.messages);
+           } else {
+             // Show empty state
+             const chatMessages = document.getElementById('userChatMessages');
+             chatMessages.innerHTML = `
+               <div style="text-align: center; padding: 40px 20px; color: var(--muted);">
+                 <div style="font-size: 2rem; margin-bottom: 16px;">💬</div>
+                 <h3 style="margin: 0 0 8px 0; color: var(--text);">No Messages Yet</h3>
+                 <p style="margin: 0; font-size: 0.9rem;">Start a conversation with the admin about this complaint.</p>
+               </div>
+             `;
+           }
+         } else {
+           throw new Error(data.error || 'Failed to load messages');
+         }
+         
+       } catch (error) {
+         console.error('Error loading user chat messages:', error);
+         // Don't show error notification for authentication issues
+         if (!error.message.includes('Authentication required')) {
+           showNotification('Failed to load chat messages: ' + error.message);
+         }
+         
+         // Show error state
+         const chatMessages = document.getElementById('userChatMessages');
+         chatMessages.innerHTML = `
+           <div style="text-align: center; padding: 40px 20px; color: var(--danger);">
+             <div style="font-size: 2rem; margin-bottom: 16px;">⚠️</div>
+             <h3 style="margin: 0 0 8px 0; color: var(--text);">Error Loading Messages</h3>
+             <p style="margin: 0; font-size: 0.9rem;">Please try again later.</p>
+           </div>
+         `;
+       }
+     }
+
+     function renderUserChatMessages(messages) {
+       const chatMessages = document.getElementById('userChatMessages');
+       
+       if (!messages || messages.length === 0) {
+         chatMessages.innerHTML = `
+           <div style="text-align: center; padding: 40px 20px; color: var(--muted);">
+             <div style="font-size: 2rem; margin-bottom: 16px;">💬</div>
+             <h3 style="margin: 0 0 8px 0; color: var(--text);">No Messages Yet</h3>
+             <p style="margin: 0; font-size: 0.9rem;">Start a conversation with the admin about this complaint.</p>
+           </div>
+         `;
+         return;
+       }
+       
+       chatMessages.innerHTML = messages.map(message => `
+         <div style="margin-bottom: 16px; display: flex; ${message.is_admin_message ? 'justify-content: flex-start' : 'justify-content: flex-end'}">
+           <div style="max-width: 70%; ${message.is_admin_message ? 'background: rgba(255,255,255,.15); color: var(--text); border: 1px solid rgba(255,255,255,.1);' : 'background: linear-gradient(90deg, var(--brand), var(--brand-2)); color: #031026;'} padding: 12px 16px; border-radius: 18px; border-bottom-right-radius: ${message.is_admin_message ? '18px' : '4px'}; border-bottom-left-radius: ${message.is_admin_message ? '4px' : '18px'};">
+             <div style="font-size: 0.9rem; margin-bottom: 4px; opacity: 0.8; font-weight: 600;">${message.sender_name}</div>
+             <div style="font-size: 1rem; line-height: 1.4;">${message.content}</div>
+             <div style="font-size: 0.8rem; margin-top: 4px; opacity: 0.7;">${formatMessageTime(message.timestamp)}</div>
+           </div>
+         </div>
+       `).join('');
+       
+       // Scroll to bottom
+       chatMessages.scrollTop = chatMessages.scrollHeight;
+     }
+
+     function formatMessageTime(timestamp) {
+       const date = new Date(timestamp);
+       const now = new Date();
+       const diffInHours = (now - date) / (1000 * 60 * 60);
+       
+       if (diffInHours < 24) {
+         return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+       } else {
+         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+       }
+     }
+
+     function handleUserMessageKeydown(event) {
+       if (event.key === 'Enter' && !event.shiftKey) {
+         event.preventDefault();
+         sendUserMessage();
+       }
+     }
+
+     async function sendUserMessage() {
+       if (!currentUserChat) {
+         showNotification('No active chat session');
+         return;
+       }
+       
+       const messageInput = document.getElementById('userMessageInput');
+       const message = messageInput.value.trim();
+       
+       if (!message) {
+         showNotification('Please enter a message');
+         return;
+       }
+       
+       const sendBtn = document.getElementById('sendUserMessageBtn');
+       const originalText = sendBtn.textContent;
+       
+       // Show loading state
+       sendBtn.textContent = 'Sending...';
+       sendBtn.disabled = true;
+       
+       try {
+         // Send message to backend
+         const response = await fetch('/api/user/chat/send/', {
+           method: 'POST',
+           headers: { 
+             'Content-Type': 'application/json',
+             'X-CSRFToken': getCookie('csrftoken')
+           },
+           body: JSON.stringify({
+             complaintId: currentUserChat.complaintId,
+             message: message
+           })
+         });
+         
+         const result = await response.json();
+         
+         if (!result.success) {
+           throw new Error(result.error || 'Failed to send message');
+         }
+         
+         // Add message to chat
+         const chatMessages = document.getElementById('userChatMessages');
+         const messageDiv = document.createElement('div');
+         messageDiv.style.cssText = 'margin-bottom: 16px; display: flex; justify-content: flex-end;';
+         messageDiv.innerHTML = `
+           <div style="max-width: 70%; background: linear-gradient(90deg, var(--brand), var(--brand-2)); color: #031026; padding: 12px 16px; border-radius: 18px; border-bottom-right-radius: 4px; border-bottom-left-radius: 18px;">
+             <div style="font-size: 0.9rem; margin-bottom: 4px; opacity: 0.8;">You</div>
+             <div style="font-size: 1rem; line-height: 1.4;">${message}</div>
+             <div style="font-size: 0.8rem; margin-top: 4px; opacity: 0.7;">${formatMessageTime(new Date().toISOString())}</div>
+           </div>
+         `;
+         chatMessages.appendChild(messageDiv);
+         
+         // Clear input
+         messageInput.value = '';
+         
+         // Scroll to bottom
+         chatMessages.scrollTop = chatMessages.scrollHeight;
+         
+         // Show success message
+         showToast('Message sent successfully!', 'success');
+         
+         // Refresh chat list to update last message
+         setTimeout(() => {
+           loadUserChats();
+         }, 1000);
+         
+       } catch (error) {
+         console.error('Error sending message:', error);
+         showNotification('Failed to send message: ' + error.message);
+       } finally {
+         // Reset button state
+         sendBtn.textContent = originalText;
+         sendBtn.disabled = false;
+       }
+     }
+
+
+
+
+    // Confirmation Modal Functions
+    function showConfirmation(message, title = 'Confirmation', onConfirm) {
+      const modal = document.getElementById('confirmationModal');
+      const titleEl = document.getElementById('confirmationTitle');
+      const messageEl = document.getElementById('confirmationMessage');
+      const yesBtn = document.getElementById('confirmYesBtn');
+     
+      // Set content
+      titleEl.textContent = title;
+      messageEl.textContent = message;
+     
+      // Remove any existing event listeners
+      yesBtn.replaceWith(yesBtn.cloneNode(true));
+     
+      // Get the new button reference
+      const newYesBtn = document.getElementById('confirmYesBtn');
+     
+      // Add event listener for confirmation
+      newYesBtn.addEventListener('click', function() {
+        closeConfirmation();
+        if (onConfirm && typeof onConfirm === 'function') {
+          onConfirm();
+        }
       });
-  }
-
-  function error(err) {
-    const messages = {
-      1: "Permission denied. Please allow location access.",
-      2: "Position unavailable. Try again later.",
-      3: "Location request timed out. Try again.",
-      default: "An unknown error occurred."
-    };
-    alert(messages[err.code] || messages.default);
-    addressField.value = '';
-  }
-});
-
-// Show Disclaimer First, Then Report Modal
-document.addEventListener('DOMContentLoaded', () => {
-  const disclaimerModal = new bootstrap.Modal(document.getElementById('disclaimerModal'));
-  const reportModal = new bootstrap.Modal(document.getElementById('reportComplaintModal'));
-
-  const btnSubmitReport = document.querySelector('a.btn-warning.btn-lg');
-  const btnViewTransaction = document.getElementById('viewTransactionDirect');
-  const btnAccept = document.getElementById('disclaimerAcceptBtn');
-
-  let actionToPerform = null;
-
-  btnSubmitReport?.addEventListener('click', (e) => {
-    e.preventDefault();
-    actionToPerform = 'submitReport';
-    disclaimerModal.show();
-  });
-
-  btnAccept?.addEventListener('click', () => {
-    disclaimerModal.hide();
-    if (actionToPerform === 'submitReport') {
-      setTimeout(() => {
-        reportModal.show();
-      }, 500);
+     
+      // Show the confirmation modal
+      openModal('confirmationModal');
     }
-    actionToPerform = null;
-  });
-});
-
-// Populate Barangay Dropdown Dynamically
-const barangayList = ["Agdao", "Baguio", "Baguio Proper", "Bunawan", "Buhangin", "Calinan", "Catalunan Grande", "Communal", "Gusgusan", "Lamanan", "Lizada", "Malagos", "Mambaling", "Manambulan", "Marilog", "Matina Aplaya", "Matina Crossing", "Matina Pangi", "Matina Proper", "Pampanga", "Paquibato Proper", "Poblacion", "Talomo", "Tugbok Proper", "Toril", "Tugbok"]
-  .concat(Array.from({ length: 182 }, (_, i) => `Barangay ${i + 1}`));
-
-document.addEventListener('DOMContentLoaded', () => {
-  const select = document.getElementById("complaintBarangay");
-  barangayList.forEach(b => {
-    const option = document.createElement("option");
-    option.value = b;
-    option.textContent = b;
-    select.appendChild(option);
-  });
-});
-
-// Toggle Show/Hide of "Other" Complaint Input Field
-document.addEventListener('DOMContentLoaded', () => {
-  const complaintType = document.getElementById('complaintType');
-  const otherContainer = document.getElementById('otherComplaintContainer');
-  const otherInput = document.getElementById('otherComplaint');
-
-  complaintType.addEventListener('change', () => {
-    if (complaintType.value === 'Other') {
-      otherContainer.style.display = 'block';
-      otherInput.placeholder = 'Please specify your complaint';
-      otherInput.required = true;
-    } else {
-      otherContainer.style.display = 'none';
-      otherInput.value = '';
-      otherInput.required = false;
+   
+    function closeConfirmation() {
+      closeModal('confirmationModal');
     }
-  });
-});
-
-function handleLogout() {
-  localStorage.clear();
-  window.location.href = 'index.html';
-}
-
-</script>
 
 
 
+
+    // Logout function
+    function logout() {
+      showConfirmation('Are you sure you want to logout?', 'Logout Confirmation', function() {
+        // User confirmed logout
+        // Don't clear localStorage completely - keep profile picture data
+        // Just clear sensitive data but keep the profile picture
+        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+        const profilePicture = userData.profile_picture; // Save profile picture
+        
+        // Clear localStorage but preserve profile picture
+        localStorage.clear();
+        
+        // Restore profile picture for next login
+        if (profilePicture) {
+          localStorage.setItem('temp_profile_picture', profilePicture);
+        }
+        
+        window.location.href = 'index.html';
+      });
+    }
+
+
+
+
+    // Submit Complaint function
+    function openComplaintForm() {
+      // Redirect to the complaint form page
+      window.location.href = 'user-submit.html';
+    }
+
+
+
+
+    // View Transactions function
+    function viewTransactions() {
+      showNotification('Transaction progress will be displayed here. This feature is coming soon!', 'info');
+      // TODO: Implement transaction progress view
+    }
+
+
+
+
+    // View History function
+    function viewHistory() {
+      window.location.href = 'user-history.html';
+    }
+
+
+
+
+    // Profile Picture Upload Modal Functions
+    function openProfileUploadModal() {
+      openModal('profileUploadModal');
+      // Add event listeners
+      document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+      document.getElementById('dropZone').addEventListener('click', () => document.getElementById('fileInput').click());
+      document.getElementById('dropZone').addEventListener('dragover', handleDragOver);
+      document.getElementById('dropZone').addEventListener('dragleave', handleDragLeave);
+      document.getElementById('dropZone').addEventListener('drop', handleDrop);
+      document.getElementById('uploadProfileBtn').addEventListener('click', uploadProfilePicture);
+    }
+
+    function closeProfileUploadModal() {
+      closeModal('profileUploadModal');
+      // Reset the form
+      document.getElementById('fileInput').value = ''; // Clear file input
+      document.getElementById('previewContainer').style.display = 'none';
+      document.getElementById('uploadProgressFill').style.width = '0%';
+      document.querySelector('.progress-text').textContent = 'Uploading...';
+      document.querySelector('.upload-progress').style.display = 'none';
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (file) {
+        previewFile(file);
+      }
+    }
+
+    function handleDragOver(event) {
+      event.preventDefault();
+      document.getElementById('dropZone').classList.add('dragover');
+    }
+
+    function handleDragLeave(event) {
+      event.preventDefault();
+      document.getElementById('dropZone').classList.remove('dragover');
+    }
+
+    function handleDrop(event) {
+      event.preventDefault();
+      document.getElementById('dropZone').classList.remove('dragover');
+      const file = event.dataTransfer.files[0];
+      if (file) {
+        previewFile(file);
+      }
+    }
+
+    function previewFile(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('previewContainer').style.display = 'block';
+        document.getElementById('previewContainer').querySelector('img').src = e.target.result;
+        document.getElementById('previewContainer').querySelector('p').textContent = file.name;
+      }
+      reader.readAsDataURL(file);
+    }
+
+    async function uploadProfilePicture() {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        showNotification('Please select a file to upload.', 'error');
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        showNotification('Please select a valid image file.', 'error');
+        return;
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        showNotification('File size must be less than 5MB.', 'error');
+        return;
+      }
+
+      // Compress image before upload to reduce base64 size
+      function compressImage(file) {
+        return new Promise((resolve) => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const img = new Image();
+          
+          img.onload = function() {
+            // Set maximum dimensions for profile picture
+            const maxWidth = 300;
+            const maxHeight = 300;
+            
+            let { width, height } = img;
+            
+            // Calculate new dimensions maintaining aspect ratio
+            if (width > height) {
+              if (width > maxWidth) {
+                height = (height * maxWidth) / width;
+                width = maxWidth;
+              }
+            } else {
+              if (height > maxHeight) {
+                width = (width * maxHeight) / height;
+                height = maxHeight;
+              }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Draw and compress image
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Convert to base64 with reduced quality
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            resolve(compressedDataUrl);
+          };
+          
+          img.src = URL.createObjectURL(file);
+        });
+      }
+
+      // Show progress
+      const uploadProgress = document.querySelector('.upload-progress');
+      const uploadProgressFill = document.getElementById('uploadProgressFill');
+      const progressText = document.querySelector('.progress-text');
+      
+      uploadProgress.style.display = 'block';
+      uploadProgressFill.style.width = '0%';
+      progressText.textContent = 'Processing...';
+
+      // Simulate upload progress
+      let progress = 0;
+      const progressInterval = setInterval(() => {
+        progress += 10;
+        uploadProgressFill.style.width = progress + '%';
+        progressText.textContent = `Uploading... ${progress}%`;
+        
+                if (progress >= 100) {
+          clearInterval(progressInterval);
+          
+          // Compress and create a preview URL for the selected image
+          compressImage(file).then(async (compressedImageUrl) => {
+            try {
+                // Get user email from localStorage
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                const email = userData.email;
+                
+                if (!email) {
+                  showNotification('User email not found. Please login again.', 'error');
+                  return;
+                }
+
+                // Save to database via API
+                const response = await fetch('/api/user/save-profile-picture/', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    email: email,
+                    profile_picture: compressedImageUrl
+                  })
+                });
+
+              const result = await response.json();
+
+              if (response.ok && result.success) {
+                // Update the profile picture
+                document.getElementById('profilePicture').src = compressedImageUrl;
+                document.getElementById('profilePicture').style.display = 'block';
+                document.getElementById('avatarText').style.display = 'none';
+                
+                // Update localStorage with the profile picture from database
+                userData.profile_picture = compressedImageUrl;
+                localStorage.setItem('userData', JSON.stringify(userData));
+                
+                // Show success message
+                showNotification('Profile picture updated successfully!', 'success');
+                closeProfileUploadModal();
+              } else {
+                // Show error message
+                const errorMessage = result.error || 'Failed to save profile picture';
+                const details = result.details ? `\n\nDetails: ${result.details}` : '';
+                showNotification(errorMessage + details, 'error');
+              }
+                        } catch (error) {
+              console.error('Error saving profile picture:', error);
+              
+              showNotification('Network error occurred. Please try again later.', 'error');
+            }
+          });
+        }
+      }, 100);
+    }
+
+
+
+
+    // Check if user is logged in and populate profile
+    // In a real application, you would check for authentication tokens
+    window.addEventListener('load', async function() {
+      // For demo purposes, we'll try to get user data from localStorage or sessionStorage
+      // In production, this would come from a secure authentication system
+      await populateUserProfile();
+      console.log('User dashboard loaded');
+    });
+
+
+
+
+    // Function to populate user profile
+    async function populateUserProfile() {
+      // Try to get user data from various sources
+      let userData = null;
+     
+      // Check if we have signup data (for demo purposes)
+      if (window.signupData) {
+        userData = window.signupData;
+      }
+     
+      // Check localStorage (if data was stored there)
+      if (!userData) {
+        const storedData = localStorage.getItem('userData');
+        if (storedData) {
+          userData = JSON.parse(storedData);
+        }
+      }
+     
+      // Check sessionStorage (if data was stored there)
+      if (!userData) {
+        const sessionData = sessionStorage.getItem('userData');
+        if (sessionData) {
+          userData = JSON.parse(sessionData);
+        }
+      }
+     
+      // If we have user data, populate the profile
+      if (userData) {
+        document.getElementById('userFullName').textContent = userData.name || userData.full_name || 'User Name';
+        document.getElementById('userEmail').textContent = userData.email || 'user@email.com';
+        document.getElementById('userBarangay').textContent = userData.barangay || 'Barangay';
+        
+        // Try to load profile picture from database first
+        if (userData.email) {
+          try {
+            const response = await fetch('/api/user/get-profile-picture/', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                email: userData.email
+              })
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success && result.profile_picture) {
+              // Use profile picture from database
+              document.getElementById('profilePicture').src = result.profile_picture;
+              document.getElementById('profilePicture').style.display = 'block';
+              document.getElementById('avatarText').style.display = 'none';
+              
+              // Update localStorage with the profile picture from database
+              userData.profile_picture = result.profile_picture;
+              localStorage.setItem('userData', JSON.stringify(userData));
+              
+              // Clear temporary profile picture if it exists
+              localStorage.removeItem('temp_profile_picture');
+            } else if (userData.profile_picture) {
+              // Fallback to localStorage profile picture
+              document.getElementById('profilePicture').src = userData.profile_picture;
+              document.getElementById('profilePicture').style.display = 'block';
+              document.getElementById('avatarText').style.display = 'none';
+            } else {
+              // Check for temporary profile picture from logout
+              const tempProfilePicture = localStorage.getItem('temp_profile_picture');
+              if (tempProfilePicture) {
+                document.getElementById('profilePicture').src = tempProfilePicture;
+                document.getElementById('profilePicture').style.display = 'block';
+                document.getElementById('avatarText').style.display = 'none';
+                
+                // Move temp profile picture to userData
+                userData.profile_picture = tempProfilePicture;
+                localStorage.setItem('userData', JSON.stringify(userData));
+                localStorage.removeItem('temp_profile_picture');
+              } else {
+                // No profile picture found
+                document.getElementById('profilePicture').style.display = 'none';
+                document.getElementById('avatarText').style.display = 'block';
+              }
+            }
+          } catch (error) {
+            console.error('Error loading profile picture from database:', error);
+            // Fallback to localStorage profile picture
+            if (userData.profile_picture) {
+              document.getElementById('profilePicture').src = userData.profile_picture;
+              document.getElementById('profilePicture').style.display = 'block';
+              document.getElementById('avatarText').style.display = 'none';
+            } else {
+              // Check for temporary profile picture from logout
+              const tempProfilePicture = localStorage.getItem('temp_profile_picture');
+              if (tempProfilePicture) {
+                document.getElementById('profilePicture').src = tempProfilePicture;
+                document.getElementById('profilePicture').style.display = 'block';
+                document.getElementById('avatarText').style.display = 'none';
+                
+                // Move temp profile picture to userData
+                userData.profile_picture = tempProfilePicture;
+                localStorage.setItem('userData', JSON.stringify(userData));
+                localStorage.removeItem('temp_profile_picture');
+              } else {
+                document.getElementById('profilePicture').style.display = 'none';
+                document.getElementById('avatarText').style.display = 'block';
+              }
+            }
+          }
+        } else {
+          // No email, use localStorage profile picture if available
+          if (userData.profile_picture) {
+            document.getElementById('profilePicture').src = userData.profile_picture;
+            document.getElementById('profilePicture').style.display = 'block';
+            document.getElementById('avatarText').style.display = 'none';
+          } else {
+            // Check for temporary profile picture from logout
+            const tempProfilePicture = localStorage.getItem('temp_profile_picture');
+            if (tempProfilePicture) {
+              document.getElementById('profilePicture').src = tempProfilePicture;
+              document.getElementById('profilePicture').style.display = 'block';
+              document.getElementById('avatarText').style.display = 'none';
+              
+              // Move temp profile picture to userData
+              userData.profile_picture = tempProfilePicture;
+              localStorage.setItem('userData', JSON.stringify(userData));
+              localStorage.removeItem('temp_profile_picture');
+            } else {
+              document.getElementById('profilePicture').style.display = 'none';
+              document.getElementById('avatarText').style.display = 'block';
+            }
+          }
+        }
+        
+        // Store in localStorage for persistence
+        localStorage.setItem('userData', JSON.stringify(userData));
+      } else {
+        // For demo purposes, show sample data
+        document.getElementById('userFullName').textContent = 'John Doe';
+        document.getElementById('userEmail').textContent = 'john.doe@example.com';
+        document.getElementById('userBarangay').textContent = 'Sample Barangay';
+        document.getElementById('profilePicture').style.display = 'none';
+        document.getElementById('avatarText').style.display = 'block';
+      }
+    }
+
+    // User Authentication Check - Only redirect if API call fails
+    async function checkUserAuth() {
+      try {
+        // Try to fetch user data from the server to verify session
+        const response = await fetch('/api/user/check-auth/', {
+          method: 'GET',
+          credentials: 'same-origin'
+        });
+        
+        if (response.status === 401) {
+          // User is not authenticated, redirect to login
+          window.location.href = '/index.html?show_login=true';
+          return;
+        }
+        
+        if (response.ok) {
+          const userData = await response.json();
+          // Check if user is an admin (admin should not access user pages)
+          if (userData.role === 'admin') {
+            window.location.href = '/index.html?show_login=true';
+            return;
+          }
+          console.log('User authenticated:', userData.email);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        // Don't redirect on network errors, let the user continue
+      }
+    }
+
+    // CSRF Token helper
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+         // Toast notification function
+     function showToast(message, type = 'info') {
+       const toast = document.getElementById('toast');
+       toast.textContent = message;
+       toast.className = `toast ${type}`;
+       toast.classList.add('show');
+       
+       // Remove after 3 seconds
+       setTimeout(() => {
+         toast.classList.remove('show');
+       }, 3000);
+    }
+
+    // Run authentication check when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      checkUserAuth();
+       // Load user chats
+       loadUserChats();
+    });
+  </script>
+
+   <!-- Toast Notification -->
+   <div id="toast" class="toast"></div>
 </body>
 </html>
+
+
+
+
+
+
+
+
+

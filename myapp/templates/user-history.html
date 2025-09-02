@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaction History — CMS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: Inter, sans-serif;
+      background: #0b1020;
+      color: #eaf0ff;
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .search-bar {
+      width: 100%;
+      max-width: 350px;
+      margin-bottom: 24px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: #0b1226;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      display: block;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,.25);
+    }
+    th, td {
+      padding: 14px 10px;
+      text-align: left;
+    }
+    th {
+      background: rgba(34,211,238,.10);
+      color: #b7f9ff;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    tr {
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    tr:last-child {
+      border-bottom: none;
+    }
+    td {
+      font-size: 0.98rem;
+    }
+    .status {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      display: inline-block;
+    }
+    .status.resolved { background: rgba(16,185,129,0.12); color: #10b981; }
+    .clickable-status:hover { 
+      background: rgba(16,185,129,0.20) !important; 
+      transform: scale(1.05);
+      transition: all 0.2s ease;
+    }
+    .notification-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #ef4444;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border: 2px solid #0b1020;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .action-btn {
+      background: linear-gradient(90deg, #3b82f6, #22d3ee);
+      color: #031026;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 18px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(34,211,238,.10);
+      transition: background 0.2s;
+      font-size: 0.98rem;
+    }
+    .action-btn:hover {
+      background: linear-gradient(90deg, #2563eb, #06b6d4);
+    }
+    /* --- CMS Modal Style --- */
+    .txn-modal-bg {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(11,16,32,0.92); z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Inter', sans-serif;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .txn-modal-bg.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    .txn-modal-content {
+      background: #121a33;
+      border-radius: 18px;
+      box-shadow: 0 10px 32px rgba(34,211,238,0.15);
+      padding: 0 0 32px 0;
+      min-width: 340px; max-width: 700px; width: 95vw;
+      color: #eaf0ff;
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .txn-modal-bg.show .txn-modal-content {
+      transform: scale(1);
+    }
+    .txn-modal-header {
+      background: linear-gradient(90deg, #1673fa 80%, #22d3ee 100%);
+      border-radius: 18px 18px 0 0;
+      padding: 22px 32px 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .txn-modal-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: .2px;
+    }
+    .txn-modal-close {
+      background: none; border: none; color: #fff;
+      font-size: 2rem; cursor: pointer; line-height: 1;
+      transition: color .2s;
+    }
+    .txn-modal-close:hover { color: #f59e0b; }
+    #modalDetails {
+      padding: 24px 32px 0 32px;
+      font-size: 1.05rem;
+    }
+    #modalDetails b {
+      color: #3b82f6;
+      font-weight: 700;
+    }
+    #modalProgress {
+      padding: 18px 32px 0 32px;
+    }
+    .txn-btn {
+      background: linear-gradient(90deg, #1673fa, #22d3ee);
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 12px 32px;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-left: 32px;
+      margin-top: 18px;
+      cursor: pointer;
+      transition: background 0.2s;
+      box-shadow: 0 2px 8px rgba(34,211,238,.10);
+    }
+    .txn-btn:hover {
+      background: linear-gradient(90deg, #2563eb, #06b6d4);
+    }
+    .txn-progress-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin: 32px 0 0 0;
+    }
+    .txn-progress-step {
+      display: flex; flex-direction: column; align-items: center; flex: 1;
+    }
+    .txn-progress-circle {
+      width: 48px; height: 48px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.7rem; font-weight: bold;
+      background: #222b44;
+      color: #b7f9ff;
+      margin-bottom: 6px;
+      border: 4px solid #334155;
+      transition: border .2s, background .2s;
+    }
+    .txn-progress-circle.active, .txn-progress-circle.resolved {
+      border-color: #3b82f6;
+      background: #3b82f6;
+      color: #fff;
+    }
+    .txn-progress-circle.resolved {
+      border-color: #10b981;
+      background: #10b981;
+    }
+    .txn-progress-label {
+      font-size: 1rem;
+      color: #b7f9ff;
+      font-weight: 600;
+      text-align: center;
+      margin-top: 2px;
+    }
+    .txn-progress-bar .txn-progress-line {
+      flex: 1;
+      height: 5px;
+      background: #334155;
+      margin: 0 4px;
+      border-radius: 2px;
+      position: relative;
+      top: 16px;
+    }
+    .txn-progress-bar .txn-progress-line.active {
+      background: #3b82f6;
+    }
+    .txn-progress-bar .txn-progress-line.resolved {
+      background: #10b981;
+    }
+    #historySection {
+      background: #181f36;
+      border-radius: 12px;
+      padding: 18px 18px;
+      color: #eaf0ff;
+      font-size: 0.98rem;
+      margin: 0 32px;
+    }
+    .history-entry {
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .history-entry:last-child { border-bottom: none; }
+    .history-date { font-size: 0.95rem; color: #9aa4bf; margin-bottom: 2px; }
+    .history-status { font-weight: 700; margin-bottom: 2px; }
+    .history-status.reported { color: #3b82f6; }
+    .history-status.inprogress { color: #f59e0b; }
+    .history-status.resolved { color: #10b981; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(-20px);} to { opacity:1; transform:translateY(0);} }
+    @media (max-width: 600px) {
+      .txn-modal-content { padding: 0 0 18px 0; }
+      #modalDetails, #modalProgress, #historySection { padding-left: 6vw; padding-right: 6vw; }
+    }
+    @media (max-width: 700px) {
+      table, thead, tbody, th, td, tr { display: block; }
+      th { position: absolute; left: -9999px; top: -9999px; }
+      tr { margin-bottom: 18px; }
+      td {
+        border: none;
+        position: relative;
+        padding-left: 50%;
+        min-height: 38px;
+      }
+      td:before {
+        position: absolute;
+        left: 14px;
+        top: 14px;
+        width: 45%;
+        white-space: nowrap;
+        font-weight: 700;
+        color: #b7f9ff;
+      }
+      td:nth-of-type(1):before { content: "Transaction ID"; }
+      td:nth-of-type(2):before { content: "Date Reported"; }
+      td:nth-of-type(3):before { content: "Reported to Barangay"; }
+      td:nth-of-type(4):before { content: "Complaint Type"; }
+      td:nth-of-type(5):before { content: "Status"; }
+      td:nth-of-type(6):before { content: "Action"; }
+    }
+    /* Add or update in your <style> */
+    .txn-image-btn-wrap {
+      display: flex;
+      align-items: flex-start;
+      margin-top: 6px;
+      margin-bottom: 10px;
+    }
+    .txn-btn.txn-img-btn {
+      padding: 6px 16px;
+      font-size: 0.95rem;
+      min-width: 120px;
+      margin: 0;
+      margin-right: 0;
+      margin-left: 0;
+      box-shadow: none;
+    }
+    #attachedImageWrap {
+      margin-left: 0;
+      margin-top: 10px;
+    }
+    
+    /* Toast Notification Styles */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(90deg, #1673fa, #22d3ee);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(34, 211, 238, 0.3);
+      font-weight: 600;
+      font-size: 0.95rem;
+      z-index: 10000;
+      transform: translateX(400px);
+      transition: transform 0.3s ease;
+      max-width: 350px;
+      word-wrap: break-word;
+    }
+    
+    .toast.show {
+      transform: translateX(0);
+    }
+    
+    .toast.success {
+      background: linear-gradient(90deg, #10b981, #34d399);
+      box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
+    }
+    
+    .toast.error {
+      background: linear-gradient(90deg, #ef4444, #f87171);
+      box-shadow: 0 8px 32px rgba(239, 68, 68, 0.3);
+    }
+    
+    /* Empty state styling */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #9aa4bf;
+    }
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+    .empty-state-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #eaf0ff;
+    }
+    .empty-state-description {
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a href="user.html" style="color:#22d3ee;text-decoration:none;display:inline-block;margin-bottom:18px;">← Back to Dashboard</a>
+    <h1>Transaction History</h1>
+    <div style="margin-bottom:24px;">
+      <input type="text" id="searchInput" class="search-bar" placeholder="Search by Transaction ID, Barangay, or Type..." style="margin-bottom:0;">
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>Tracking ID</th>
+            <th>Date Reported</th>
+            <th>Reported to Barangay</th>
+            <th>Complaint Type</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <!-- Dynamic content will be loaded here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let historyData = [];
+
+    async function fetchHistoryData() {
+      try {
+        console.log('Fetching transaction history...');
+        const res = await fetch('/api/complaints/history/');
+        console.log('Response status:', res.status);
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('Server error:', errorText);
+          throw new Error('Failed to load transaction history');
+        }
+        
+        const payload = await res.json();
+        console.log('Received history payload:', payload);
+        
+        const newHistoryData = (payload.results || []).map(r => ({
+          id: r.tracking_id,
+          date: r.date,
+          barangay: r.barangay,
+          type: r.type,
+          status: r.status,
+          description: r.description,
+          location: r.location,
+          image: r.image,
+          resolution_image: r.resolution_image,
+          resolved_date: r.resolved_date
+        }));
+        
+        historyData = newHistoryData;
+        console.log('Processed history data:', historyData);
+        renderHistoryTable(historyData);
+        
+        return true;
+      } catch (e) {
+        console.error('Error fetching history:', e);
+        const tbody = document.getElementById('historyBody');
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#f87171;">Failed to load transaction history: ${e.message}</td></tr>`;
+        throw e;
+      }
+    }
+    
+    function renderHistoryTable(data) {
+      const tbody = document.getElementById('historyBody');
+      tbody.innerHTML = '';
+      
+      if (data.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6">
+              <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <div class="empty-state-title">No Transaction History</div>
+                <div class="empty-state-description">
+                  You haven't submitted any complaints yet, or all your complaints are still in progress.<br>
+                  <a href="user-submit.html" style="color:#22d3ee;text-decoration:none;">Submit your first complaint</a> to get started.
+                </div>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+             data.forEach(txn => {
+         // Create clickable status badge for resolved complaints with resolution image
+         let statusBadge = `<span class="status resolved">${txn.status}</span>`;
+         
+         if (txn.status.toLowerCase() === 'resolved' && txn.resolution_image) {
+           statusBadge = `<span class="status resolved clickable-status" onclick="showResolutionImage('${txn.id}')" style="cursor: pointer; position: relative;">${txn.status}<span class="notification-badge">1</span></span>`;
+         }
+         
+         tbody.innerHTML += `
+           <tr>
+             <td>${txn.id}</td>
+             <td>${txn.date}</td>
+             <td>${txn.barangay}</td>
+             <td>${txn.type}</td>
+             <td>
+               ${statusBadge}
+             </td>
+             <td>
+               <button class="action-btn" onclick="viewHistoryDetails('${txn.id}')">View</button>
+             </td>
+           </tr>
+         `;
+       });
+    }
+
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', function() {
+      const q = this.value.toLowerCase();
+      renderHistoryTable(
+        historyData.filter(txn =>
+          txn.id.toLowerCase().includes(q) ||
+          txn.barangay.toLowerCase().includes(q) ||
+          txn.type.toLowerCase().includes(q)
+        )
+      );
+    });
+
+    // View history details
+    function viewHistoryDetails(id) {
+      const txn = historyData.find(t => t.id === id);
+      if (!txn) return;
+
+      // Modal Details
+      let imageSection = '';
+      if (txn.image) {
+        imageSection = `
+          <div>
+            <div class="txn-image-btn-wrap">
+              <button class="txn-btn txn-img-btn" id="toggleImageBtn" onclick="toggleAttachedImage()">View Original Image</button>
+            </div>
+            <div id="attachedImageWrap" style="display:none;">
+              <img src="${txn.image}" alt="Original Complaint Image" style="max-width:160px;max-height:160px;border-radius:10px;box-shadow:0 4px 18px rgba(34,211,238,0.10);margin-bottom:8px;object-fit:cover;">
+            </div>
+          </div>
+        `;
+      } else {
+        imageSection = `<span style="color:#9aa4bf;">No original image attached.</span>`;
+      }
+
+             document.getElementById('modalDetails').innerHTML = `
+         <div style="margin-bottom:10px;"><b style="color:#3b82f6;">Transaction ID:</b> ${txn.id}</div>
+         <div style="margin-bottom:10px;"><b style="color:#3b82f6;">Description:</b> ${txn.description || ''}</div>
+         <div style="margin-bottom:10px;"><b style="color:#3b82f6;">Location:</b> ${txn.location || ''}</div>
+         <div style="margin-bottom:10px;"><b style="color:#3b82f6;">Original Image:</b><br>${imageSection}</div>
+       `;
+
+      // Progress Bar - All steps completed
+      document.getElementById('modalProgress').innerHTML = `
+        <div class="txn-progress-bar">
+          <div class="txn-progress-step">
+            <div class="txn-progress-circle resolved">
+              <span style="font-size:1.3rem;">⏳</span>
+            </div>
+            <div class="txn-progress-label">Pending</div>
+          </div>
+          <div class="txn-progress-line resolved"></div>
+          <div class="txn-progress-step">
+            <div class="txn-progress-circle resolved">
+              <span style="font-size:1.3rem;">&#9992;</span>
+            </div>
+            <div class="txn-progress-label">Reported</div>
+          </div>
+          <div class="txn-progress-line resolved"></div>
+          <div class="txn-progress-step">
+            <div class="txn-progress-circle resolved">
+              <span style="font-size:1.3rem;">&#8635;</span>
+            </div>
+            <div class="txn-progress-label">In-Progress</div>
+          </div>
+          <div class="txn-progress-line resolved"></div>
+          <div class="txn-progress-step">
+            <div class="txn-progress-circle resolved">
+              <span style="font-size:1.3rem;">&#10003;</span>
+            </div>
+            <div class="txn-progress-label">Resolved</div>
+          </div>
+        </div>
+      `;
+
+      // Show/Hide History Button
+      document.getElementById('viewHistoryBtn').style.display = 'inline-block';
+      document.getElementById('viewHistoryBtn').textContent = 'View Full Transaction History';
+      document.getElementById('historySection').style.display = 'none';
+      document.getElementById('historySection').innerHTML = renderFullHistory(txn);
+
+      const modal = document.getElementById('transactionModal');
+      modal.style.display = 'flex';
+      setTimeout(() => modal.classList.add('show'), 10);
+      document.body.style.overflow = 'hidden';
+    }
+
+    function toggleAttachedImage() {
+      const imgWrap = document.getElementById('attachedImageWrap');
+      const btn = document.getElementById('toggleImageBtn');
+      if (imgWrap.style.display === 'none' || imgWrap.style.display === '') {
+        imgWrap.style.display = 'block';
+        btn.textContent = 'Hide Original Image';
+      } else {
+        imgWrap.style.display = 'none';
+        btn.textContent = 'View Original Image';
+      }
+    }
+
+    function toggleResolutionImage() {
+      const imgWrap = document.getElementById('resolutionImageWrap');
+      const btn = document.getElementById('toggleResolutionImageBtn');
+      if (imgWrap.style.display === 'none' || imgWrap.style.display === '') {
+        imgWrap.style.display = 'block';
+        btn.textContent = 'Hide Resolution Evidence';
+      } else {
+        imgWrap.style.display = 'none';
+        btn.textContent = 'View Resolution Evidence';
+      }
+    }
+
+    function closeTransactionModal() {
+      const modal = document.getElementById('transactionModal');
+      modal.classList.remove('show');
+      setTimeout(() => {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+      }, 300);
+    }
+
+    // Toggle Transaction History
+    function toggleHistory() {
+      const section = document.getElementById('historySection');
+      const btn = document.getElementById('viewHistoryBtn');
+      if (section.style.display === 'none') {
+        section.style.display = 'block';
+        btn.textContent = 'Hide Full Transaction History';
+      } else {
+        section.style.display = 'none';
+        btn.textContent = 'View Full Transaction History';
+      }
+    }
+
+    // Render Full Transaction History
+    function renderFullHistory(txn) {
+      let entries = [];
+      
+      // Always start with PENDING
+      entries.push({
+        date: txn.date,
+        status: 'pending',
+        label: 'PENDING',
+        color: 'pending',
+        details: 'Your complaint has been submitted and is waiting for initial review.'
+      });
+      
+      // Add REPORTED
+      entries.push({
+        date: addDays(txn.date, 1),
+        status: 'reported',
+        label: 'REPORTED',
+        color: 'reported',
+        details: 'Your report has been successfully accepted and is now in review for processing.'
+      });
+      
+      // Add IN-PROGRESS
+      entries.push({
+        date: addDays(txn.date, 2),
+        status: 'inprogress',
+        label: 'IN-PROGRESS',
+        color: 'inprogress',
+        details: "Your complaint was handled by barangay staff. Actions were completed successfully."
+      });
+      
+      // Add RESOLVED
+      entries.push({
+        date: txn.resolved_date || addDays(txn.date, 5),
+        status: 'resolved',
+        label: 'RESOLVED',
+        color: 'resolved',
+        details: 'The barangay has marked this complaint as resolved. Thank you for reporting.'
+      });
+      
+      return entries.map(e => `
+        <div class="history-entry">
+          <div class="history-date">${formatDate(e.date)}</div>
+          <div class="history-status ${e.color}">${e.label}</div>
+          <div>${e.details}</div>
+        </div>
+      `).join('');
+    }
+
+    // Helper to add days to a date string and include time
+    function addDays(dateStr, days) {
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() + days);
+      // Add a random time between 9 AM and 6 PM for demo purposes
+      const hours = Math.floor(Math.random() * 8) + 9; // 9-16 (9 AM to 4 PM)
+      const minutes = Math.floor(Math.random() * 60); // 0-59
+      d.setHours(hours, minutes, 0, 0);
+      return d.toISOString();
+    }
+
+    // Helper to format date with time
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      const date = d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: '2-digit' });
+      const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+      return `${date} ${time}`;
+    }
+    
+         // Show resolution image modal
+     function showResolutionImage(trackingId) {
+       const txn = historyData.find(t => t.id === trackingId);
+       if (!txn || !txn.resolution_image) return;
+
+       document.getElementById('resolutionImageModal').style.display = 'flex';
+       setTimeout(() => {
+         document.getElementById('resolutionImageModal').classList.add('show');
+         document.body.style.overflow = 'hidden';
+       }, 10);
+
+       document.getElementById('resolutionImageContent').innerHTML = `
+         <div style="text-align: center;">
+           <h3 style="color: #10b981; margin-bottom: 20px;">✅ Resolution Evidence</h3>
+           <p style="color: #9aa4bf; margin-bottom: 20px;">Visual proof that this complaint has been resolved</p>
+           <img src="${txn.resolution_image}" alt="Resolution Evidence" style="max-width: 100%; max-height: 400px; border-radius: 12px; border: 2px solid #10b981;">
+           <div style="margin-top: 15px; color: #10b981; font-size: 0.9rem;">
+             Complaint ID: ${txn.id}
+           </div>
+         </div>
+       `;
+     }
+
+     function closeResolutionImageModal() {
+       const modal = document.getElementById('resolutionImageModal');
+       modal.classList.remove('show');
+       setTimeout(() => {
+         modal.style.display = 'none';
+         document.body.style.overflow = '';
+       }, 300);
+     }
+     
+     // Toast notification function
+     function showToast(message, type = 'info') {
+       const toast = document.getElementById('toast');
+       toast.textContent = message;
+       toast.className = `toast ${type}`;
+       toast.classList.add('show');
+       
+       setTimeout(() => {
+         toast.classList.remove('show');
+       }, 5000);
+     }
+
+    // Initial fetch
+    fetchHistoryData();
+  </script>
+
+  <script>
+    // User Authentication Check - Only redirect if API call fails
+    async function checkUserAuth() {
+      try {
+        // Try to fetch user data from the server to verify session
+        const response = await fetch('/api/user/check-auth/', {
+          method: 'GET',
+          credentials: 'same-origin'
+        });
+        
+        if (response.status === 401) {
+          // User is not authenticated, redirect to login
+          window.location.href = '/index.html?show_login=true';
+          return;
+        }
+        
+        if (response.ok) {
+          const userData = await response.json();
+          // Check if user is an admin (admin should not access user pages)
+          if (userData.role === 'admin') {
+            window.location.href = '/index.html?show_login=true';
+            return;
+          }
+          console.log('User authenticated:', userData.email);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        // Don't redirect on network errors, let the user continue
+      }
+    }
+
+    // Run authentication check when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      checkUserAuth();
+    });
+  </script>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+  
+     <!-- Transaction Details Modal -->
+   <div id="transactionModal" class="txn-modal-bg" style="display:none;">
+     <div class="txn-modal-content">
+       <div class="txn-modal-header">
+         <span class="txn-modal-title">Transaction History Details</span>
+         <button class="txn-modal-close" onclick="closeTransactionModal()">×</button>
+       </div>
+       <div id="modalDetails"></div>
+       <div id="modalProgress"></div>
+       <button class="txn-btn" id="viewHistoryBtn" style="margin-top:24px;" onclick="toggleHistory()">View Full Transaction History</button>
+       <div id="historySection" style="display:none;margin-top:18px;"></div>
+     </div>
+   </div>
+
+   <!-- Resolution Image Modal -->
+   <div id="resolutionImageModal" class="txn-modal-bg" style="display:none;">
+     <div class="txn-modal-content" style="max-width: 600px;">
+       <div class="txn-modal-header">
+         <span class="txn-modal-title">Resolution Evidence</span>
+         <button class="txn-modal-close" onclick="closeResolutionImageModal()">×</button>
+       </div>
+       <div id="resolutionImageContent" style="padding: 24px 32px 32px 32px;"></div>
+     </div>
+   </div>
+</body>
+</html>

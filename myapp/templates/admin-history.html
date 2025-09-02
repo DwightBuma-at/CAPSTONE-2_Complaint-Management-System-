@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin History — CMS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#121a33;
+      --muted:#9aa4bf;
+      --text:#eaf0ff;
+      --brand:#3b82f6;
+      --brand-2:#22d3ee;
+      --accent:#f59e0b;
+      --danger:#ef4444;
+      --ok:#10b981;
+      --shadow:0 10px 25px rgba(0,0,0,.35);
+      --radius:18px;
+      --border:1px solid rgba(255,255,255,.10);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    .layout{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+    .sidebar{
+      background:linear-gradient(180deg,#181f36,#0b1020);
+      color:var(--text);
+      padding:28px 18px 18px 18px;
+      position:sticky; top:0; height:100vh;
+      box-shadow: 2px 0 18px rgba(0,0,0,.18);
+      z-index:10;
+    }
+    .brand{display:flex;align-items:center;gap:10px;margin-bottom:18px;text-decoration:none;color:var(--text)}
+    .shield{width:38px;height:38px;border-radius:12px;background:conic-gradient(from 210deg,var(--brand),var(--brand-2),var(--brand));box-shadow:0 8px 20px rgba(34,211,238,.28)}
+    .brand span{font-weight:800;letter-spacing:.2px}
+    .badge{display:inline-block;background:rgba(34,211,238,.10);border:1px solid rgba(34,211,238,.18);padding:6px 12px;border-radius:999px;font-weight:700;color:#b7f9ff;margin:6px 0 18px}
+    .nav a{
+      display:flex;align-items:center;gap:12px;color:var(--muted);text-decoration:none;padding:12px 12px;border-radius:12px;margin:4px 0;font-weight:600;transition:.18s;
+    }
+    .nav a:hover{background:rgba(34,211,238,.08);color:#fff}
+    .nav .active{background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#031026;box-shadow:0 2px 8px rgba(34,211,238,.10);}
+    .logout{position:absolute;bottom:16px;left:18px;right:18px}
+    .logout a{display:flex;gap:8px;align-items:center;color:#fca5a5;text-decoration:none;padding:10px 12px;border-radius:12px;font-weight:700;}
+    .logout a:hover{background:rgba(239,68,68,.10);color:#fff}
+    .content{padding:32px 36px}
+    .top h1{margin:0 0 8px;font-size:clamp(1.4rem,2.2vw,2rem);font-weight:800;letter-spacing:.2px}
+    .top .sub{color:var(--muted);margin:0 0 18px 0}
+    .search-bar {
+      width: 100%;
+      max-width: 350px;
+      margin-bottom: 24px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: #0b1226;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      display: block;
+    }
+    .card{background:var(--card);border:var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .card-head{padding:18px 18px 0}
+    .card-body{padding:18px}
+    .tablewrap{overflow:auto;border-radius:14px;border:1px solid rgba(255,255,255,.10);background:var(--card)}
+    table{width:100%;border-collapse:collapse;background:transparent}
+    th,td{padding:14px 10px;text-align:left;border-bottom:1px solid rgba(255,255,255,.06);white-space:nowrap}
+    th{background:rgba(34,211,238,.10);color:#b7f9ff;font-weight:800}
+    .status{padding:6px 14px;border-radius:8px;font-weight:800;font-size:.95rem;display:inline-block}
+    .status.resolved{background:rgba(16,185,129,0.12);color:var(--ok);}
+    .btn{
+      display:inline-flex;align-items:center;gap:8px;justify-content:center;
+      height:40px;padding:0 16px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#031026;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(34,211,238,.10);transition:.18s;
+    }
+    .btn.small{height:34px;padding:0 12px;font-size:.92rem}
+    .btn:hover{filter:brightness(1.08)}
+    .footerbar{display:flex;align-items:center;justify-content:space-between;margin-top:10px;color:var(--muted)}
+    
+    /* Modal Styles */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .modal.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal.hidden {
+      display: none;
+    }
+    .sheet {
+      width: min(820px, 96%);
+      background: var(--card);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      box-shadow: var(--shadow);
+      max-height: 92vh;
+      overflow: auto;
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+    .modal.show .sheet {
+      transform: scale(1);
+    }
+    .sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    }
+    .sheet-head strong {
+      font-size: 1.2rem;
+      letter-spacing: 0.2px;
+    }
+    .sheet-body {
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 24px;
+    }
+    .kv {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 10px 14px;
+    }
+    .kv .k {
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .imgbox {
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      min-height: 240px;
+      background: #181f36;
+    }
+    .imgbox img {
+      max-width: 100%;
+      max-height: 360px;
+      border-radius: 10px;
+    }
+    .select {
+      width: 100%;
+      height: 44px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      background: #181f36;
+      color: var(--text);
+      padding: 0 12px;
+      outline: none;
+    }
+    .select:focus {
+      box-shadow: 0 0 0 3px var(--brand-2);
+      border-color: var(--brand);
+    }
+    .select:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    /* Toast */
+    .toast {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      background: #181f36;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 12px 14px;
+      border-radius: 12px;
+      display: none;
+      z-index: 200;
+    }
+    .toast.show {
+      display: block;
+    }
+    /* Responsive */
+    @media (max-width: 980px) {
+      .sheet-body {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 720px) {
+      .sheet-body {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+                           <a href="#" class="brand" onclick="return false;">
+          <div class="shield"></div>
+          <span>Admin</span>
+        </a>
+      <div class="badge" id="adminBarangayBadge">Barangay: Loading...</div>
+      <nav class="nav">
+        <a href="/admin-dashboard.html">🏠 <span>Dashboard</span></a>
+        <a href="/admin-complaints.html">🧾 <span>Complaints</span></a>
+        <a href="/admin-history.html" class="active">📋 <span>History</span></a>
+        <a href="/admin-user.html">👥 <span>Users</span></a>
+        <a href="/admin-chat.html">💬 <span>Message</span></a>
+      </nav>
+      <div class="logout">
+        <a href="#" onclick="logout();return false">⎋ <span>Logout</span></a>
+      </div>
+    </aside>
+    <!-- MAIN -->
+    <main class="content">
+      <div class="top">
+        <h1>Transaction History</h1>
+        <p class="sub">All resolved complaints across all barangays.</p>
+      </div>
+      
+      <div style="margin-bottom:24px;">
+        <input type="text" id="searchInput" class="search-bar" placeholder="Search by Transaction ID, User, Barangay, or Type..." style="margin-bottom:0;">
+      </div>
+
+      <!-- CARD -->
+      <section class="card">
+        <div class="card-head">
+          <h3 style="margin:0 0 10px;font-weight:700;letter-spacing:.1px">Resolved Complaints</h3>
+        </div>
+        <div class="card-body">
+          <div class="tablewrap">
+            <table id="historyTable">
+              <thead>
+                <tr>
+                  <th>Tracking ID</th>
+                  <th>Date Reported</th>
+                  <th>User Name</th>
+                  <th>Barangay</th>
+                  <th>Complaint Type</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="historyBody">
+                <tr><td colspan="7" style="text-align:center;color:var(--muted)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="footerbar">
+            <div id="countNote">—</div>
+            <div>
+              <button class="btn small" id="prevBtn" onclick="gotoPage('prev')" disabled>‹ Prev</button>
+              <span style="margin:0 8px;color:var(--muted)" id="pageNote">Page 1</span>
+              <button class="btn small" id="nextBtn" onclick="gotoPage('next')" disabled>Next ›</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- DETAIL MODAL -->
+  <div id="detailModal" class="modal hidden">
+    <div class="sheet">
+      <div class="sheet-head">
+        <strong>Complaint Details</strong>
+        <button class="btn small" onclick="closeModalButton()">Close</button>
+      </div>
+      <div class="sheet-body">
+        <div>
+          <div class="imgbox" id="imgBox"><span style="color:var(--muted)">No image attached.</span></div>
+        </div>
+        <div>
+          <div class="kv" id="kv">
+            <!-- key-values injected here -->
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <select id="detailStatus" class="select" style="max-width:220px" disabled>
+              <option>Reported</option>
+              <option>In Progress</option>
+              <option>Resolved</option>
+            </select>
+            <button class="btn" id="saveStatusBtn" onclick="saveStatus()" disabled>Save Status</button>
+          </div>
+          <div style="margin-top: 8px; padding: 8px 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; color: var(--ok); font-size: 0.9rem;">
+            <strong>📋 History View:</strong> Status changes are disabled for resolved complaints in the transaction history.
+          </div>
+          
+          <!-- Resolution Image Display Section (Read-only for history) -->
+          <div id="resolutionImageSection" style="margin-top:16px;padding:16px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(16,185,129,.05);">
+            <h4 style="margin:0 0 12px;color:var(--text);font-size:1rem;">📸 Resolution Evidence</h4>
+            <p style="margin:0 0 12px;color:var(--muted);font-size:0.9rem;">Evidence showing this complaint was resolved.</p>
+            
+            <div id="resolutionImagePreview" style="margin-top:12px;">
+              <img id="resolutionPreviewImg" style="max-width:200px;max-height:150px;border-radius:8px;border:1px solid rgba(255,255,255,.1);">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast"></div>
+
+  <script>
+    let historyData = [];
+    let currentPage = 1;
+    const itemsPerPage = 10;
+    let currentDetail = null;
+
+    // Helper functions
+    function statusClass(s) {
+      const v = (s || '').toLowerCase();
+      if (v === 'pending') return 'pending';
+      if (v === 'reported') return 'reported';
+      if (v === 'in progress') return 'inprogress';
+      if (v === 'resolved') return 'resolved';
+      return '';
+    }
+
+    function fmtDate(d) {
+      const x = new Date(d);
+      if (isNaN(x)) return d;
+      const year = x.getFullYear();
+      const month = String(x.getMonth() + 1).padStart(2, '0');
+      const day = String(x.getDate()).padStart(2, '0');
+      const hours = String(x.getHours()).padStart(2, '0');
+      const minutes = String(x.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day} ${hours}:${minutes}`;
+    }
+
+    function toast(message, duration = 3000) {
+      const toastEl = document.getElementById('toast');
+      toastEl.textContent = message;
+      toastEl.classList.add('show');
+      setTimeout(() => toastEl.classList.remove('show'), duration);
+    }
+
+    async function fetchHistoryData() {
+      try {
+        console.log('Fetching admin transaction history...');
+        const res = await fetch('/api/complaints/history/');
+        console.log('Response status:', res.status);
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('Server error:', errorText);
+          throw new Error('Failed to load transaction history');
+        }
+        
+        const payload = await res.json();
+        console.log('Received history payload:', payload);
+        
+        const newHistoryData = (payload.results || []).map(r => ({
+          id: r.tracking_id,
+          date: r.date,
+          user_name: r.user_name || 'Unknown User',
+          barangay: r.barangay,
+          type: r.type,
+          status: r.status,
+          description: r.description,
+          location: r.location,
+          image: r.image,
+          resolution_image: r.resolution_image,
+          resolved_date: r.resolved_date
+        }));
+        
+        historyData = newHistoryData;
+        console.log('Processed history data:', historyData);
+        renderHistoryTable(historyData);
+        updatePagination();
+        
+        return true;
+      } catch (e) {
+        console.error('Error fetching history:', e);
+        const tbody = document.getElementById('historyBody');
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#f87171;">Failed to load transaction history: ${e.message}</td></tr>`;
+        throw e;
+      }
+    }
+    
+    function renderHistoryTable(data) {
+      const tbody = document.getElementById('historyBody');
+      tbody.innerHTML = '';
+      
+      if (data.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align:center;color:var(--muted)">
+              <div style="padding: 60px 20px;">
+                <div style="font-size: 4rem; margin-bottom: 20px; opacity: 0.5;">📋</div>
+                <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 10px;">No Transaction History</div>
+                <div>No resolved complaints found in the system.</div>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      // Pagination
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const paginatedData = data.slice(startIndex, endIndex);
+      
+      paginatedData.forEach(txn => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${txn.id}</td>
+            <td>${txn.date}</td>
+            <td>${txn.user_name}</td>
+            <td>${txn.barangay}</td>
+            <td>${txn.type}</td>
+            <td>
+              <span class="status resolved">${txn.status}</span>
+            </td>
+            <td>
+              <button class="btn small" onclick="openDetail('${txn.id}')">View</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function updatePagination() {
+      const totalPages = Math.ceil(historyData.length / itemsPerPage);
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const pageNote = document.getElementById('pageNote');
+      const countNote = document.getElementById('countNote');
+      
+      prevBtn.disabled = currentPage === 1;
+      nextBtn.disabled = currentPage === totalPages;
+      
+      pageNote.textContent = `Page ${currentPage} of ${totalPages}`;
+      countNote.textContent = `Showing ${historyData.length} resolved complaints`;
+    }
+
+    function gotoPage(direction) {
+      const totalPages = Math.ceil(historyData.length / itemsPerPage);
+      
+      if (direction === 'prev' && currentPage > 1) {
+        currentPage--;
+      } else if (direction === 'next' && currentPage < totalPages) {
+        currentPage++;
+      }
+      
+      renderHistoryTable(historyData);
+      updatePagination();
+    }
+
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', function() {
+      const q = this.value.toLowerCase();
+      const filteredData = historyData.filter(txn =>
+        txn.id.toLowerCase().includes(q) ||
+        txn.user_name.toLowerCase().includes(q) ||
+        txn.barangay.toLowerCase().includes(q) ||
+        txn.type.toLowerCase().includes(q)
+      );
+      
+      currentPage = 1; // Reset to first page when searching
+      renderHistoryTable(filteredData);
+      updatePagination();
+    });
+
+    // Modal functions
+    function openDetail(id) {
+      console.log('Opening detail for ID:', id);
+      const r = historyData.find(x => x.id === id);
+      if (!r) {
+        console.error('Complaint not found:', id);
+        return;
+      }
+      currentDetail = r;
+      
+      const kv = document.getElementById('kv');
+      kv.innerHTML = `
+        <div class="k">Tracking ID</div><div><strong>${r.id}</strong></div>
+        <div class="k">Reported</div><div>${fmtDate(r.date)}</div>
+        <div class="k">User</div><div>${r.user_name || 'N/A'}</div>
+        <div class="k">Barangay</div><div>${r.barangay}</div>
+        <div class="k">Location</div><div>${r.location || 'N/A'}</div>
+        <div class="k">Type</div><div>${r.type}</div>
+        <div class="k">Status</div><div><span class="status ${statusClass(r.status)}">${r.status}</span></div>
+        <div class="k">Description</div><div>${r.description || ''}</div>
+      `;
+      
+      const imgBox = document.getElementById('imgBox');
+      imgBox.innerHTML = r.image ? `<img src="${r.image}" alt="Complaint image">` : `<span style="color:var(--muted)">No image attached.</span>`;
+      
+      document.getElementById('detailStatus').value = r.status;
+      
+      // Always show resolution image section for history view (read-only)
+      document.getElementById('resolutionImageSection').style.display = 'block';
+      
+      // Show existing resolution image if available
+      if (r.resolution_image) {
+        document.getElementById('resolutionPreviewImg').src = r.resolution_image;
+      } else {
+        document.getElementById('resolutionImagePreview').innerHTML = '<span style="color:var(--muted);font-style:italic;">No resolution evidence uploaded</span>';
+      }
+      
+      const modal = document.getElementById('detailModal');
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+      setTimeout(() => modal.classList.add('show'), 10);
+      document.body.style.overflow = 'hidden';
+      
+      // Add click outside to close
+      modal.removeEventListener('click', modalClickHandler);
+      modal.addEventListener('click', modalClickHandler);
+    }
+
+    function modalClickHandler(e) {
+      if (e.target === e.currentTarget) {
+        closeModal();
+      }
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('detailModal');
+      if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => {
+          modal.classList.add('hidden');
+          modal.style.display = 'none';
+          document.body.style.overflow = '';
+        }, 300);
+        currentDetail = null;
+        console.log('Modal closed successfully');
+      } else {
+        console.error('Modal element not found');
+      }
+    }
+
+    function closeModalButton() {
+      console.log('Close button clicked');
+      closeModal();
+    }
+
+    async function saveStatus() {
+      // Status changes are disabled in history view
+      toast('Status changes are disabled for resolved complaints in the transaction history');
+      return;
+    }
+
+         // Admin authentication and barangay fetch
+     async function checkAdminAuth() {
+       try {
+         const response = await fetch('/api/admin/me/');
+         const data = await response.json();
+         
+         if (!data.authenticated) {
+           // Redirect to index with login modal
+           window.location.href = '/index.html?show_login=true';
+           return;
+         }
+       } catch (error) {
+         console.error('Auth check failed:', error);
+         // Redirect to index with login modal
+         window.location.href = '/index.html?show_login=true';
+       }
+     }
+
+     // Load admin barangay from database
+     async function loadAdminBarangay() {
+       try {
+         // Check if we have cached barangay data
+         const cachedBarangay = localStorage.getItem('adminBarangay');
+         if (cachedBarangay) {
+           document.getElementById('adminBarangayBadge').textContent = `Barangay: ${cachedBarangay}`;
+           return; // Use cached data, no need to make API call
+         }
+
+         // Try to get admin data from server session first
+         const response = await fetch('/api/admin/me/', {
+           method: 'GET',
+           credentials: 'same-origin'
+         });
+
+         if (response.ok) {
+           const adminData = await response.json();
+           if (adminData.authenticated && adminData.barangay) {
+             const barangay = adminData.barangay;
+             // Cache the barangay data
+             localStorage.setItem('adminBarangay', barangay);
+             document.getElementById('adminBarangayBadge').textContent = `Barangay: ${barangay}`;
+             return;
+           }
+         }
+
+         // Fallback to localStorage if server check fails
+         const userData = localStorage.getItem('userData');
+         if (!userData) {
+           document.getElementById('adminBarangayBadge').textContent = 'Barangay: Not logged in';
+           return;
+         }
+
+         const adminData = JSON.parse(userData);
+         const email = adminData.email;
+
+         if (!email) {
+           document.getElementById('adminBarangayBadge').textContent = 'Barangay: Email not found';
+           return;
+         }
+
+         // Fetch admin data from database
+         const dbResponse = await fetch('/api/admin/get-data/', {
+           method: 'POST',
+           headers: {
+             'Content-Type': 'application/json',
+           },
+           body: JSON.stringify({ email: email })
+         });
+
+         if (dbResponse.ok) {
+           const result = await dbResponse.json();
+           if (result.success && result.admin_data.barangay) {
+             const barangay = result.admin_data.barangay;
+             // Cache the barangay data
+             localStorage.setItem('adminBarangay', barangay);
+             document.getElementById('adminBarangayBadge').textContent = `Barangay: ${barangay}`;
+           } else {
+             document.getElementById('adminBarangayBadge').textContent = 'Barangay: Unknown';
+           }
+         } else {
+           console.error('Failed to fetch admin data from database');
+           document.getElementById('adminBarangayBadge').textContent = 'Barangay: Database Error';
+         }
+       } catch (error) {
+         console.error('Error loading admin barangay from database:', error);
+         document.getElementById('adminBarangayBadge').textContent = 'Barangay: Error';
+       }
+     }
+
+         // Logout function
+     function logout() {
+       if (confirm('Are you sure you want to logout?')) {
+         window.location.href = '/index.html';
+       }
+     }
+
+              // Load data when page loads
+     document.addEventListener('DOMContentLoaded', function() {
+       loadAdminBarangay();
+       fetchHistoryData();
+       
+       // Check if user is authenticated
+       checkAdminAuth();
+     });
+   </script>
+ </body>
+ </html>

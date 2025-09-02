@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard — CMS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#121a33;
+      --muted:#9aa4bf;
+      --text:#eaf0ff;
+      --brand:#3b82f6;
+      --brand-2:#22d3ee;
+      --accent:#f59e0b;
+      --danger:#ef4444;
+      --ok:#10b981;
+      --shadow:0 10px 25px rgba(0,0,0,.35);
+      --radius:18px;
+      --border:1px solid rgba(255,255,255,.10);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    .layout{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+    .sidebar{
+      background:linear-gradient(180deg,#181f36,#0b1020);
+      color:var(--text);
+      padding:28px 18px 18px 18px;
+      position:sticky; top:0; height:100vh;
+      box-shadow: 2px 0 18px rgba(0,0,0,.18);
+      z-index:10;
+    }
+    .brand{display:flex;align-items:center;gap:10px;margin-bottom:18px;text-decoration:none;color:var(--text)}
+    .shield{width:38px;height:38px;border-radius:12px;background:conic-gradient(from 210deg,var(--brand),var(--brand-2),var(--brand));box-shadow:0 8px 20px rgba(34,211,238,.28)}
+    .brand span{font-weight:800;letter-spacing:.2px}
+    .badge{display:inline-block;background:rgba(34,211,238,.10);border:1px solid rgba(34,211,238,.18);padding:6px 12px;border-radius:999px;font-weight:700;color:#b7f9ff;margin:6px 0 18px}
+    .nav a{
+      display:flex;align-items:center;gap:12px;color:var(--muted);text-decoration:none;padding:12px 12px;border-radius:12px;margin:4px 0;font-weight:600;transition:.18s;
+    }
+    .nav a:hover{background:rgba(34,211,238,.08);color:#fff}
+    .nav .active{background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#031026;box-shadow:0 2px 8px rgba(34,211,238,.10);}
+    .logout{position:absolute;bottom:16px;left:18px;right:18px}
+    .logout a{display:flex;gap:8px;align-items:center;color:#fca5a5;text-decoration:none;padding:10px 12px;border-radius:12px;font-weight:700;}
+    .logout a:hover{background:rgba(239,68,68,.10);color:#fff}
+    .content{padding:32px 36px}
+    .top h1{margin:0 0 8px;font-size:clamp(1.4rem,2.2vw,2rem);font-weight:800;letter-spacing:.2px}
+    .top .sub{color:var(--muted);margin:0 0 18px 0}
+         .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:32px}
+    .stat-card{
+      background:var(--card);border:var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);
+    }
+    .stat-card h3{margin:0 0 8px;color:var(--muted);font-size:.9rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+    .stat-card .value{font-size:2.5rem;font-weight:800;margin:0 0 4px;background:linear-gradient(90deg,var(--brand),var(--brand-2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .stat-card .change{font-size:.85rem;color:var(--ok);font-weight:600}
+    .content-grid{display:grid;grid-template-columns:2fr 1fr;gap:24px}
+    .card{background:var(--card);border:var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .card-head{padding:20px 24px 0;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:20px}
+    .card-head h3{margin:0 0 16px;font-weight:700;letter-spacing:.1px}
+    .card-body{padding:0 24px 24px}
+    .all-complaints-modal{max-height:500px;overflow-y:auto;padding-right:8px}
+    .all-complaints-modal::-webkit-scrollbar{width:6px}
+    .all-complaints-modal::-webkit-scrollbar-track{background:rgba(255,255,255,.05);border-radius:3px}
+    .all-complaints-modal::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:3px}
+    .all-complaints-modal::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.3)}
+    .recent-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+    .recent-item:last-child{border-bottom:none}
+    .recent-icon{width:40px;height:40px;border-radius:10px;background:rgba(34,211,238,.15);display:grid;place-items:center;font-size:1.2rem}
+    .recent-content{flex:1}
+    .recent-title{font-weight:600;margin-bottom:2px}
+    .recent-meta{font-size:.85rem;color:var(--muted)}
+    .status-badge{padding:4px 8px;border-radius:6px;font-size:.75rem;font-weight:700}
+             .status-badge.pending{background:rgba(245,158,11,0.12);color:var(--accent)}
+    .status-badge.reported{background:rgba(239,68,68,0.12);color:var(--danger)}
+    .status-badge.inprogress{background:rgba(59,130,246,0.12);color:var(--brand)}
+    .status-badge.completed{background:rgba(16,185,129,0.12);color:var(--ok)}
+    .chart-placeholder{height:200px;background:linear-gradient(135deg,rgba(34,211,238,.08),rgba(59,130,246,.08));border-radius:12px;display:grid;place-items:center;color:var(--muted);font-size:.9rem}
+    .btn{
+      display:inline-flex;align-items:center;gap:8px;justify-content:center;
+      height:40px;padding:0 16px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#031026;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(34,211,238,.10);transition:.18s;text-decoration:none;
+    }
+    .btn:hover{filter:brightness(1.08)}
+    .btn.ghost{background:#181f36;color:var(--text);border:1px solid rgba(255,255,255,.12)}
+    .btn.small{height:34px;padding:0 12px;font-size:.92rem}
+    /* Modal Base Styles */
+    .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all .3s ease}
+    .modal.show{opacity:1;visibility:visible}
+    .modal.hidden{opacity:0;visibility:hidden}
+    .modal-content{background:var(--card);border:var(--border);border-radius:var(--radius);box-shadow:var(--shadow);width:90%;max-width:500px;transform:scale(.9);transition:transform .3s ease}
+    .modal.show .modal-content{transform:scale(1)}
+    .modal-close{background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;padding:0;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all .2s ease}
+    .modal-close:hover{background:rgba(255,255,255,.1);color:var(--text)}
+    /* Confirmation Modal Styles */
+    .confirmation-content{max-width:450px;padding:0}
+    .confirmation-header{display:flex;align-items:center;gap:16px;padding:24px 24px 16px 24px;border-bottom:1px solid rgba(255,255,255,.1)}
+    .confirmation-icon{font-size:1.5rem;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(34,211,238,.2);color:#b7f9ff}
+    .confirmation-header h3{margin:0;color:var(--text);font-size:1.25rem;flex:1}
+    .confirmation-body{padding:20px 24px}
+    .confirmation-body p{margin:0;color:var(--muted);font-size:1rem;line-height:1.5}
+    .confirmation-actions{display:flex;gap:12px;padding:16px 24px 24px 24px;justify-content:flex-end}
+    @media (max-width:768px){.confirmation-actions{flex-direction:column}.confirmation-actions .btn{width:100%}}
+    @media (max-width:980px){
+      .layout{grid-template-columns:80px 1fr}
+      .brand span,.nav span,.badge{display:none}
+      .sidebar{padding:18px 8px}
+      .content{padding:18px 6vw}
+      .content-grid{grid-template-columns:1fr}
+    }
+    @media (max-width:720px){
+      .stats-grid{grid-template-columns:1fr}
+      .content{padding:18px 4vw}
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <a class="brand" href="admin-dashboard.html" aria-label="Admin Home">
+        <div class="shield" aria-hidden="true"></div>
+        <span>Admin</span>
+      </a>
+      <div class="badge" id="adminBarangayBadge">Barangay: Loading...</div>
+      <nav class="nav">
+        <a href="/admin-dashboard.html" class="active">🏠 <span>Dashboard</span></a>
+        <a href="/admin-complaints.html">🧾 <span>Complaints</span></a>
+        <a href="/admin-history.html">📋 <span>History</span></a>
+        <a href="/admin-user.html">👥 <span>Users</span></a>
+        <a href="/admin-chat.html">💬 <span>Message</span></a>
+      </nav>
+      <div class="logout">
+        <a href="#" onclick="logout();return false">⎋ <span>Logout</span></a>
+      </div>
+    </aside>
+    <!-- MAIN -->
+    <main class="content">
+      <div class="top">
+        <h1>Admin Dashboard</h1>
+        <p class="sub">Overview of your barangay's complaint management system</p>
+      </div>
+     
+             <!-- STATS GRID -->
+       <div class="stats-grid">
+         <div class="stat-card">
+           <h3>Total Complaints</h3>
+           <div class="value" id="totalComplaints">—</div>
+           <div class="change" id="totalChange">Loading...</div>
+         </div>
+         <div class="stat-card">
+           <h3>Pending</h3>
+           <div class="value" id="pendingComplaints">—</div>
+           <div class="change" id="pendingChange">Loading...</div>
+         </div>
+         <div class="stat-card">
+           <h3>Reported</h3>
+           <div class="value" id="reportedComplaints">—</div>
+           <div class="change" id="reportedChange">Loading...</div>
+         </div>
+         <div class="stat-card">
+           <h3>In Progress</h3>
+           <div class="value" id="inProgressComplaints">—</div>
+           <div class="change" id="inProgressChange">Loading...</div>
+         </div>
+         <div class="stat-card">
+           <h3>Completed</h3>
+           <div class="value" id="completedComplaints">—</div>
+           <div class="change" id="completedChange">Loading...</div>
+         </div>
+       </div>
+     
+      <!-- CONTENT GRID -->
+      <div class="content-grid">
+        <!-- RECENT COMPLAINTS -->
+        <div class="card">
+          <div class="card-head">
+            <h3>Recent Complaints</h3>
+          </div>
+          <div class="card-body" id="recentComplaintsContainer">
+            <div style="text-align:center;color:var(--muted);padding:20px">Loading recent complaints...</div>
+          </div>
+        </div>
+       
+        <!-- QUICK ACTIONS & CHART -->
+        <div class="card">
+          <div class="card-head">
+            <h3>Quick Actions</h3>
+          </div>
+          <div class="card-body">
+            <div style="display:grid;gap:12px;margin-bottom:24px">
+              <a href="/admin-complaints.html" class="btn">View Complaints</a>
+              <a href="/admin-user.html" class="btn btn--ghost">Manage Users</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <!-- Confirmation Modal -->
+  <div id="confirmationModal" class="modal hidden">
+    <div class="modal-content confirmation-content">
+      <div class="confirmation-header">
+        <div class="confirmation-icon" id="confirmationIcon">❓</div>
+        <h3 id="confirmationTitle">Logout Confirmation</h3>
+        <button class="modal-close" onclick="closeConfirmation()">&times;</button>
+      </div>
+      <div class="confirmation-body">
+        <p id="confirmationMessage">Are you sure you want to logout?</p>
+      </div>
+      <div class="confirmation-actions">
+        <button class="btn ghost" onclick="closeConfirmation()">NO</button>
+        <button class="btn" id="confirmYesBtn">YES</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- All Complaints Modal -->
+  <div id="allComplaintsModal" class="modal hidden">
+    <div class="modal-content" style="max-width: 800px; max-height: 80vh;">
+      <div class="confirmation-header">
+        <div class="confirmation-icon">📋</div>
+        <h3>All Complaints</h3>
+        <button class="modal-close" onclick="closeAllComplaintsModal()">&times;</button>
+      </div>
+      <div class="all-complaints-modal" id="allComplaintsContainer">
+        <div style="text-align:center;color:var(--muted);padding:20px">Loading all complaints...</div>
+      </div>
+    </div>
+  </div>
+  <script>
+    function openModal(modalId){const m=document.getElementById(modalId);if(!m)return;m.classList.remove('hidden');setTimeout(()=>m.classList.add('show'),10);document.body.style.overflow='hidden'}
+    function closeModal(modalId){const m=document.getElementById(modalId);if(!m)return;m.classList.remove('show');setTimeout(()=>m.classList.add('hidden'),300);document.body.style.overflow=''}
+    function showConfirmation(message,title='Confirmation',onConfirm){document.getElementById('confirmationTitle').textContent=title;document.getElementById('confirmationMessage').textContent=message;const yesBtn=document.getElementById('confirmYesBtn');yesBtn.replaceWith(yesBtn.cloneNode(true));document.getElementById('confirmYesBtn').addEventListener('click',function(){closeConfirmation();if(typeof onConfirm==='function'){onConfirm();}});openModal('confirmationModal')}
+    function closeConfirmation(){closeModal('confirmationModal')}
+    function logout(){
+      showConfirmation('Are you sure you want to logout?','Logout Confirmation',function(){
+        // Clear localStorage
+        localStorage.removeItem('userData');
+        localStorage.removeItem('adminBarangay'); // Clear cached barangay data
+        window.location.href = '/index.html';
+      })
+    }
+    
+    // All Complaints Modal Functions
+    function openAllComplaintsModal() {
+      openModal('allComplaintsModal');
+      fetchAllComplaints();
+    }
+    
+    function closeAllComplaintsModal() {
+      closeModal('allComplaintsModal');
+    }
+
+    // Dashboard Statistics Functions
+    async function fetchDashboardStats() {
+      try {
+        const response = await fetch('/api/transactions/');
+        if (!response.ok) throw new Error('Failed to fetch complaints');
+        
+        const data = await response.json();
+        const complaints = data.results || [];
+        
+        calculateAndDisplayStats(complaints);
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+               // Show error state
+       document.getElementById('totalComplaints').textContent = 'Error';
+       document.getElementById('pendingComplaints').textContent = 'Error';
+       document.getElementById('reportedComplaints').textContent = 'Error';
+       document.getElementById('inProgressComplaints').textContent = 'Error';
+       document.getElementById('completedComplaints').textContent = 'Error';
+      }
+    }
+
+    function calculateAndDisplayStats(complaints) {
+             // Count complaints by status
+       const stats = {
+         total: complaints.length,
+         pending: 0,
+         reported: 0,
+         inProgress: 0,
+         completed: 0
+       };
+
+             complaints.forEach(complaint => {
+         const status = (complaint.status || '').toLowerCase();
+         if (status === 'pending') {
+           stats.pending++;
+         } else if (status === 'reported') {
+           stats.reported++;
+         } else if (status === 'in progress') {
+           stats.inProgress++;
+         } else if (status === 'resolved') {
+           stats.completed++;
+         } else {
+           // Default to pending for unknown statuses
+           stats.pending++;
+         }
+       });
+
+             // Update the display
+       document.getElementById('totalComplaints').textContent = stats.total.toLocaleString();
+       document.getElementById('pendingComplaints').textContent = stats.pending.toLocaleString();
+       document.getElementById('reportedComplaints').textContent = stats.reported.toLocaleString();
+       document.getElementById('inProgressComplaints').textContent = stats.inProgress.toLocaleString();
+       document.getElementById('completedComplaints').textContent = stats.completed.toLocaleString();
+
+             // Calculate and display change indicators (simplified for now)
+       const totalChange = stats.total > 0 ? `+${stats.total} total complaints` : 'No complaints yet';
+       const pendingChange = stats.pending > 0 ? `${stats.pending} pending` : 'No pending complaints';
+       const reportedChange = stats.reported > 0 ? `${stats.reported} reported` : 'No reported complaints';
+       const inProgressChange = stats.inProgress > 0 ? `${stats.inProgress} in progress` : 'No in-progress complaints';
+       const completedChange = stats.completed > 0 ? `${stats.completed} resolved` : 'No resolved complaints';
+
+       document.getElementById('totalChange').textContent = totalChange;
+       document.getElementById('pendingChange').textContent = pendingChange;
+       document.getElementById('reportedChange').textContent = reportedChange;
+       document.getElementById('inProgressChange').textContent = inProgressChange;
+       document.getElementById('completedChange').textContent = completedChange;
+    }
+
+    // Recent Complaints Functions
+    function getComplaintIcon(type) {
+      const icons = {
+        'noise': '🚨',
+        'garbage': '🗑️',
+        'parking': '🚗',
+        'lighting': '💡',
+        'water': '💧',
+        'road': '🛣️',
+        'security': '👮',
+        'health': '🏥',
+        'environment': '🌱',
+        'other': '📋'
+      };
+      
+      const typeLower = (type || '').toLowerCase();
+      for (const [key, icon] of Object.entries(icons)) {
+        if (typeLower.includes(key)) {
+          return icon;
+        }
+      }
+      return '📋'; // Default icon
+    }
+
+    function getStatusClass(status) {
+      const statusLower = (status || '').toLowerCase();
+      if (statusLower === 'pending') return 'pending';
+      if (statusLower === 'reported') return 'reported';
+      if (statusLower === 'in progress') return 'inprogress';
+      if (statusLower === 'resolved') return 'completed';
+      return 'pending';
+    }
+
+    function formatTimeAgo(dateString) {
+      // Handle different date formats from backend
+      let date;
+      
+      if (!dateString) {
+        return 'Unknown time';
+      }
+      
+      // Try parsing the date string
+      try {
+        // Handle format like "2025-01-21 14:30" (from Django)
+        if (dateString.includes(' ')) {
+          date = new Date(dateString);
+        } 
+        // Handle format like "2025-01-21T14:30:00.000Z" (from Supabase)
+        else if (dateString.includes('T')) {
+          date = new Date(dateString);
+        }
+        // Handle other formats
+        else {
+          date = new Date(dateString);
+        }
+        
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+          console.warn('Invalid date string:', dateString);
+          return 'Invalid date';
+        }
+      } catch (error) {
+        console.error('Error parsing date:', dateString, error);
+        return 'Invalid date';
+      }
+      
+      const now = new Date();
+      const diffInMilliseconds = now.getTime() - date.getTime();
+      const diffInHours = Math.floor(diffInMilliseconds / (1000 * 60 * 60));
+      
+      if (diffInHours < 1) {
+        const diffInMinutes = Math.floor(diffInMilliseconds / (1000 * 60));
+        if (diffInMinutes < 1) return 'Just now';
+        if (diffInMinutes === 1) return '1 minute ago';
+        return `${diffInMinutes} minutes ago`;
+      }
+      
+      if (diffInHours === 1) return '1 hour ago';
+      if (diffInHours < 24) return `${diffInHours} hours ago`;
+      
+      const diffInDays = Math.floor(diffInHours / 24);
+      if (diffInDays === 1) return '1 day ago';
+      if (diffInDays < 7) return `${diffInDays} days ago`;
+      
+      const diffInWeeks = Math.floor(diffInDays / 7);
+      if (diffInWeeks === 1) return '1 week ago';
+      if (diffInWeeks < 4) return `${diffInWeeks} weeks ago`;
+      
+      const diffInMonths = Math.floor(diffInDays / 30);
+      if (diffInMonths === 1) return '1 month ago';
+      if (diffInMonths < 12) return `${diffInMonths} months ago`;
+      
+      const diffInYears = Math.floor(diffInDays / 365);
+      if (diffInYears === 1) return '1 year ago';
+      return `${diffInYears} years ago`;
+    }
+
+    async function fetchRecentComplaints() {
+      try {
+        const response = await fetch('/api/transactions/');
+        if (!response.ok) throw new Error('Failed to fetch complaints');
+        
+        const data = await response.json();
+        const complaints = data.results || [];
+        
+        // Sort complaints by date (latest first) and get only 4 most recent
+        const sortedComplaints = complaints.sort((a, b) => new Date(b.date) - new Date(a.date));
+        const recentComplaints = sortedComplaints.slice(0, 4);
+        
+        renderRecentComplaints(recentComplaints);
+      } catch (error) {
+        console.error('Error fetching recent complaints:', error);
+        document.getElementById('recentComplaintsContainer').innerHTML = 
+          '<div style="text-align:center;color:var(--muted);padding:20px">Error loading recent complaints</div>';
+      }
+    }
+
+    function renderRecentComplaints(complaints) {
+      const container = document.getElementById('recentComplaintsContainer');
+      
+      if (complaints.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center;color:var(--muted);padding:20px">No complaints found</div>
+          <div style="margin-top:20px;text-align:center">
+            <a href="admin-complaints.html" class="btn btn--ghost">View All Complaints</a>
+          </div>
+        `;
+        return;
+      }
+      
+      let html = '';
+      
+      complaints.forEach(complaint => {
+        const icon = getComplaintIcon(complaint.type);
+        const statusClass = getStatusClass(complaint.status);
+        const timeAgo = formatTimeAgo(complaint.date);
+        const title = `${complaint.type} - ${complaint.barangay}`;
+        
+        html += `
+          <div class="recent-item">
+            <div class="recent-icon">${icon}</div>
+            <div class="recent-content">
+              <div class="recent-title">${title}</div>
+              <div class="recent-meta">${complaint.id} • ${timeAgo}</div>
+            </div>
+            <span class="status-badge ${statusClass}">${complaint.status}</span>
+          </div>
+        `;
+      });
+      
+      html += `
+        <div style="margin-top:20px;text-align:center">
+          <button onclick="openAllComplaintsModal()" class="btn btn--ghost">View All Complaints</button>
+        </div>
+      `;
+      
+      container.innerHTML = html;
+    }
+
+    async function fetchAllComplaints() {
+      try {
+        const response = await fetch('/api/transactions/');
+        if (!response.ok) throw new Error('Failed to fetch complaints');
+        
+        const data = await response.json();
+        const complaints = data.results || [];
+        
+        // Sort complaints by date (latest first) and get all complaints
+        const sortedComplaints = complaints.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        renderAllComplaints(sortedComplaints);
+      } catch (error) {
+        console.error('Error fetching all complaints:', error);
+        document.getElementById('allComplaintsContainer').innerHTML = 
+          '<div style="text-align:center;color:var(--muted);padding:20px">Error loading all complaints</div>';
+      }
+    }
+
+    function renderAllComplaints(complaints) {
+      const container = document.getElementById('allComplaintsContainer');
+      
+      if (complaints.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center;color:var(--muted);padding:20px">No complaints found</div>
+        `;
+        return;
+      }
+      
+      let html = '';
+      
+      complaints.forEach(complaint => {
+        const icon = getComplaintIcon(complaint.type);
+        const statusClass = getStatusClass(complaint.status);
+        const timeAgo = formatTimeAgo(complaint.date);
+        const title = `${complaint.type} - ${complaint.barangay}`;
+        
+        html += `
+          <div class="recent-item">
+            <div class="recent-icon">${icon}</div>
+            <div class="recent-content">
+              <div class="recent-title">${title}</div>
+              <div class="recent-meta">${complaint.id} • ${timeAgo}</div>
+            </div>
+            <span class="status-badge ${statusClass}">${complaint.status}</span>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    /* ======= Load Admin Barangay ======= */
+    async function loadAdminBarangay() {
+      try {
+        // Check if we have cached barangay data
+        const cachedBarangay = localStorage.getItem('adminBarangay');
+        if (cachedBarangay) {
+          document.getElementById('adminBarangayBadge').textContent = `Barangay: ${cachedBarangay}`;
+          return; // Use cached data, no need to make API call
+        }
+
+        // Try to get admin data from server session
+        const response = await fetch('/api/admin/me/', {
+          method: 'GET',
+          credentials: 'same-origin'
+        });
+
+        if (response.ok) {
+          const adminData = await response.json();
+          if (adminData.authenticated && adminData.barangay) {
+            const barangay = adminData.barangay;
+            // Cache the barangay data
+            localStorage.setItem('adminBarangay', barangay);
+            document.getElementById('adminBarangayBadge').textContent = `Barangay: ${barangay}`;
+          } else {
+            document.getElementById('adminBarangayBadge').textContent = 'Barangay: Unknown';
+          }
+        } else {
+          // Fallback to localStorage if server check fails
+          const userData = localStorage.getItem('userData');
+          if (userData) {
+            const adminData = JSON.parse(userData);
+            const email = adminData.email;
+
+            if (email) {
+              // Fetch admin data from database
+              const dbResponse = await fetch('/api/admin/get-data/', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: email })
+              });
+
+              if (dbResponse.ok) {
+                const result = await dbResponse.json();
+                if (result.success && result.admin_data.barangay) {
+                  const barangay = result.admin_data.barangay;
+                  // Cache the barangay data
+                  localStorage.setItem('adminBarangay', barangay);
+                  document.getElementById('adminBarangayBadge').textContent = `Barangay: ${barangay}`;
+                } else {
+                  document.getElementById('adminBarangayBadge').textContent = 'Barangay: Unknown';
+                }
+              } else {
+                document.getElementById('adminBarangayBadge').textContent = 'Barangay: Database Error';
+              }
+            } else {
+              document.getElementById('adminBarangayBadge').textContent = 'Barangay: Email not found';
+            }
+          } else {
+            document.getElementById('adminBarangayBadge').textContent = 'Barangay: Not logged in';
+          }
+        }
+      } catch (error) {
+        console.error('Error loading admin barangay:', error);
+        document.getElementById('adminBarangayBadge').textContent = 'Barangay: Error';
+      }
+    }
+
+    // Check admin authentication
+    async function checkAdminAuth() {
+      try {
+        const response = await fetch('/api/admin/me/', {
+          method: 'GET',
+          credentials: 'same-origin'
+        });
+        
+        if (response.status === 401) {
+          // User is not authenticated, redirect to login
+          window.location.href = '/index.html?show_login=true';
+          return;
+        }
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (!data.authenticated) {
+            // Redirect to index with login modal
+            window.location.href = '/index.html?show_login=true';
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        // Don't redirect on network errors, let the user continue
+      }
+    }
+
+    // Load dashboard data when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      loadAdminBarangay();
+      fetchDashboardStats();
+      fetchRecentComplaints();
+      
+      // Check if user is authenticated
+      checkAdminAuth();
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
