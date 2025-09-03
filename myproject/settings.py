@@ -180,37 +180,28 @@ SUPABASE_URL = os.getenv('SUPABASE_URL', "https://dfcaiybfnrhyitofdxug.supabase.
 SUPABASE_KEY = os.getenv('SUPABASE_KEY', "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmY2FpeWJmbnJoeWl0b2ZkeHVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NjIzNzgsImV4cCI6MjA2NDQzODM3OH0.DfOwFq0X1PqWhhaTS2sxKl1sL4WPO0uR-p5qLFvjy6E")
 
 # =========================
-# Email / SMS configuration
+# Email Configuration - Gmail SMTP
 # =========================
-# Email (SMTP). Defaults let you use Gmail quickly; override via .env
-EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
-EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")  # your email address
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")  # app password
-EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER or "no-reply@example.com"
+# For production, use environment variables. For development, use hardcoded values.
+if os.getenv('RAILWAY_ENVIRONMENT'):
+    # Production: Use environment variables
+    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', "complaintmanagementsystem5@gmail.com")
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', "ocjr swyw mnrb pwts")
+else:
+    # Development: Use hardcoded Gmail credentials
+    EMAIL_HOST_USER = "complaintmanagementsystem5@gmail.com"  # ✅ System Gmail address
+    EMAIL_HOST_PASSWORD = "ocjr swyw mnrb pwts"  # ✅ System 16-character app password
 
-# Nice dev fallback: if you haven’t set email creds, print emails to console
-if DEBUG and not EMAIL_HOST_USER:
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
-# Twilio (read here; the views will use them)
-TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
-TWILIO_FROM = os.getenv("TWILIO_FROM", "")   # e.g. +15005550006
-
-# =========================
-# Gmail SMTP Configuration - REAL EMAIL SENDING
-# =========================
-# Use environment variables for email credentials
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', "complaintmanagementsystem5@gmail.com")  # ✅ System Gmail address
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', "ocjr swyw mnrb pwts")  # ✅ System 16-character app password
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# Twilio Configuration (Optional)
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
+TWILIO_FROM = os.getenv("TWILIO_FROM", "")   # e.g. +15005550006
 
 print("📧 Email mode: SMTP (Gmail) - REAL EMAIL SENDING ENABLED")
 print(f"✅ Gmail configuration is properly set up with: {EMAIL_HOST_USER}")
