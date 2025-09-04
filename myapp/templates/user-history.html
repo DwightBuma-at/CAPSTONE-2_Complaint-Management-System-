@@ -69,6 +69,7 @@
       display: inline-block;
     }
     .status.resolved { background: rgba(16,185,129,0.12); color: #10b981; }
+    .status.declined { background: rgba(239,68,68,0.12); color: #ef4444; }
     .clickable-status:hover { 
       background: rgba(16,185,129,0.20) !important; 
       transform: scale(1.05);
@@ -453,7 +454,12 @@
       
              data.forEach(txn => {
          // Create clickable status badge for resolved complaints with resolution image
-         let statusBadge = `<span class="status resolved">${txn.status}</span>`;
+         let statusClass = 'resolved';
+         if (txn.status.toLowerCase() === 'declined/spam') {
+           statusClass = 'declined';
+         }
+         
+         let statusBadge = `<span class="status ${statusClass}">${txn.status}</span>`;
          
          if (txn.status.toLowerCase() === 'resolved' && txn.resolution_image) {
            statusBadge = `<span class="status resolved clickable-status" onclick="showResolutionImage('${txn.id}')" style="cursor: pointer; position: relative;">${txn.status}<span class="notification-badge">1</span></span>`;
@@ -513,48 +519,67 @@
              document.getElementById('modalDetails').innerHTML = `
          <div style="margin-bottom:10px;"><b style="color:#3b82f6;">Transaction ID:</b> ${txn.id}</div>
          <div style="margin-bottom:10px;"><b style="color:#3b82f6;">Description:</b> ${txn.description || ''}</div>
-         <div style="margin-bottom:10px;"><b style="color:#3b82f6;">Location:</b> ${txn.location || ''}</div>
+         <div style="margin-bottom:10px;"><b style="color:#3b82f6;">Landmark:</b> ${txn.location || ''}</div>
          <div style="margin-bottom:10px;"><b style="color:#3b82f6;">Original Image:</b><br>${imageSection}</div>
        `;
 
-      // Progress Bar - All steps completed
-      document.getElementById('modalProgress').innerHTML = `
-        <div class="txn-progress-bar">
-          <div class="txn-progress-step">
-            <div class="txn-progress-circle resolved">
-              <span style="font-size:1.3rem;">⏳</span>
-            </div>
-            <div class="txn-progress-label">Pending</div>
+      // Progress Bar - Handle declined complaints differently
+      if (txn.status.toLowerCase() === 'declined/spam') {
+        // Special display for declined complaints
+        document.getElementById('modalProgress').innerHTML = `
+          <div style="text-align: center; padding: 20px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); border-radius: 12px;">
+            <div style="font-size: 2rem; margin-bottom: 10px;">❌</div>
+            <div style="color: #ef4444; font-weight: 600; margin-bottom: 5px;">Complaint Declined</div>
+            <div style="color: #9aa4bf; font-size: 0.9rem;">This complaint has been marked as spam or declined by the administrator.</div>
           </div>
-          <div class="txn-progress-line resolved"></div>
-          <div class="txn-progress-step">
-            <div class="txn-progress-circle resolved">
-              <span style="font-size:1.3rem;">&#9992;</span>
+        `;
+      } else {
+        // Normal progress bar for resolved complaints
+        document.getElementById('modalProgress').innerHTML = `
+          <div class="txn-progress-bar">
+            <div class="txn-progress-step">
+              <div class="txn-progress-circle resolved">
+                <span style="font-size:1.3rem;">⏳</span>
+              </div>
+              <div class="txn-progress-label">Pending</div>
             </div>
-            <div class="txn-progress-label">Reported</div>
-          </div>
-          <div class="txn-progress-line resolved"></div>
-          <div class="txn-progress-step">
-            <div class="txn-progress-circle resolved">
-              <span style="font-size:1.3rem;">&#8635;</span>
+            <div class="txn-progress-line resolved"></div>
+            <div class="txn-progress-step">
+              <div class="txn-progress-circle resolved">
+                <span style="font-size:1.3rem;">&#9992;</span>
+              </div>
+              <div class="txn-progress-label">Reported</div>
             </div>
-            <div class="txn-progress-label">In-Progress</div>
-          </div>
-          <div class="txn-progress-line resolved"></div>
-          <div class="txn-progress-step">
-            <div class="txn-progress-circle resolved">
-              <span style="font-size:1.3rem;">&#10003;</span>
+            <div class="txn-progress-line resolved"></div>
+            <div class="txn-progress-step">
+              <div class="txn-progress-circle resolved">
+                <span style="font-size:1.3rem;">&#8635;</span>
+              </div>
+              <div class="txn-progress-label">In-Progress</div>
             </div>
-            <div class="txn-progress-label">Resolved</div>
+            <div class="txn-progress-line resolved"></div>
+            <div class="txn-progress-step">
+              <div class="txn-progress-circle resolved">
+                <span style="font-size:1.3rem;">&#10003;</span>
+              </div>
+              <div class="txn-progress-label">Resolved</div>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
 
-      // Show/Hide History Button
-      document.getElementById('viewHistoryBtn').style.display = 'inline-block';
-      document.getElementById('viewHistoryBtn').textContent = 'View Full Transaction History';
-      document.getElementById('historySection').style.display = 'none';
-      document.getElementById('historySection').innerHTML = renderFullHistory(txn);
+      // Show/Hide History Button - Handle declined complaints
+      if (txn.status.toLowerCase() === 'declined/spam') {
+        // Hide history button for declined complaints as they don't follow normal flow
+        document.getElementById('viewHistoryBtn').style.display = 'none';
+        document.getElementById('historySection').style.display = 'none';
+      } else {
+        // Show history button for resolved complaints
+        document.getElementById('viewHistoryBtn').style.display = 'inline-block';
+        document.getElementById('viewHistoryBtn').textContent = 'View Full Transaction History';
+        document.getElementById('historySection').style.display = 'none';
+        document.getElementById('historySection').innerHTML = renderFullHistory(txn);
+      }
 
       const modal = document.getElementById('transactionModal');
       modal.style.display = 'flex';

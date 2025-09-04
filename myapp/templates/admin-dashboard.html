@@ -80,6 +80,7 @@
     .status-badge.reported{background:rgba(239,68,68,0.12);color:var(--danger)}
     .status-badge.inprogress{background:rgba(59,130,246,0.12);color:var(--brand)}
     .status-badge.completed{background:rgba(16,185,129,0.12);color:var(--ok)}
+    .status-badge.declined{background:rgba(239,68,68,0.12);color:var(--danger)}
     .chart-placeholder{height:200px;background:linear-gradient(135deg,rgba(34,211,238,.08),rgba(59,130,246,.08));border-radius:12px;display:grid;place-items:center;color:var(--muted);font-size:.9rem}
     .btn{
       display:inline-flex;align-items:center;gap:8px;justify-content:center;
@@ -98,12 +99,13 @@
     .modal-close:hover{background:rgba(255,255,255,.1);color:var(--text)}
     /* Confirmation Modal Styles */
     .confirmation-content{max-width:450px;padding:0}
-    .confirmation-header{display:flex;align-items:center;gap:16px;padding:24px 24px 16px 24px;border-bottom:1px solid rgba(255,255,255,.1)}
-    .confirmation-icon{font-size:1.5rem;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(34,211,238,.2);color:#b7f9ff}
-    .confirmation-header h3{margin:0;color:var(--text);font-size:1.25rem;flex:1}
-    .confirmation-body{padding:20px 24px}
-    .confirmation-body p{margin:0;color:var(--muted);font-size:1rem;line-height:1.5}
-    .confirmation-actions{display:flex;gap:12px;padding:16px 24px 24px 24px;justify-content:flex-end}
+    .confirmation-header{display:flex;align-items:center;gap:16px;padding:24px 24px 20px 24px;border-bottom:none}
+    .confirmation-icon{font-size:1.8rem;width:50px;height:50px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(239,68,68,.15);color:var(--danger)}
+    .confirmation-header h3{margin:0;color:var(--text);font-size:1.4rem;flex:1;font-weight:700}
+    .confirmation-body{padding:0px 24px 24px 24px}
+    .confirmation-body p{margin:0;color:var(--muted);font-size:1.1rem;line-height:1.5}
+    .confirmation-actions{display:flex;gap:16px;padding:0px 24px 24px 24px;justify-content:flex-end}
+    .confirmation-actions .btn{min-width:80px;height:44px;font-weight:700;font-size:1rem}
     @media (max-width:768px){.confirmation-actions{flex-direction:column}.confirmation-actions .btn{width:100%}}
     @media (max-width:980px){
       .layout{grid-template-columns:80px 1fr}
@@ -148,7 +150,7 @@
              <!-- STATS GRID -->
        <div class="stats-grid">
          <div class="stat-card">
-           <h3>Total Complaints</h3>
+           <h3>Active Complaints</h3>
            <div class="value" id="totalComplaints">—</div>
            <div class="change" id="totalChange">Loading...</div>
          </div>
@@ -168,7 +170,7 @@
            <div class="change" id="inProgressChange">Loading...</div>
          </div>
          <div class="stat-card">
-           <h3>Completed</h3>
+           <h3>Resolved</h3>
            <div class="value" id="completedComplaints">—</div>
            <div class="change" id="completedChange">Loading...</div>
          </div>
@@ -259,7 +261,7 @@
     // Dashboard Statistics Functions
     async function fetchDashboardStats() {
       try {
-        const response = await fetch('/api/transactions/');
+        const response = await fetch('/api/transactions/?include_resolved=true');
         if (!response.ok) throw new Error('Failed to fetch complaints');
         
         const data = await response.json();
@@ -280,7 +282,7 @@
     function calculateAndDisplayStats(complaints) {
              // Count complaints by status
        const stats = {
-         total: complaints.length,
+         total: 0, // Will be calculated as sum of active complaints only
          pending: 0,
          reported: 0,
          inProgress: 0,
@@ -295,13 +297,16 @@
            stats.reported++;
          } else if (status === 'in progress') {
            stats.inProgress++;
-         } else if (status === 'resolved') {
+         } else if (status === 'resolved' || status === 'Resolved') {
            stats.completed++;
          } else {
            // Default to pending for unknown statuses
            stats.pending++;
          }
        });
+
+       // Calculate total as sum of active complaints only (exclude resolved)
+       stats.total = stats.pending + stats.reported + stats.inProgress;
 
              // Update the display
        document.getElementById('totalComplaints').textContent = stats.total.toLocaleString();
@@ -311,7 +316,7 @@
        document.getElementById('completedComplaints').textContent = stats.completed.toLocaleString();
 
              // Calculate and display change indicators (simplified for now)
-       const totalChange = stats.total > 0 ? `+${stats.total} total complaints` : 'No complaints yet';
+       const totalChange = stats.total > 0 ? `${stats.total} active complaints` : 'No active complaints';
        const pendingChange = stats.pending > 0 ? `${stats.pending} pending` : 'No pending complaints';
        const reportedChange = stats.reported > 0 ? `${stats.reported} reported` : 'No reported complaints';
        const inProgressChange = stats.inProgress > 0 ? `${stats.inProgress} in progress` : 'No in-progress complaints';
@@ -354,6 +359,7 @@
       if (statusLower === 'reported') return 'reported';
       if (statusLower === 'in progress') return 'inprogress';
       if (statusLower === 'resolved') return 'completed';
+      if (statusLower === 'declined/spam') return 'declined';
       return 'pending';
     }
 
@@ -423,7 +429,7 @@
 
     async function fetchRecentComplaints() {
       try {
-        const response = await fetch('/api/transactions/');
+        const response = await fetch('/api/transactions/?include_resolved=true');
         if (!response.ok) throw new Error('Failed to fetch complaints');
         
         const data = await response.json();
@@ -485,7 +491,7 @@
 
     async function fetchAllComplaints() {
       try {
-        const response = await fetch('/api/transactions/');
+        const response = await fetch('/api/transactions/?include_resolved=true');
         if (!response.ok) throw new Error('Failed to fetch complaints');
         
         const data = await response.json();

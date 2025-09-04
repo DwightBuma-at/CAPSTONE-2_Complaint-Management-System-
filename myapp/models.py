@@ -7,6 +7,7 @@ class Complaint(models.Model):
         PENDING = "Pending", "Pending"
         IN_PROGRESS = "In Progress", "In Progress"
         RESOLVED = "Resolved", "Resolved"
+        DECLINED = "Declined/Spam", "Declined/Spam"
 
     tracking_id = models.CharField(max_length=20, unique=True)
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='complaints', null=True, blank=True)

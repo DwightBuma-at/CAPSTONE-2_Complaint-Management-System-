@@ -71,7 +71,11 @@ urlpatterns = [
     # Chat functionality
     path('api/admin/chat/send/', views.send_chat_message, name='send_chat_message'),
     path('api/admin/chat/<str:complaint_id>/messages/', views.get_chat_messages, name='get_chat_messages'),
+    path('api/admin/chat/<str:complaint_id>/delete/', views.delete_admin_chat, name='delete_admin_chat'),
     path('api/admin/chat/list/', views.get_admin_chat_list, name='get_admin_chat_list'),
+    
+    # Debug endpoint
+    path('api/admin/chat/test/', views.test_chat_delete, name='test_chat_delete'),
     
     # User chat functionality
     path('api/user/chat/list/', views.get_user_chat_list, name='get_user_chat_list'),

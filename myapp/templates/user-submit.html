@@ -28,6 +28,162 @@
   }
   .back-link{color:var(--brand-2);text-decoration:none;display:inline-block;margin-bottom:20px;}
   
+  /* Barangay Search Container */
+  .barangay-search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  
+  .barangay-search-container select {
+    padding-right: 45px; /* Make room for the search icon */
+  }
+  
+  .search-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.3s ease;
+    z-index: 10;
+  }
+  
+  .search-icon:hover {
+    color: var(--brand);
+  }
+  
+  /* Search Modal Styles */
+  .search-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+  
+  .search-modal.show {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  .search-content {
+    background: linear-gradient(135deg, var(--card), rgba(255, 255, 255, 0.05));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: var(--shadow);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+  }
+  
+  .search-modal.show .search-content {
+    transform: scale(1);
+  }
+  
+  .search-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--text);
+    text-align: center;
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #0b1226;
+    color: #fff;
+    outline: none;
+    margin-bottom: 20px;
+    font-size: 16px;
+  }
+  
+  .search-input:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  .search-results {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+  }
+  
+  .search-result-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background-color 0.2s ease;
+  }
+  
+  .search-result-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .search-result-item:last-child {
+    border-bottom: none;
+  }
+  
+  .search-result-item.selected {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--brand);
+  }
+  
+  .no-results {
+    padding: 20px;
+    text-align: center;
+    color: var(--muted);
+    font-style: italic;
+  }
+  
+  .search-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  
+  .search-btn {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .search-btn.primary {
+    background: linear-gradient(90deg, var(--brand), var(--brand-2));
+    color: white;
+  }
+  
+  .search-btn.secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .search-btn:hover {
+    transform: translateY(-2px);
+  }
+  
   /* Tracking Number Modal Styles */
   .notification-modal {
     position: fixed;
@@ -188,9 +344,17 @@
   <h1>Submit Complaint</h1>
   <form id="complaintForm">
     <label>Reporting to (Select Barangay)</label>
-    <select id="barangay" required disabled>
-      <option value="">Loading available barangays...</option>
-    </select>
+    <div class="barangay-search-container">
+      <select id="barangay" required disabled>
+        <option value="">Loading available barangays...</option>
+      </select>
+      <div class="search-icon" onclick="toggleBarangaySearch()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
+        </svg>
+      </div>
+    </div>
 
 
 
@@ -212,7 +376,7 @@
     <label>Description</label>
     <textarea id="description" rows="4" required></textarea>
 
-    <label>Location</label>
+    <label>Landmark</label>
     <input type="text" id="location" required>
 
     <label>Upload Image</label>
@@ -220,6 +384,21 @@
 
     <button type="submit">Submit Complaint</button>
   </form>
+</div>
+
+<!-- Barangay Search Modal -->
+<div id="searchModal" class="search-modal">
+  <div class="search-content">
+    <div class="search-title">Search Barangay</div>
+    <input type="text" id="searchInput" class="search-input" placeholder="Type to search for a barangay...">
+    <div id="searchResults" class="search-results">
+      <!-- Search results will be populated here -->
+    </div>
+    <div class="search-actions">
+      <button class="search-btn secondary" onclick="closeSearchModal()">Cancel</button>
+      <button class="search-btn primary" onclick="selectBarangay()" id="selectBtn" disabled>Select</button>
+    </div>
+  </div>
 </div>
 
 <!-- Tracking Number Modal -->
@@ -247,9 +426,120 @@
   </div>
 </div>
 <script>
+// Global variables for search functionality
+let allBarangays = [];
+let selectedBarangay = null;
+
 // Load registered barangays when page loads
 document.addEventListener('DOMContentLoaded', function() {
   loadRegisteredBarangays();
+});
+
+// Search functionality
+function toggleBarangaySearch() {
+  const modal = document.getElementById('searchModal');
+  modal.style.display = 'flex';
+  setTimeout(() => modal.classList.add('show'), 10);
+  document.body.style.overflow = 'hidden';
+  
+  // Focus on search input
+  setTimeout(() => {
+    document.getElementById('searchInput').focus();
+  }, 100);
+  
+  // Load all barangays for search
+  loadAllBarangaysForSearch();
+}
+
+function closeSearchModal() {
+  const modal = document.getElementById('searchModal');
+  modal.classList.remove('show');
+  setTimeout(() => {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }, 300);
+  
+  // Clear search
+  document.getElementById('searchInput').value = '';
+  selectedBarangay = null;
+  document.getElementById('selectBtn').disabled = true;
+}
+
+function loadAllBarangaysForSearch() {
+  // Use the same barangays that were loaded for the dropdown
+  const barangaySelect = document.getElementById('barangay');
+  allBarangays = [];
+  
+  for (let i = 1; i < barangaySelect.options.length; i++) { // Skip first option (placeholder)
+    allBarangays.push(barangaySelect.options[i].value);
+  }
+  
+  // Display all barangays initially
+  displaySearchResults(allBarangays);
+}
+
+function displaySearchResults(barangays) {
+  const resultsContainer = document.getElementById('searchResults');
+  
+  if (barangays.length === 0) {
+    resultsContainer.innerHTML = '<div class="no-results">No barangays found</div>';
+    return;
+  }
+  
+  resultsContainer.innerHTML = '';
+  barangays.forEach(barangay => {
+    const item = document.createElement('div');
+    item.className = 'search-result-item';
+    item.textContent = barangay;
+    item.onclick = () => selectSearchResult(item, barangay);
+    resultsContainer.appendChild(item);
+  });
+}
+
+function selectSearchResult(element, barangay) {
+  // Remove previous selection
+  document.querySelectorAll('.search-result-item').forEach(item => {
+    item.classList.remove('selected');
+  });
+  
+  // Add selection to clicked item
+  element.classList.add('selected');
+  selectedBarangay = barangay;
+  document.getElementById('selectBtn').disabled = false;
+}
+
+function selectBarangay() {
+  if (selectedBarangay) {
+    // Set the selected barangay in the dropdown
+    const barangaySelect = document.getElementById('barangay');
+    barangaySelect.value = selectedBarangay;
+    
+    // Close the search modal
+    closeSearchModal();
+  }
+}
+
+// Search input event listener
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      const query = this.value.toLowerCase().trim();
+      
+      if (query === '') {
+        displaySearchResults(allBarangays);
+      } else {
+        const filtered = allBarangays.filter(barangay => 
+          barangay.toLowerCase().includes(query)
+        );
+        displaySearchResults(filtered);
+      }
+      
+      // Clear selection when searching
+      selectedBarangay = null;
+      document.getElementById('selectBtn').disabled = true;
+    });
+  }
 });
 
 // Function to load all registered barangays with admins

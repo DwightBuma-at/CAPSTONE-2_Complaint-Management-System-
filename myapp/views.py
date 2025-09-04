@@ -745,10 +745,10 @@ def list_complaints(request):
             # Filter complaints by user_id for regular users, show all for admins
             # Exclude resolved complaints from the main view (they go to transaction history)
             if user.is_staff or user.is_superuser:
-                response = supabase.table('complaints').select('*').neq('status', 'Resolved').order('created_at', desc=True).execute()
+                response = supabase.table('complaints').select('*').neq('status', 'Resolved').neq('status', 'Declined/Spam').order('created_at', desc=True).execute()
             else:
-                # For regular users, show all complaints they submitted except resolved ones
-                response = supabase.table('complaints').select('*').eq('user_id', user.id).neq('status', 'Resolved').order('created_at', desc=True).execute()
+                # For regular users, show all complaints they submitted except resolved and declined ones
+                response = supabase.table('complaints').select('*').eq('user_id', user.id).neq('status', 'Resolved').neq('status', 'Declined/Spam').order('created_at', desc=True).execute()
             
             complaints = response.data
             data = []
@@ -785,11 +785,11 @@ def list_complaints(request):
     
     # Fallback to Django ORM
     if user.is_staff or user.is_superuser:
-        # Exclude resolved complaints from the main view (they go to transaction history)
-        complaints = Complaint.objects.exclude(status='Resolved')
+        # Exclude resolved and declined complaints from the main view (they go to transaction history)
+        complaints = Complaint.objects.exclude(status__in=['Resolved', 'Declined/Spam'])
     else:
-        # For regular users, show all complaints they submitted except resolved ones
-        complaints = Complaint.objects.filter(user=user).exclude(status='Resolved')
+        # For regular users, show all complaints they submitted except resolved and declined ones
+        complaints = Complaint.objects.filter(user=user).exclude(status__in=['Resolved', 'Declined/Spam'])
     
     print(f"Found {complaints.count()} complaints in Django database")  # Debug logging
     data = [
@@ -834,15 +834,15 @@ def list_complaints_history(request):
     # Try Supabase first, fallback to Django ORM
     if supabase:
         try:
-            # Filter resolved complaints by user_id for regular users, by barangay for admins
+            # Filter resolved and declined complaints by user_id for regular users, by barangay for admins
             if user.is_staff or user.is_superuser:
                 if admin_barangay:
-                    response = supabase.table('complaints').select('*').eq('status', 'Resolved').eq('barangay', admin_barangay).order('created_at', desc=True).execute()
+                    response = supabase.table('complaints').select('*').in_('status', ['Resolved', 'Declined/Spam']).eq('barangay', admin_barangay).order('created_at', desc=True).execute()
                 else:
-                    response = supabase.table('complaints').select('*').eq('status', 'Resolved').order('created_at', desc=True).execute()
+                    response = supabase.table('complaints').select('*').in_('status', ['Resolved', 'Declined/Spam']).order('created_at', desc=True).execute()
             else:
-                # For regular users, show only their resolved complaints
-                response = supabase.table('complaints').select('*').eq('user_id', user.id).eq('status', 'Resolved').order('created_at', desc=True).execute()
+                # For regular users, show only their resolved and declined complaints
+                response = supabase.table('complaints').select('*').eq('user_id', user.id).in_('status', ['Resolved', 'Declined/Spam']).order('created_at', desc=True).execute()
             
             complaints = response.data
             data = []
@@ -882,12 +882,12 @@ def list_complaints_history(request):
     # Fallback to Django ORM
     if user.is_staff or user.is_superuser:
         if admin_barangay:
-            complaints = Complaint.objects.filter(status='Resolved', barangay=admin_barangay)
+            complaints = Complaint.objects.filter(status__in=['Resolved', 'Declined/Spam'], barangay=admin_barangay)
         else:
-            complaints = Complaint.objects.filter(status='Resolved')
+            complaints = Complaint.objects.filter(status__in=['Resolved', 'Declined/Spam'])
     else:
-        # For regular users, show only their resolved complaints
-        complaints = Complaint.objects.filter(user=user, status='Resolved')
+        # For regular users, show only their resolved and declined complaints
+        complaints = Complaint.objects.filter(user=user, status__in=['Resolved', 'Declined/Spam'])
     
     print(f"Found {complaints.count()} resolved complaints in Django database")  # Debug logging
     data = [
@@ -1084,11 +1084,19 @@ def list_transactions(request):
     except:
         return JsonResponse({"error": "Admin profile not found"}, status=400)
     
+    # Check if this is a dashboard request (include resolved complaints)
+    include_resolved = request.GET.get('include_resolved', 'false').lower() == 'true'
+    
     # Try Supabase first, fallback to Django ORM
     if supabase:
         try:
-            # Filter complaints by admin's barangay and exclude resolved complaints
-            response = supabase.table('complaints').select('*').eq('barangay', admin_barangay).neq('status', 'Resolved').order('created_at', desc=True).execute()
+            # Filter complaints by admin's barangay
+            if include_resolved:
+                # Include all complaints (for dashboard statistics)
+                response = supabase.table('complaints').select('*').eq('barangay', admin_barangay).order('created_at', desc=True).execute()
+            else:
+                # Exclude resolved and declined complaints (for active complaints view)
+                response = supabase.table('complaints').select('*').eq('barangay', admin_barangay).neq('status', 'Resolved').neq('status', 'Declined/Spam').order('created_at', desc=True).execute()
             complaints = response.data
             data = []
             for c in complaints:
@@ -1126,8 +1134,14 @@ def list_transactions(request):
             print(f"Supabase error: {e}, falling back to Django ORM")  # Debug logging
     
     # Fallback to Django ORM
-    complaints = Complaint.objects.filter(barangay=admin_barangay).exclude(status='Resolved')
-    print(f"Found {complaints.count()} complaints in Django database for barangay {admin_barangay} (excluding resolved)")  # Debug logging
+    if include_resolved:
+        # Include all complaints (for dashboard statistics)
+        complaints = Complaint.objects.filter(barangay=admin_barangay)
+        print(f"Found {complaints.count()} complaints in Django database for barangay {admin_barangay} (including resolved and declined)")  # Debug logging
+    else:
+        # Exclude resolved and declined complaints (for active complaints view)
+        complaints = Complaint.objects.filter(barangay=admin_barangay).exclude(status__in=['Resolved', 'Declined/Spam'])
+        print(f"Found {complaints.count()} complaints in Django database for barangay {admin_barangay} (excluding resolved and declined)")  # Debug logging
     data = [
         {
             "id": c.tracking_id,
@@ -1857,6 +1871,96 @@ def get_admin_chat_list(request):
     except Exception as e:
         print(f"Error getting admin chat list: {e}")
         return JsonResponse({"error": "Failed to get chat list"}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+def delete_admin_chat(request, complaint_id):
+    """Delete a chat conversation for admin"""
+    print(f"🗑️ DELETE request received for complaint_id: {complaint_id}")
+    
+    # Check if user is authenticated as admin using session-based auth
+    if not request.session.get('admin_authenticated'):
+        print("❌ Admin authentication failed - session not authenticated")
+        return JsonResponse({"error": "Admin authentication required"}, status=401)
+    
+    print("✅ Admin authentication successful")
+    
+    try:
+        # Parse request body to get conversation ID if needed
+        data = {}
+        if request.body:
+            try:
+                data = json.loads(request.body)
+            except json.JSONDecodeError:
+                pass
+        
+        conversation_id = data.get('conversationId')
+        print(f"📋 Request data: {data}")
+        print(f"🔗 Conversation ID: {conversation_id}")
+        
+        # Try Supabase first
+        if supabase:
+            print("🌐 Using Supabase for deletion")
+            try:
+                # Delete all messages in the conversation from Supabase
+                print(f"🗑️ Deleting messages for complaint_id: {complaint_id}")
+                delete_messages_response = supabase.table('chat_messages').delete().eq('complaint_id', complaint_id).execute()
+                print(f"📤 Messages deletion response: {delete_messages_response}")
+                
+                # Delete the conversation from Supabase
+                print(f"🗑️ Deleting conversation for complaint_id: {complaint_id}")
+                delete_conversation_response = supabase.table('chat_conversations').delete().eq('complaint_id', complaint_id).execute()
+                print(f"📤 Conversation deletion response: {delete_conversation_response}")
+                
+                print("✅ Supabase deletion successful")
+                return JsonResponse({"success": True, "message": "Chat deleted successfully"})
+                
+            except Exception as supabase_error:
+                print(f"❌ Supabase error deleting chat: {supabase_error}")
+                print("🔄 Falling back to Django ORM")
+        else:
+            print("🗄️ Supabase not available, using Django ORM")
+        
+        # Django ORM fallback
+        from myapp.models import ChatConversation, ChatMessage
+        
+        print(f"🔍 Looking for conversation with complaint_id: {complaint_id}")
+        
+        # Find the conversation by complaint_id
+        try:
+            conversation = ChatConversation.objects.get(complaint_id=complaint_id)
+            print(f"📝 Found conversation: {conversation.id}")
+            
+            # Delete all messages in this conversation
+            messages_count = ChatMessage.objects.filter(conversation=conversation).count()
+            print(f"🗑️ Deleting {messages_count} messages")
+            ChatMessage.objects.filter(conversation=conversation).delete()
+            
+            # Delete the conversation itself
+            print(f"🗑️ Deleting conversation: {conversation.id}")
+            conversation.delete()
+            
+            print("✅ Django ORM deletion successful")
+            return JsonResponse({"success": True, "message": "Chat deleted successfully"})
+            
+        except ChatConversation.DoesNotExist:
+            print(f"⚠️ Chat conversation not found for complaint_id: {complaint_id} - treating as already deleted")
+            return JsonResponse({"success": True, "message": "Chat already deleted or not found"})
+        
+    except Exception as e:
+        print(f"❌ Error deleting admin chat: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"error": "Failed to delete chat"}, status=500)
+
+
+def test_chat_delete(request):
+    """Test endpoint to verify routing and authentication"""
+    print("🧪 Test endpoint called")
+    admin_auth = request.session.get('admin_authenticated')
+    print(f"🔐 Admin auth status: {admin_auth}")
+    return JsonResponse({"success": True, "message": "Test endpoint working", "admin_auth": admin_auth})
 
 
 # ==========================

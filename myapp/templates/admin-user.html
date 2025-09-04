@@ -126,12 +126,13 @@
     }
     .modal-close{background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;padding:0;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all .2s ease}
     .modal-close:hover{background:rgba(255,255,255,.1);color:var(--text)}
-    .confirmation-header{display:flex;align-items:center;gap:16px;padding:24px 24px 16px 24px;border-bottom:1px solid rgba(255,255,255,.1)}
-    .confirmation-icon{font-size:1.5rem;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(34,211,238,.2);color:#b7f9ff}
-    .confirmation-header h3{margin:0;color:var(--text);font-size:1.25rem;flex:1}
-    .confirmation-body{padding:20px 24px}
-    .confirmation-body p{margin:0;color:var(--muted);font-size:1rem;line-height:1.5}
-    .confirmation-actions{display:flex;gap:12px;padding:16px 24px 24px 24px;justify-content:flex-end}
+    .confirmation-header{display:flex;align-items:center;gap:16px;padding:24px 24px 20px 24px;border-bottom:none}
+    .confirmation-icon{font-size:1.8rem;width:50px;height:50px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(239,68,68,.15);color:var(--danger)}
+    .confirmation-header h3{margin:0;color:var(--text);font-size:1.4rem;flex:1;font-weight:700}
+    .confirmation-body{padding:0px 24px 24px 24px}
+    .confirmation-body p{margin:0;color:var(--muted);font-size:1.1rem;line-height:1.5}
+    .confirmation-actions{display:flex;gap:16px;padding:0px 24px 24px 24px;justify-content:flex-end}
+    .confirmation-actions .btn{min-width:80px;height:44px;font-weight:700;font-size:1rem}
     @media (max-width:768px){.confirmation-actions{flex-direction:column}.confirmation-actions .btn{width:100%}}
   </style>
 </head>

@@ -72,6 +72,7 @@
     .status.reported{background:rgba(239,68,68,0.12);color:var(--danger);}
     .status.inprogress{background:rgba(59,130,246,0.12);color:var(--brand);}
     .status.resolved{background:rgba(16,185,129,0.12);color:var(--ok);}
+    .status.declined{background:rgba(239,68,68,0.12);color:var(--danger);}
     .btn{
       display:inline-flex;align-items:center;gap:8px;justify-content:center;
       height:40px;padding:0 16px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#031026;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(34,211,238,.10);transition:.18s;
@@ -274,12 +275,13 @@
     }
     .modal-close{background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;padding:0;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all .2s ease}
     .modal-close:hover{background:rgba(255,255,255,.1);color:var(--text)}
-    .confirmation-header{display:flex;align-items:center;gap:16px;padding:24px 24px 16px 24px;border-bottom:1px solid rgba(255,255,255,.1)}
-.confirmation-icon{font-size:1.5rem;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(34,211,238,.2);color:#b7f9ff}
-.confirmation-header h3{margin:0;color:var(--text);font-size:1.25rem;flex:1}
-.confirmation-body{padding:20px 24px}
-.confirmation-body p{margin:0;color:var(--muted);font-size:1rem;line-height:1.5}
-.confirmation-actions{display:flex;gap:12px;padding:16px 24px 24px 24px;justify-content:flex-end}
+    .confirmation-header{display:flex;align-items:center;gap:16px;padding:24px 24px 20px 24px;border-bottom:none}
+.confirmation-icon{font-size:1.8rem;width:50px;height:50px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(239,68,68,.15);color:var(--danger)}
+.confirmation-header h3{margin:0;color:var(--text);font-size:1.4rem;flex:1;font-weight:700}
+.confirmation-body{padding:0px 24px 24px 24px}
+.confirmation-body p{margin:0;color:var(--muted);font-size:1.1rem;line-height:1.5}
+.confirmation-actions{display:flex;gap:16px;padding:0px 24px 24px 24px;justify-content:flex-end}
+.confirmation-actions .btn{min-width:80px;height:44px;font-weight:700;font-size:1rem}
 @media (max-width:768px){.confirmation-actions{flex-direction:column}.confirmation-actions .btn{width:100%}}
   </style>
 </head>
@@ -319,7 +321,7 @@
           <option>Reported</option>
           <option>In Progress</option>
           <option>Resolved</option>
-          <option>Declined</option> <!-- added -->
+          <option>Declined/Spam</option>
         </select>
         <button class="btn small ghost" onclick="resetFilters()">Reset</button>
       </section>
@@ -379,6 +381,7 @@
                <option>Reported</option>
                <option>In Progress</option>
                <option>Resolved</option>
+               <option>Declined/Spam</option>
              </select>
 
             <button class="btn" id="saveStatusBtn" onclick="saveStatus()">Save Status</button>
@@ -495,6 +498,7 @@ let currentChat = null;
    if(v==='reported') return 'reported';
    if(v==='in progress') return 'inprogress';
    if(v==='resolved') return 'resolved';
+   if(v==='declined/spam') return 'declined';
    return '';
  }
 
@@ -580,7 +584,7 @@ function openDetail(id){
     <div class="k">User</div><div>${r.user_name || r.user || 'N/A'}</div>
          <div class="k">Barangay</div><div>${r.user_barangay || 'N/A'}</div>
     <div class="k">Reported to Barangay</div><div>${r.barangay}</div>
-    <div class="k">Location</div><div>${r.location || 'N/A'}</div>
+    <div class="k">Landmark</div><div>${r.location || 'N/A'}</div>
     <div class="k">Type</div><div>${r.type}</div>
     <div class="k">Status</div><div><span class="status ${statusClass(r.status)}">${r.status}</span></div>
     <div class="k">Description</div><div>${r.description||''}</div>

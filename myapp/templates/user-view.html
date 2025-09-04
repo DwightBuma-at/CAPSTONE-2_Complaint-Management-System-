@@ -550,7 +550,7 @@
              document.getElementById('modalDetails').innerHTML = `
          <div style="margin-bottom:10px;"><b style="color:#3b82f6;">Transaction ID:</b> ${txn.id}</div>
          <div style="margin-bottom:10px;"><b style="color:#3b82f6;">Description:</b> ${txn.description || ''}</div>
-         <div style="margin-bottom:10px;"><b style="color:#3b82f6;">Location:</b> ${txn.location || ''}</div>
+         <div style="margin-bottom:10px;"><b style="color:#3b82f6;">Landmark:</b> ${txn.location || ''}</div>
          <div style="margin-bottom:10px;"><b style="color:#3b82f6;">Attached Image:</b><br>${imageSection}</div>
        `;
 
@@ -560,38 +560,51 @@
       else if (txn.status.toLowerCase() === 'reported' || txn.status.toLowerCase() === 'submitted') statusIdx = 1;
       else if (txn.status.toLowerCase() === 'in progress' || txn.status.toLowerCase() === 'in-progress') statusIdx = 2;
       else if (txn.status.toLowerCase() === 'resolved') statusIdx = 3;
+      else if (txn.status.toLowerCase() === 'declined/spam') statusIdx = -1; // Special handling for declined
 
-      document.getElementById('modalProgress').innerHTML = `
-        <div class="txn-progress-bar">
+      if (statusIdx === -1) {
+        // Special handling for declined/spam complaints
+        document.getElementById('modalProgress').innerHTML = `
+          <div style="text-align: center; padding: 20px; background: rgba(156,163,175,0.1); border: 1px solid rgba(156,163,175,0.2); border-radius: 12px;">
+            <div style="font-size: 2rem; margin-bottom: 10px;">❌</div>
+            <div style="color: #9ca3af; font-weight: 600; margin-bottom: 5px;">Complaint Declined</div>
+            <div style="color: var(--muted); font-size: 0.9rem;">This complaint has been marked as spam or declined by the administrator.</div>
+          </div>
+        `;
+      } else {
+        // Normal progress bar for active complaints
+        document.getElementById('modalProgress').innerHTML = `
+          <div class="txn-progress-bar">
+            <div class="txn-progress-step">
+                        <div class="txn-progress-circle ${statusIdx >= 0 ? 'active' : ''} ${statusIdx > 0 ? 'resolved' : ''}">
+              <span style="font-size:1.3rem;">⏳</span>
+            </div>
+            <div class="txn-progress-label">Pending</div>
+          </div>
+          <div class="txn-progress-line ${statusIdx > 0 ? (statusIdx >= 2 ? 'resolved' : 'active') : ''}"></div>
           <div class="txn-progress-step">
-                      <div class="txn-progress-circle ${statusIdx >= 0 ? 'active' : ''} ${statusIdx > 0 ? 'resolved' : ''}">
-            <span style="font-size:1.3rem;">⏳</span>
+            <div class="txn-progress-circle ${statusIdx >= 1 ? 'active' : ''} ${statusIdx > 1 ? 'resolved' : ''}">
+              <span style="font-size:1.3rem;">&#9992;</span>
+            </div>
+            <div class="txn-progress-label">Reported</div>
           </div>
-          <div class="txn-progress-label">Pending</div>
-        </div>
-        <div class="txn-progress-line ${statusIdx > 0 ? (statusIdx >= 2 ? 'resolved' : 'active') : ''}"></div>
-        <div class="txn-progress-step">
-          <div class="txn-progress-circle ${statusIdx >= 1 ? 'active' : ''} ${statusIdx > 1 ? 'resolved' : ''}">
-            <span style="font-size:1.3rem;">&#9992;</span>
+          <div class="txn-progress-line ${statusIdx > 1 ? (statusIdx === 3 ? 'resolved' : 'active') : ''}"></div>
+          <div class="txn-progress-step">
+            <div class="txn-progress-circle ${statusIdx >= 2 ? 'active' : ''} ${statusIdx > 2 ? 'resolved' : ''}">
+              <span style="font-size:1.3rem;">&#8635;</span>
+            </div>
+            <div class="txn-progress-label">In-Progress</div>
           </div>
-          <div class="txn-progress-label">Reported</div>
-        </div>
-        <div class="txn-progress-line ${statusIdx > 1 ? (statusIdx === 3 ? 'resolved' : 'active') : ''}"></div>
-        <div class="txn-progress-step">
-          <div class="txn-progress-circle ${statusIdx >= 2 ? 'active' : ''} ${statusIdx > 2 ? 'resolved' : ''}">
-            <span style="font-size:1.3rem;">&#8635;</span>
+          <div class="txn-progress-line ${statusIdx === 3 ? 'resolved' : ''}"></div>
+          <div class="txn-progress-step">
+            <div class="txn-progress-circle ${statusIdx === 3 ? 'resolved' : ''}">
+              <span style="font-size:1.3rem;">&#10003;</span>
+            </div>
+            <div class="txn-progress-label">Resolved</div>
           </div>
-          <div class="txn-progress-label">In-Progress</div>
-        </div>
-        <div class="txn-progress-line ${statusIdx === 3 ? 'resolved' : ''}"></div>
-        <div class="txn-progress-step">
-          <div class="txn-progress-circle ${statusIdx === 3 ? 'resolved' : ''}">
-            <span style="font-size:1.3rem;">&#10003;</span>
           </div>
-          <div class="txn-progress-label">Resolved</div>
-        </div>
-        </div>
-      `;
+        `;
+      }
 
       // Show/Hide History Button
       document.getElementById('viewHistoryBtn').style.display = 'inline-block';
