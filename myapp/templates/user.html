@@ -756,6 +756,42 @@
        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
      }
 
+     /* Message Button Badge Styles */
+     .message-button-container {
+       position: relative;
+       display: inline-block;
+     }
+     
+     .message-notification-badge {
+       position: absolute;
+       top: -8px;
+       right: -8px;
+       display: none;
+       align-items: center;
+       justify-content: center;
+       min-width: 20px;
+       height: 20px;
+       padding: 0 6px;
+       background: linear-gradient(90deg, var(--danger), #dc2626);
+       color: white;
+       border-radius: 10px;
+       font-size: 0.75rem;
+       font-weight: 700;
+       box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+       border: 2px solid var(--bg);
+       animation: pulse-badge 2s infinite;
+     }
+     
+     .message-notification-badge.show {
+       display: inline-flex;
+     }
+     
+     @keyframes pulse-badge {
+       0% { transform: scale(1); }
+       50% { transform: scale(1.1); }
+       100% { transform: scale(1); }
+     }
+
      .chat-name {
        display: flex;
        align-items: center;
@@ -824,7 +860,10 @@
 
        <!-- Message Button positioned exactly where the white line indicates -->
        <div style="text-align: center; margin: 32px 0;">
-         <button class="btn btn--message" onclick="showMessageNotification()">Message</button>
+         <div class="message-button-container">
+           <button class="btn btn--message" onclick="showMessageNotification()">Message</button>
+           <span class="message-notification-badge" id="messageNotificationBadge">0</span>
+         </div>
        </div>
 
       <div class="dashboard__grid">
@@ -1087,6 +1126,19 @@
      let currentUserChat = null;
      let userChatData = [];
 
+     // Update Message button notification badge
+     function updateMessageButtonBadge(count) {
+       const badge = document.getElementById('messageNotificationBadge');
+       if (badge) {
+         if (count > 0) {
+           badge.textContent = count > 99 ? '99+' : count;
+           badge.classList.add('show');
+         } else {
+           badge.classList.remove('show');
+         }
+       }
+     }
+
      // Load user chat data dynamically
      async function loadUserChats() {
        try {
@@ -1103,9 +1155,15 @@
            if (data.chats && data.chats.length > 0) {
              userChatData = data.chats;
              renderUserChats(data.chats);
+             
+             // Calculate total unread count and update Message button badge
+             const totalUnread = data.chats.reduce((sum, chat) => sum + (chat.unread_count || 0), 0);
+             updateMessageButtonBadge(totalUnread);
            } else {
              // Show empty state
              document.getElementById('chatEmptyState').style.display = 'block';
+             // No chats means no unread messages
+             updateMessageButtonBadge(0);
            }
          } else {
            throw new Error(data.error || 'Failed to load chats');
