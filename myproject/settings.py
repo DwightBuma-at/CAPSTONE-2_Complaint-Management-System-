@@ -140,8 +140,14 @@ except ImportError:
     HAS_DJ_DATABASE_URL = False
     print("⚠️ dj-database-url not available, using manual database configuration")
 
-if os.getenv('RAILWAY_ENVIRONMENT') or os.getenv('DATABASE_URL') or os.getenv('PGDATABASE'):
-    # Production: Use Railway PostgreSQL
+# Check if Railway has provided database environment variables
+railway_db_configured = (
+    os.getenv('DATABASE_URL') or 
+    (os.getenv('PGHOST') and os.getenv('PGDATABASE') and os.getenv('PGUSER'))
+)
+
+if os.getenv('RAILWAY_ENVIRONMENT') and railway_db_configured:
+    # Production: Use Railway PostgreSQL (only if properly configured)
     print("🚀 Using Railway PostgreSQL database for production.")
     
     # Try DATABASE_URL first (Railway's preferred method)
@@ -192,9 +198,27 @@ if os.getenv('RAILWAY_ENVIRONMENT') or os.getenv('DATABASE_URL') or os.getenv('P
                 },
             }
         }
+elif os.getenv('RAILWAY_ENVIRONMENT') and not railway_db_configured:
+    # Railway environment but no database configured - force Supabase fallback
+    print("⚠️  Railway detected but no PostgreSQL service configured!")
+    print("🚀 Using Supabase PostgreSQL database as Railway fallback.")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'postgres',
+            'USER': 'postgres.dfcaiybfnrhyitofdxug',
+            'PASSWORD': 'Lotusnotes216641021',
+            'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',
+            'PORT': '5432',
+            'OPTIONS': {
+                'sslmode': 'require',
+                'connect_timeout': 60,
+            },
+        }
+    }
 else:
-    # Development OR Railway fallback: Use Supabase PostgreSQL database
-    print("🚀 Using Supabase PostgreSQL database (development or Railway fallback).")
+    # Development: Use Supabase PostgreSQL database
+    print("🚀 Using Supabase PostgreSQL database for development.")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
