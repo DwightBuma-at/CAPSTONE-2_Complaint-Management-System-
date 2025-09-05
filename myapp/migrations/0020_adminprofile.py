@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('myapp', '0019_remove_transaction_model'),
+        ('myapp', '0016_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

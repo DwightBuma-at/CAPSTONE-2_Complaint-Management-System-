@@ -210,7 +210,7 @@ print(f"✅ Gmail configuration is properly set up with: {EMAIL_HOST_USER}")
 # Security Settings for Production
 # =========================
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
+    # SECURE_SSL_REDIRECT = True  # Commented out to prevent redirect loops on Railway
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
