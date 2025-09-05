@@ -44,11 +44,9 @@ def send_email_via_sendgrid(to_email, subject, html_content, from_email=None):
             print(f"🔍 All env vars preview: {list(env_preview.keys())}")
             return False
         
-        # Default sender email - use verified email for SendGrid
+        # Default sender email - use system email (must be verified in SendGrid)
         if not from_email:
-            # TEMPORARY: Use verified email address for SendGrid (your email)
-            # Later we'll set up proper sender verification in SendGrid
-            from_email = 'dwightanthonyb@gmail.com'  # Your verified email
+            from_email = 'complaintmanagementsystem5@gmail.com'  # System email
         
         print(f"📧 SendGrid: Sending email to {to_email}")
         print(f"📧 Subject: {subject}")
