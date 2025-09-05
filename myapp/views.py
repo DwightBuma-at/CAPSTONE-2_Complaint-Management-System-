@@ -1230,9 +1230,55 @@ def update_transaction_status(request, tracking_id: str):
     if new_status == "Resolved" and not resolution_image:
         return JsonResponse({"error": "Resolution image is required when setting status to Resolved"}, status=400)
 
+    # Try Supabase first, fallback to Django ORM
+    if supabase:
+        try:
+            # Get current complaint data from Supabase
+            response = supabase.table('complaints').select('*').eq('tracking_id', tracking_id).eq('barangay', admin_barangay).execute()
+            
+            if not response.data:
+                raise Http404("Complaint not found")
+            
+            complaint_data = response.data[0]
+            old_status = complaint_data.get('status')
+            user_email = complaint_data.get('user_email')  # Assuming user email is stored in complaints table
+            
+            # Update complaint in Supabase
+            update_data = {'status': new_status}
+            if resolution_image:
+                update_data['resolution_image'] = resolution_image
+            
+            update_response = supabase.table('complaints').update(update_data).eq('tracking_id', tracking_id).eq('barangay', admin_barangay).execute()
+            
+            if not update_response.data:
+                return JsonResponse({"error": "Failed to update complaint"}, status=500)
+            
+            # Send email notification if status changed
+            if old_status != new_status and user_email:
+                from .email_utils import send_status_change_notification
+                try:
+                    send_status_change_notification(
+                        user_email=user_email,
+                        tracking_id=tracking_id,
+                        complaint_type=complaint_data.get('complaint_type', 'Unknown'),
+                        old_status=old_status,
+                        new_status=new_status,
+                        admin_barangay=admin_barangay
+                    )
+                    print(f"📧 Notification sent to {user_email} for complaint {tracking_id}")
+                except Exception as e:
+                    print(f"⚠️ Failed to send notification email: {e}")
+            
+            return JsonResponse({"ok": True, "status": new_status})
+            
+        except Exception as e:
+            print(f"Supabase error: {e}, falling back to Django ORM")
+    
+    # Fallback to Django ORM
     try:
         # Only allow updating complaints from admin's barangay
         complaint = Complaint.objects.get(tracking_id=tracking_id, barangay=admin_barangay)
+        old_status = complaint.status  # Store old status for notification
         complaint.status = new_status
         
         # Save resolution image if provided
@@ -1240,6 +1286,38 @@ def update_transaction_status(request, tracking_id: str):
             complaint.resolution_image = resolution_image
             
         complaint.save()
+        
+        # Send email notification to user if status changed
+        if old_status != new_status:
+            # Get user email from complaint
+            user_email = None
+            
+            # Try to get user email from UserProfile if complaint has user
+            if complaint.user:
+                try:
+                    from .models import UserProfile
+                    user_profile = UserProfile.objects.get(user=complaint.user)
+                    user_email = user_profile.email
+                except UserProfile.DoesNotExist:
+                    print(f"UserProfile not found for user {complaint.user.id}")
+            
+            # If we have user email, send notification
+            if user_email:
+                from .email_utils import send_status_change_notification
+                try:
+                    send_status_change_notification(
+                        user_email=user_email,
+                        tracking_id=complaint.tracking_id,
+                        complaint_type=complaint.complaint_type,
+                        old_status=old_status,
+                        new_status=new_status,
+                        admin_barangay=admin_barangay
+                    )
+                    print(f"📧 Notification sent to {user_email} for complaint {tracking_id}")
+                except Exception as e:
+                    print(f"⚠️ Failed to send notification email: {e}")
+            else:
+                print(f"⚠️ No user email found for complaint {tracking_id}")
         
         return JsonResponse({"ok": True, "status": complaint.status})
     except Complaint.DoesNotExist:

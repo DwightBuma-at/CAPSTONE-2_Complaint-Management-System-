@@ -93,3 +93,103 @@ def verify_otp(email, otp_code):
         return False, "Invalid OTP code"
     except Exception as e:
         return False, f"Error verifying OTP: {str(e)}"
+
+
+def send_status_change_notification(user_email, tracking_id, complaint_type, old_status, new_status, admin_barangay):
+    """Send email notification when complaint status changes"""
+    
+    # Status-specific messages
+    status_messages = {
+        'In Progress': {
+            'subject': f'Update: Your complaint #{tracking_id} is now being processed',
+            'message': f"""
+Good news! Your complaint has been received and is now being processed by the {admin_barangay} Barangay Office.
+
+Complaint Details:
+- Tracking ID: {tracking_id}
+- Type: {complaint_type}
+- Status: {new_status}
+- Barangay: {admin_barangay}
+
+Our team is working on your complaint and will update you once it's resolved.
+
+You can track your complaint status anytime by logging into your account at our complaint management portal.
+            """.strip()
+        },
+        'Resolved': {
+            'subject': f'Resolved: Your complaint #{tracking_id} has been resolved',
+            'message': f"""
+Great news! Your complaint has been successfully resolved by the {admin_barangay} Barangay Office.
+
+Complaint Details:
+- Tracking ID: {tracking_id}
+- Type: {complaint_type}
+- Status: {new_status}
+- Barangay: {admin_barangay}
+
+Thank you for using our complaint management system. If you have any concerns about this resolution, please don't hesitate to contact the {admin_barangay} Barangay Office directly.
+
+You can view the resolution details by logging into your account.
+            """.strip()
+        },
+        'Declined/Spam': {
+            'subject': f'Update: Your complaint #{tracking_id} status has been updated',
+            'message': f"""
+We've reviewed your complaint and updated its status.
+
+Complaint Details:
+- Tracking ID: {tracking_id}
+- Type: {complaint_type}
+- Status: {new_status}
+- Barangay: {admin_barangay}
+
+If you believe this decision was made in error or if you have additional information to provide, please contact the {admin_barangay} Barangay Office directly.
+
+You can view more details by logging into your account.
+            """.strip()
+        }
+    }
+    
+    # Get the appropriate message for the new status
+    notification_info = status_messages.get(new_status)
+    if not notification_info:
+        # Fallback for any other status
+        notification_info = {
+            'subject': f'Update: Your complaint #{tracking_id} status has changed',
+            'message': f"""
+Your complaint status has been updated by the {admin_barangay} Barangay Office.
+
+Complaint Details:
+- Tracking ID: {tracking_id}
+- Type: {complaint_type}
+- Previous Status: {old_status}
+- New Status: {new_status}
+- Barangay: {admin_barangay}
+
+You can view more details by logging into your account at our complaint management portal.
+            """.strip()
+        }
+    
+    # Add footer to all messages
+    full_message = notification_info['message'] + f"""
+
+---
+This is an automated notification from the {admin_barangay} Barangay Complaint Management System.
+Please do not reply to this email.
+
+For inquiries, please visit your local barangay office or use our complaint management portal.
+    """
+    
+    try:
+        send_mail(
+            subject=notification_info['subject'],
+            message=full_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user_email],
+            fail_silently=False,
+        )
+        print(f"✅ Status change notification sent to {user_email} for complaint {tracking_id}")
+        return True
+    except Exception as e:
+        print(f"❌ Error sending status change notification to {user_email}: {e}")
+        return False

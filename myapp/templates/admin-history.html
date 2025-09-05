@@ -253,7 +253,7 @@
     <main class="content">
       <div class="top">
         <h1>Transaction History</h1>
-        <p class="sub">All resolved complaints across all barangays.</p>
+        <p class="sub">All resolved and declined complaints across all barangays.</p>
       </div>
       
       <div style="margin-bottom:24px;">
@@ -263,7 +263,7 @@
       <!-- CARD -->
       <section class="card">
         <div class="card-head">
-          <h3 style="margin:0 0 10px;font-weight:700;letter-spacing:.1px">Resolved Complaints</h3>
+          <h3 style="margin:0 0 10px;font-weight:700;letter-spacing:.1px">Transaction History</h3>
         </div>
         <div class="card-body">
           <div class="tablewrap">
@@ -322,13 +322,13 @@
             <button class="btn" id="saveStatusBtn" onclick="saveStatus()" disabled>Save Status</button>
           </div>
           <div style="margin-top: 8px; padding: 8px 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; color: var(--ok); font-size: 0.9rem;">
-            <strong>📋 History View:</strong> Status changes are disabled for resolved complaints in the transaction history.
+            <strong>📋 History View:</strong> Status changes are disabled for completed complaints in the transaction history.
           </div>
           
           <!-- Resolution Image Display Section (Read-only for history) -->
           <div id="resolutionImageSection" style="margin-top:16px;padding:16px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(16,185,129,.05);">
             <h4 style="margin:0 0 12px;color:var(--text);font-size:1rem;">📸 Resolution Evidence</h4>
-            <p style="margin:0 0 12px;color:var(--muted);font-size:0.9rem;">Evidence showing this complaint was resolved.</p>
+            <p style="margin:0 0 12px;color:var(--muted);font-size:0.9rem;">Evidence showing this complaint was completed (resolved or declined).</p>
             
             <div id="resolutionImagePreview" style="margin-top:12px;">
               <img id="resolutionPreviewImg" style="max-width:200px;max-height:150px;border-radius:8px;border:1px solid rgba(255,255,255,.1);">
@@ -411,7 +411,8 @@
         console.log('Received history payload:', payload);
         
         const newHistoryData = (payload.results || []).map(r => ({
-          id: r.tracking_id,
+          id: r.tracking_id,  // Use tracking_id as the display ID
+          tracking_id: r.tracking_id,  // Keep original tracking_id for reference
           date: r.date,
           user_name: r.user_name || 'Unknown User',
           barangay: r.barangay,
@@ -449,7 +450,7 @@
               <div style="padding: 60px 20px;">
                 <div style="font-size: 4rem; margin-bottom: 20px; opacity: 0.5;">📋</div>
                 <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 10px;">No Transaction History</div>
-                <div>No resolved complaints found in the system.</div>
+                <div>No resolved or declined complaints found in the system.</div>
               </div>
             </td>
           </tr>
@@ -494,7 +495,7 @@
       nextBtn.disabled = currentPage === totalPages;
       
       pageNote.textContent = `Page ${currentPage} of ${totalPages}`;
-      countNote.textContent = `Showing ${historyData.length} resolved complaints`;
+      countNote.textContent = `Showing ${historyData.length} completed complaints`;
     }
 
     function gotoPage(direction) {
@@ -530,6 +531,18 @@
       console.log('🧪 Testing view button for ID:', id);
       openDetail(id);
     };
+    
+    // Global function to test with first available ID
+    window.testFirstViewButton = function() {
+      if (historyData.length > 0) {
+        const firstId = historyData[0].id;
+        console.log('🧪 Testing with first available ID:', firstId);
+        openDetail(firstId);
+      } else {
+        console.log('❌ No history data available');
+        toast('No data available to test');
+      }
+    };
 
     // Modal functions
     function openDetail(id) {
@@ -545,6 +558,7 @@
       if (!r) {
         console.error('❌ Complaint not found for ID:', id);
         console.error('Available complaints:', historyData);
+        toast('Complaint not found. Please refresh the page and try again.');
         return;
       }
       
@@ -574,11 +588,18 @@
       // Show existing resolution image if available
       if (r.resolution_image) {
         document.getElementById('resolutionPreviewImg').src = r.resolution_image;
+        document.getElementById('resolutionPreviewImg').style.display = 'block';
       } else {
         document.getElementById('resolutionImagePreview').innerHTML = '<span style="color:var(--muted);font-style:italic;">No resolution evidence uploaded</span>';
       }
       
       const modal = document.getElementById('detailModal');
+      if (!modal) {
+        console.error('❌ Modal element not found');
+        toast('Modal not found. Please refresh the page.');
+        return;
+      }
+      
       modal.classList.remove('hidden');
       modal.style.display = 'flex';
       setTimeout(() => modal.classList.add('show'), 10);
@@ -587,6 +608,8 @@
       // Add click outside to close
       modal.removeEventListener('click', modalClickHandler);
       modal.addEventListener('click', modalClickHandler);
+      
+      console.log('✅ Modal opened successfully');
     }
 
     function modalClickHandler(e) {
@@ -619,7 +642,7 @@
 
     async function saveStatus() {
       // Status changes are disabled in history view
-      toast('Status changes are disabled for resolved complaints in the transaction history');
+      toast('Status changes are disabled for completed complaints in the transaction history');
       return;
     }
 

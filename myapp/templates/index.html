@@ -127,13 +127,6 @@
       min-width:28px;height:28px;border-radius:999px;display:grid;place-items:center;
       background:rgba(59,130,246,.2);color:#cfe2ff;font-weight:700;border:1px solid rgba(59,130,246,.35)
     }
-    /* Testimonials */
-    .marquee{
-      display:flex;gap:18px;overflow:hidden;mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
-    }
-    .marquee .quote{min-width:320px;max-width:420px;padding:18px}
-    .quote small{color:var(--muted)}
-    .stars{color:#ffd166}
     /* Pricing */
     .pricing{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
     .priceCard{padding:22px;position:relative;overflow:hidden}
@@ -513,7 +506,7 @@
   <div class="wrap nav__inner">
     <a class="brand" href="#top" aria-label="CMS Home"><div class="logo" aria-hidden="true"></div><span>CMS</span></a>
          <nav class="nav__links" aria-label="Main">
-       <a href="#features">Features</a><a href="#how">How it works</a><a href="#faq">FAQ</a><button class="btn btn--ghost" onclick="scrollToId('contact')">Contact</button>
+       <button class="btn btn--ghost" onclick="scrollToId('contact')">Contact</button>
      </nav>
     <div class="nav__auth">
       <button class="btn btn--ghost btn--small" onclick="openModal('loginModal')" style="background:transparent;border:1px solid rgba(255,255,255,.15);color:#fff;">Login</button>
@@ -522,7 +515,7 @@
     <button class="hamburger" aria-label="Menu" id="menuBtn">☰</button>
   </div>
      <div class="mobile hidden" id="mobileMenu">
-     <a href="#features" onclick="toggleMenu(false)">Features</a><a href="#how" onclick="toggleMenu(false)">How it works</a><a href="#faq" onclick="toggleMenu(false)">FAQ</a><button class="btn btn--ghost" onclick="scrollToId('contact');toggleMenu(false)">Contact</button><button class="btn btn--ghost" onclick="openModal('loginModal');toggleMenu(false)" style="background:transparent;border:1px solid rgba(255,255,255,.15);color:#fff;">Login</button><button class="btn" onclick="openModal('signupModal');toggleMenu(false)" style="background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#031026;">Sign Up</button>
+     <button class="btn btn--ghost" onclick="scrollToId('contact');toggleMenu(false)">Contact</button><button class="btn btn--ghost" onclick="openModal('loginModal');toggleMenu(false)" style="background:transparent;border:1px solid rgba(255,255,255,.15);color:#fff;">Login</button><button class="btn" onclick="openModal('signupModal');toggleMenu(false)" style="background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#031026;">Sign Up</button>
    </div>
 </header>
 <!-- Modals -->
@@ -683,7 +676,7 @@
       </p>
              <div class="hero__cta">
        </div>
-      <p class="muted" style="margin-top:10px">No credit card · Works on any device · 24/7</p>
+      <p class="muted" style="margin-top:10px"></p>
     </div>
     <div class="card screen">
       <div class="screen__inner">
@@ -701,113 +694,25 @@
     </div>
   </div>
 </main>
-<!-- Features -->
-<section id="features" class="wrap section">
-  <div class="center">
-    <span class="kicker">Why CMS</span>
-    <h2 style="margin:.5rem 0 0">Everything you need to handle complaints—fast.</h2>
-    <p class="muted">From intake to closure with transparency and auditability.</p>
-  </div>
-  <div class="grid-3">
-    <article class="card feature">
-      <div class="icon">📨</div>
-      <h3>One‑tap reporting</h3>
-      <p class="muted">Residents submit issues with photos, location, and timestamps in under a minute.</p>
-    </article>
-    <article class="card feature">
-      <div class="icon">📊</div>
-      <h3>Live tracking</h3>
-      <p class="muted">Track status from <em>Reported</em> to <em>Resolved</em> with clear milestones.</p>
-    </article>
-    <article class="card feature">
-      <div class="icon">🛡️</div>
-      <h3>Secure & role‑based</h3>
-      <p class="muted">Admin tools, audit logs, and best‑practice security to keep data safe.</p>
-    </article>
-  </div>
-</section>
-<!-- How it works -->
-<section id="how" class="wrap section">
-  <div class="grid-2">
-    <div>
-      <span class="kicker">How it works</span>
-      <h2>Simple steps. Powerful results.</h2>
-      <div class="list">
-        <div class="row"><span class="badge">1</span> <div><strong>Submit</strong><br><span class="muted">Resident fills a quick form with details and optional photo.</span></div></div>
-        <div class="row"><span class="badge">2</span> <div><strong>Track</strong><br><span class="muted">A tracking ID keeps everyone updated in real time.</span></div></div>
-        <div class="row"><span class="badge">3</span> <div><strong>Resolve</strong><br><span class="muted">Teams act, update notes, and close with proof.</span></div></div>
-      </div>
-             <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
-       </div>
-    </div>
-    <div class="card" style="padding:22px">
-      <div class="muted">Uptime</div>
-      <div style="font-size:2.4rem;font-weight:800;margin-top:6px">99.98%</div>
-      <div class="muted" style="margin-top:18px">Monthly reports handled</div>
-      <div style="font-size:2.4rem;font-weight:800;margin-top:6px;color:var(--ok)">10k+</div>
-      <div class="muted" style="margin-top:18px">Avg time to first response</div>
-      <div style="font-size:2.4rem;font-weight:800;margin-top:6px;color:var(--accent)">12m</div>
-    </div>
-  </div>
-</section>
-<!-- Testimonials (auto‑scroll) -->
-<section class="wrap section">
-  <div class="center">
-    <span class="kicker">Loved by communities</span>
-    <h2>What users are saying</h2>
-  </div>
-  <div class="marquee" id="marquee">
-    <div class="card quote"><div class="stars">★★★★★</div><p>"Submitting a report took less than a minute. I could see progress the whole time."</p><small>— Resident, Brgy. 5‑A</small></div>
-    <div class="card quote"><div class="stars">★★★★★</div><p>"Our team clears backlogs twice as fast thanks to the dashboard and status flows."</p><small>— Staff, City Office</small></div>
-    <div class="card quote"><div class="stars">★★★★☆</div><p>"The tracking ID made follow‑ups painless. Super helpful."</p><small>— Resident, Brgy. 12‑B</small></div>
-    <div class="card quote"><div class="stars">★★★★★</div><p>"Zero training needed. It just works."</p><small>— Barangay Captain</small></div>
-  </div>
-</section>
 
-<!-- FAQ -->
-<section id="faq" class="wrap section">
-  <div class="center">
-    <span class="kicker">FAQ</span>
-    <h2>Answers to common questions</h2>
+<!-- Contact -->
+<section id="contact" class="wrap section">
+  <div style="display:flex;justify-content:center;">
+    <form id="contactForm" class="card" style="padding:24px;max-width:500px;width:100%;">
+      <h3 style="margin:0 0 8px;text-align:center;">Contact us</h3>
+      <p class="muted" style="margin-top:0;text-align:center;">We'll respond within 24 hours.</p>
+      <div style="display:grid;gap:10px;margin-top:16px">
+        <input name="name" placeholder="Full name" required aria-label="Full name"
+               style="height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0b1226;color:#fff;padding:0 12px;outline:none;box-shadow:none">
+        <input name="email" type="email" placeholder="Email address" required aria-label="Email"
+               style="height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0b1226;color:#fff;padding:0 12px">
+        <textarea name="msg" rows="4" placeholder="How can we help?" required aria-label="Message"
+               style="border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0b1226;color:#fff;padding:10px 12px;resize:vertical"></textarea>
+        <button class="btn" type="submit">Send message</button>
+        <div id="contactNote" class="muted" role="status" aria-live="polite"></div>
+      </div>
+    </form>
   </div>
-  <div class="faq" style="margin-top:18px">
-    <details>
-      <summary>Can residents track their complaints?</summary>
-      <p>Yes. Each submission generates a tracking ID that shows live status updates.</p>
-    </details>
-    <details>
-      <summary>Does it work on mobile phones?</summary>
-      <p>Absolutely—CMS is responsive and works on any modern device.</p>
-    </details>
-    <details>
-      <summary>Can we export data?</summary>
-      <p>Admins can export CSV and generate summary reports anytime.</p>
-    </details>
-  </div>
-</section>
-<!-- Get Started / Contact -->
-<section id="get-started" class="wrap section cta">
-  <div>
-    <span class="kicker">Ready to try?</span>
-    <h2>Launch your portal in minutes.</h2>
-    <p class="muted">No setup fees. We'll guide you through connecting your existing workflow.</p>
-         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
-     </div>
-  </div>
-  <form id="contact" class="card" style="padding:18px">
-    <h3 style="margin:0 0 8px">Contact us</h3>
-    <p class="muted" style="margin-top:0">We'll respond within 24 hours.</p>
-    <div style="display:grid;gap:10px;margin-top:8px">
-      <input name="name" placeholder="Full name" required aria-label="Full name"
-             style="height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0b1226;color:#fff;padding:0 12px;outline:none;box-shadow:none">
-      <input name="email" type="email" placeholder="Email address" required aria-label="Email"
-             style="height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0b1226;color:#fff;padding:0 12px">
-      <textarea name="msg" rows="4" placeholder="How can we help?" required aria-label="Message"
-             style="border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0b1226;color:#fff;padding:10px 12px;resize:vertical"></textarea>
-      <button class="btn" type="submit">Send message</button>
-      <div id="contactNote" class="muted" role="status" aria-live="polite"></div>
-    </div>
-  </form>
 </section>
 <!-- Footer -->
 <footer class="wrap footer">
@@ -834,22 +739,8 @@
       menuBtn.setAttribute('aria-expanded', String(next));
     }
     menuBtn.addEventListener('click', () => toggleMenu());
-    // Simple marquee animation
-    (function marquee(){
-      const box = document.getElementById('marquee');
-      let scrollX = 0;
-      function step(){
-        scrollX += 0.4;
-        if (scrollX >= box.scrollWidth / 2) scrollX = 0;
-        box.scrollLeft = scrollX;
-        requestAnimationFrame(step);
-      }
-      // duplicate content for seamless loop
-      box.innerHTML = box.innerHTML + box.innerHTML;
-      step();
-    })();
     // Contact form - functional with backend API
-    document.querySelector('#contact').addEventListener('submit', async (e)=>{
+    document.querySelector('#contactForm').addEventListener('submit', async (e)=>{
       e.preventDefault();
       
       const formData = new FormData(e.target);
