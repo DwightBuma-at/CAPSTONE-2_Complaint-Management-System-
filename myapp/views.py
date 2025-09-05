@@ -304,20 +304,12 @@ def user_login(request):
         
         print(f"✅ OTP created successfully")
         
-        # For Railway debugging - show OTP in response if email fails
-        if os.getenv('RAILWAY_ENVIRONMENT'):
-            return JsonResponse({
-                "success": True,
-                "message": f"Login verification code: {otp.otp_code} (Railway Debug Mode)",
-                "email": email,
-                "debug_otp": otp.otp_code  # Temporary for Railway debugging
-            })
-        else:
-            return JsonResponse({
-                "success": True,
-                "message": "Verification code sent to your email",
-                "email": email
-            })
+        # Email sending is working - no need for debug mode
+        return JsonResponse({
+            "success": True,
+            "message": "Verification code sent to your email",
+            "email": email
+        })
         
     except Exception as e:
         print(f"❌ Error in user login OTP creation: {e}")

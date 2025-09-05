@@ -29,19 +29,8 @@ def send_email_via_sendgrid(to_email, subject, html_content, from_email=None):
             None
         )
         
-        # Check if we're on Railway and debug the issue
-        if not sendgrid_api_key and os.getenv('RAILWAY_ENVIRONMENT'):
-            print("🚨 Railway environment detected but SENDGRID_API_KEY not found")
-            print("🔧 This suggests a Railway variable configuration issue")
-        
         if not sendgrid_api_key:
             print("❌ SENDGRID_API_KEY not found in environment variables")
-            print(f"🔍 Available env vars: {[k for k in os.environ.keys() if 'SENDGRID' in k or 'RAILWAY' in k]}")
-            print(f"🔍 Total env vars count: {len(os.environ)}")
-            # Show ALL environment variables for debugging (first 10 chars of values only)
-            env_preview = {k: str(v)[:10] + "..." if len(str(v)) > 10 else str(v) 
-                          for k, v in os.environ.items() if not k.startswith('_')}
-            print(f"🔍 All env vars preview: {list(env_preview.keys())}")
             return False
         
         # Default sender email - use system email (must be verified in SendGrid)
