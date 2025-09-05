@@ -182,15 +182,10 @@ SUPABASE_KEY = os.getenv('SUPABASE_KEY', "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e
 # =========================
 # Email Configuration - Gmail SMTP
 # =========================
-# For production, use environment variables. For development, use hardcoded values.
-if os.getenv('RAILWAY_ENVIRONMENT'):
-    # Production: Use environment variables
-    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', "complaintmanagementsystem5@gmail.com")
-    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', "ocjr swyw mnrb pwts")
-else:
-    # Development: Use hardcoded Gmail credentials
-    EMAIL_HOST_USER = "complaintmanagementsystem5@gmail.com"  # ✅ System Gmail address
-    EMAIL_HOST_PASSWORD = "ocjr swyw mnrb pwts"  # ✅ System 16-character app password
+# Use hardcoded Gmail credentials for both development and production
+# This ensures consistent email functionality across environments
+EMAIL_HOST_USER = "complaintmanagementsystem5@gmail.com"  # ✅ System Gmail address
+EMAIL_HOST_PASSWORD = "ocjr swyw mnrb pwts"  # ✅ System 16-character app password
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
