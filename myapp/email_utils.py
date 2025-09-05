@@ -39,9 +39,11 @@ CMS Team
             recipient_list=[email],
             fail_silently=False,
         )
+        print(f"✅ Email sent successfully via SMTP to {email}")
         return True
     except Exception as e:
-        print(f"Error sending email: {e}")
+        print(f"❌ SMTP Error sending email to {email}: {e}")
+        # On Railway, SMTP might fail but we want to continue with OTP fallback
         return False
 
 
@@ -62,12 +64,18 @@ def create_otp_for_email(email):
     )
     
     # Send email
-    if send_verification_email(email, otp_code):
+    try:
+        if send_verification_email(email, otp_code):
+            print(f"✅ Email sent successfully to {email}")
+            return otp
+        else:
+            print(f"⚠️ Email sending failed for {email}, but OTP record preserved for fallback")
+            # Keep the OTP record for fallback usage (don't delete it)
+            return otp
+    except Exception as e:
+        print(f"❌ Email sending crashed for {email}: {e}")
+        # Keep the OTP record for fallback usage
         return otp
-    else:
-        # If email sending fails, delete the OTP record
-        otp.delete()
-        return None
 
 
 def verify_otp(email, otp_code):

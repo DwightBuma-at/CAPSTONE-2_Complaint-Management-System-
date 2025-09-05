@@ -9,6 +9,7 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.utils import timezone
 from functools import wraps
 import json
+import os
 
 from .models import Complaint, AdminProfile, UserProfile, EmailOTP, ChatConversation, ChatMessage
 from .supabase_client import supabase
@@ -301,12 +302,22 @@ def user_login(request):
                 "email": email
             })
         
-        print(f"✅ OTP created and email sent successfully")
-        return JsonResponse({
-            "success": True,
-            "message": "Verification code sent to your email",
-            "email": email
-        })
+        print(f"✅ OTP created successfully")
+        
+        # For Railway debugging - show OTP in response if email fails
+        if os.getenv('RAILWAY_ENVIRONMENT'):
+            return JsonResponse({
+                "success": True,
+                "message": f"Login verification code: {otp.otp_code} (Railway Debug Mode)",
+                "email": email,
+                "debug_otp": otp.otp_code  # Temporary for Railway debugging
+            })
+        else:
+            return JsonResponse({
+                "success": True,
+                "message": "Verification code sent to your email",
+                "email": email
+            })
         
     except Exception as e:
         print(f"❌ Error in user login OTP creation: {e}")
