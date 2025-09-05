@@ -27,7 +27,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-x6r&=8w9%$#0#4kbmi%4+4i13kzwnh_o8#-9s9r36p^z+^s0g&')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+# Set DEBUG based on environment - False for Railway production
+if os.getenv('RAILWAY_ENVIRONMENT'):
+    DEBUG = False  # Production should have DEBUG=False
+else:
+    DEBUG = True   # Development can have DEBUG=True
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,capstone-2complaint-management-system-production.up.railway.app').split(',') if os.getenv('ALLOWED_HOSTS') else ['localhost', '127.0.0.1', 'capstone-2complaint-management-system-production.up.railway.app']
 
@@ -36,6 +40,38 @@ CSRF_TRUSTED_ORIGINS = [
     'https://capstone-2complaint-management-system-production.up.railway.app',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
+]
+
+# CORS Configuration for API requests
+CORS_ALLOWED_ORIGINS = [
+    'https://capstone-2complaint-management-system-production.up.railway.app',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = False
+
+# Additional CORS settings for better compatibility
+CORS_ALLOWED_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
 ]
 
 
@@ -48,16 +84,18 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',  # CORS headers for API requests
     'myapp',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # CORS middleware first
     'django.middleware.security.SecurityMiddleware',
 ]
 
 # Add WhiteNoise only in production (Railway environment)
 if os.getenv('RAILWAY_ENVIRONMENT'):
-    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    MIDDLEWARE.insert(-1, 'whitenoise.middleware.WhiteNoiseMiddleware')  # Insert before last
 
 MIDDLEWARE.extend([
     'myapp.middleware.RoleBasedAuthMiddleware',  # Custom auth middleware
