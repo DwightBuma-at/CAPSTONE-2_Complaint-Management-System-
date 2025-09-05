@@ -36,9 +36,21 @@ Best regards,
 CMS Team
     """.strip()
     
+    import signal
+    import os
+    
+    def timeout_handler(signum, frame):
+        raise TimeoutError("SMTP connection timed out")
+    
     try:
         print(f"🔍 SMTP Config: Host={settings.EMAIL_HOST}, Port={settings.EMAIL_PORT}, TLS={settings.EMAIL_USE_TLS}")
+        print(f"🔍 Timeout: {getattr(settings, 'EMAIL_TIMEOUT', 10)} seconds")
         print(f"🔍 Sending from: {settings.DEFAULT_FROM_EMAIL} to: {email}")
+        
+        # Set a hard timeout to prevent worker hangs
+        if os.getenv('RAILWAY_ENVIRONMENT'):
+            signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(5)  # 5-second hard timeout on Railway
         
         send_mail(
             subject=subject,
@@ -47,14 +59,20 @@ CMS Team
             recipient_list=[email],
             fail_silently=False,
         )
+        
+        if os.getenv('RAILWAY_ENVIRONMENT'):
+            signal.alarm(0)  # Cancel the alarm
+        
         print(f"✅ Email sent successfully via SMTP to {email}")
         return True
-    except Exception as e:
+    except (TimeoutError, Exception) as e:
+        if os.getenv('RAILWAY_ENVIRONMENT'):
+            signal.alarm(0)  # Cancel the alarm
+        
         print(f"❌ SMTP Error sending email to {email}: {e}")
         print(f"🔍 SMTP Error Details: {type(e).__name__}: {str(e)}")
-        import traceback
-        print(f"🔍 Full traceback: {traceback.format_exc()}")
-        # Even on Railway $5 plan, if SMTP fails, continue with OTP fallback
+        # Don't print full traceback to avoid log spam
+        print("⚡ Fast-failing to prevent worker timeout")
         return False
 
 

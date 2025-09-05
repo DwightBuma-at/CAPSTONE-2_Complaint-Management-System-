@@ -338,17 +338,14 @@ EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
-EMAIL_TIMEOUT = 60  # Increased timeout for Railway
+EMAIL_TIMEOUT = 10  # Fast timeout to prevent worker hangs
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Railway-specific SMTP settings for paid tier
 if os.getenv('RAILWAY_ENVIRONMENT'):
-    print("🚂 Railway $5 plan detected - using optimized SMTP settings")
-    EMAIL_TIMEOUT = 120  # Even longer timeout for Railway
-    # Try alternative port that might work better on Railway
-    # EMAIL_PORT = 465
-    # EMAIL_USE_TLS = False
-    # EMAIL_USE_SSL = True
+    print("🚂 Railway $5 plan detected - using fast-fail SMTP settings")
+    EMAIL_TIMEOUT = 5  # Very short timeout to prevent worker timeouts
+    print(f"⚡ SMTP timeout set to {EMAIL_TIMEOUT} seconds to prevent worker hangs")
 
 # Twilio Configuration (Optional)
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
