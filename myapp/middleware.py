@@ -32,7 +32,8 @@ class RoleBasedAuthMiddleware:
         if request.path in admin_pages:
             # Only block if user is authenticated as a regular user (not admin)
             # This prevents regular users from accessing admin pages via URL
-            if request.user.is_authenticated and not request.session.get('admin_authenticated'):
+            # Safety check: ensure request.user exists (should be added by AuthenticationMiddleware)
+            if hasattr(request, 'user') and request.user.is_authenticated and not request.session.get('admin_authenticated'):
                 print(f"🚫 Regular user blocked from accessing admin page {request.path}")
                 # If it's an AJAX request, return JSON response
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':

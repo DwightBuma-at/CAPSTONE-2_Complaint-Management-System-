@@ -99,11 +99,11 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
     MIDDLEWARE.insert(-1, 'whitenoise.middleware.WhiteNoiseMiddleware')  # Insert before last
 
 MIDDLEWARE.extend([
-    'myapp.middleware.RoleBasedAuthMiddleware',  # Custom auth middleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'myapp.middleware.RoleBasedAuthMiddleware',  # Custom auth middleware AFTER AuthenticationMiddleware
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ])
