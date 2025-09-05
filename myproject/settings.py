@@ -27,9 +27,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-x6r&=8w9%$#0#4kbmi%4+4i13kzwnh_o8#-9s9r36p^z+^s0g&')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Set DEBUG based on environment - False for Railway production
+# TEMPORARILY enable DEBUG for Railway to see error details
 if os.getenv('RAILWAY_ENVIRONMENT'):
-    DEBUG = False  # Production should have DEBUG=False
+    DEBUG = True  # TEMPORARY: Enable to see errors in production
+    print("🚨 DEBUG=True enabled for Railway error diagnosis")
 else:
     DEBUG = True   # Development can have DEBUG=True
 
@@ -210,6 +211,33 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Comprehensive logging for Railway debugging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'myapp': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
 
 # =========================
 # File Upload Settings
