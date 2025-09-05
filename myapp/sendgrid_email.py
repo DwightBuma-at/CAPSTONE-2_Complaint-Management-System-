@@ -27,6 +27,7 @@ def send_email_via_sendgrid(to_email, subject, html_content, from_email=None):
         
         if not sendgrid_api_key:
             print("❌ SENDGRID_API_KEY not found in environment variables")
+            print(f"🔍 Available env vars: {[k for k in os.environ.keys() if 'SENDGRID' in k or 'RAILWAY' in k]}")
             return False
         
         # Default sender email
