@@ -13,11 +13,17 @@ def generate_otp():
 
 
 def send_verification_email(email, otp_code):
-    """Send verification email with OTP - Railway $5 plan should support SMTP"""
+    """Send verification email with OTP - Use SendGrid on Railway, SMTP locally"""
     import os
     
-    # Try to send email even on Railway since you have the paid plan
-    print(f"📧 Attempting to send email to {email} (Railway $5 plan)")
+    # Use SendGrid on Railway for reliable delivery
+    if os.getenv('RAILWAY_ENVIRONMENT'):
+        print(f"🚂 Railway detected - using SendGrid for {email}")
+        from .sendgrid_email import send_otp_email_sendgrid
+        return send_otp_email_sendgrid(email, otp_code)
+    
+    # Use Gmail SMTP for local development
+    print(f"📧 Local development - using Gmail SMTP for {email}")
     
     subject = "Email Verification - Complaint Management System"
     
@@ -71,8 +77,7 @@ CMS Team
         
         print(f"❌ SMTP Error sending email to {email}: {e}")
         print(f"🔍 SMTP Error Details: {type(e).__name__}: {str(e)}")
-        # Don't print full traceback to avoid log spam
-        print("⚡ Fast-failing to prevent worker timeout")
+        # On local development, SMTP failure is expected sometimes
         return False
 
 
@@ -133,7 +138,17 @@ def verify_otp(email, otp_code):
 
 
 def send_status_change_notification(user_email, tracking_id, complaint_type, old_status, new_status, admin_barangay):
-    """Send email notification when complaint status changes"""
+    """Send email notification when complaint status changes - Use SendGrid on Railway"""
+    import os
+    
+    # Use SendGrid on Railway for reliable delivery
+    if os.getenv('RAILWAY_ENVIRONMENT'):
+        print(f"🚂 Railway detected - using SendGrid for status notification to {user_email}")
+        from .sendgrid_email import send_status_notification_sendgrid
+        return send_status_notification_sendgrid(user_email, tracking_id, new_status, admin_barangay)
+    
+    # Use Gmail SMTP for local development
+    print(f"📧 Local development - using Gmail SMTP for status notification to {user_email}")
     
     # Status-specific messages
     status_messages = {
