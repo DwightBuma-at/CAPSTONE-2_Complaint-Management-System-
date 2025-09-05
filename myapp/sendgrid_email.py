@@ -65,7 +65,7 @@ def send_otp_email_sendgrid(email, otp_code):
     """
     Send OTP verification email using SendGrid
     """
-    subject = "Email Verification - Complaint Management System"
+    subject = "Your Login Code - Complaint Management System"
     
     html_content = f"""
     <!DOCTYPE html>
@@ -86,12 +86,13 @@ def send_otp_email_sendgrid(email, otp_code):
                 <h1>Email Verification</h1>
             </div>
             <div class="content">
-                <p>Hello!</p>
-                <p>Thank you for using the Complaint Management System.</p>
-                <p>Your verification code is:</p>
+                <p>Hello,</p>
+                <p>Here is your login code for the Complaint Management System:</p>
                 <div class="otp-code">{otp_code}</div>
-                <p>This code will expire in 10 minutes.</p>
-                <p>If you didn't request this verification, please ignore this email.</p>
+                <p><strong>This code expires in 10 minutes.</strong></p>
+                <p>If you didn't request this code, please ignore this email.</p>
+                <p><strong>📧 Can't find this email?</strong> Check your spam/junk folder and mark as "Not Spam".</p>
+                <p>For assistance, contact us through the system.</p>
             </div>
             <div class="footer">
                 <p>Best regards,<br>CMS Team</p>
