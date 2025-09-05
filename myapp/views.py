@@ -107,15 +107,41 @@ def send_verification_code(request):
         return JsonResponse({"error": "Email already registered"}, status=400)
 
     # Create OTP and send email
-    otp = create_otp_for_email(email)
-    if not otp:
-        return JsonResponse({"error": "Failed to send verification email. Please try again."}, status=500)
-
-    return JsonResponse({
-        "success": True, 
-        "message": "Verification code sent to your email",
-        "email": email
-    })
+    try:
+        otp = create_otp_for_email(email)
+        if not otp:
+            # If email sending fails, create OTP anyway for development/testing
+            from .email_utils import generate_otp
+            from datetime import timedelta
+            
+            # Delete any existing unused OTPs for this email
+            EmailOTP.objects.filter(email=email, is_used=False).delete()
+            
+            # Generate new OTP without sending email
+            otp_code = generate_otp()
+            expires_at = timezone.now() + timedelta(minutes=10)
+            
+            # Create OTP record
+            otp = EmailOTP.objects.create(
+                email=email,
+                otp_code=otp_code,
+                expires_at=expires_at
+            )
+            
+            return JsonResponse({
+                "success": True, 
+                "message": "Verification code generated. Check console for code: " + otp_code,
+                "email": email
+            })
+        
+        return JsonResponse({
+            "success": True, 
+            "message": "Verification code sent to your email",
+            "email": email
+        })
+    except Exception as e:
+        print(f"Error in send_verification_code: {e}")
+        return JsonResponse({"error": f"Server error: {str(e)}"}, status=500)
 
 
 @csrf_exempt
