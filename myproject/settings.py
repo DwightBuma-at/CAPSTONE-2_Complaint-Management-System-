@@ -133,7 +133,12 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 # Database Configuration - Use Railway PostgreSQL in production, Supabase for development
-import dj_database_url
+try:
+    import dj_database_url
+    HAS_DJ_DATABASE_URL = True
+except ImportError:
+    HAS_DJ_DATABASE_URL = False
+    print("⚠️ dj-database-url not available, using manual database configuration")
 
 if os.getenv('RAILWAY_ENVIRONMENT') or os.getenv('DATABASE_URL') or os.getenv('PGDATABASE'):
     # Production: Use Railway PostgreSQL
@@ -141,7 +146,7 @@ if os.getenv('RAILWAY_ENVIRONMENT') or os.getenv('DATABASE_URL') or os.getenv('P
     
     # Try DATABASE_URL first (Railway's preferred method)
     database_url = os.getenv('DATABASE_URL')
-    if database_url:
+    if database_url and HAS_DJ_DATABASE_URL:
         print(f"🔍 Using DATABASE_URL connection")
         DATABASES = {
             'default': dj_database_url.config(
@@ -149,6 +154,25 @@ if os.getenv('RAILWAY_ENVIRONMENT') or os.getenv('DATABASE_URL') or os.getenv('P
                 conn_max_age=600,
                 conn_health_checks=True,
             )
+        }
+    elif database_url and not HAS_DJ_DATABASE_URL:
+        print(f"⚠️ DATABASE_URL found but dj-database-url not available, using manual parsing")
+        # Manual DATABASE_URL parsing as fallback
+        import urllib.parse as urlparse
+        url = urlparse.urlparse(database_url)
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': url.path[1:],
+                'USER': url.username,
+                'PASSWORD': url.password,
+                'HOST': url.hostname,
+                'PORT': url.port or 5432,
+                'OPTIONS': {
+                    'connect_timeout': 60,
+                    'sslmode': 'require',
+                },
+            }
         }
     else:
         # Fallback to individual environment variables
