@@ -70,9 +70,17 @@ def user_history(request):
 def send_verification_code(request):
     """Send verification code to user's email"""
     try:
+        print(f"🔍 send_verification_code called with method: {request.method}")
+        print(f"🔍 Request body: {request.body.decode('utf-8')[:200]}...")  # First 200 chars
+        
         payload = json.loads(request.body.decode("utf-8"))
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest("Invalid JSON body")
+        print(f"🔍 Parsed payload successfully: {list(payload.keys())}")
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON decode error: {e}")
+        return JsonResponse({"error": "Invalid JSON body"}, status=400)
+    except Exception as e:
+        print(f"❌ Unexpected error in send_verification_code: {e}")
+        return JsonResponse({"error": f"Server error: {str(e)}"}, status=500)
 
     email = (payload.get("email") or "").strip().lower()
     full_name = (payload.get("full_name") or "").strip()
@@ -108,7 +116,9 @@ def send_verification_code(request):
 
     # Create OTP and send email
     try:
+        print(f"📧 Attempting to create OTP for email: {email}")
         otp = create_otp_for_email(email)
+        print(f"📧 create_otp_for_email returned: {otp}")
         if not otp:
             # If email sending fails, create OTP anyway for development/testing
             from .email_utils import generate_otp
@@ -139,9 +149,11 @@ def send_verification_code(request):
             "message": "Verification code sent to your email",
             "email": email
         })
-    except Exception as e:
-        print(f"Error in send_verification_code: {e}")
-        return JsonResponse({"error": f"Server error: {str(e)}"}, status=500)
+            except Exception as e:
+            print(f"❌ CRITICAL ERROR in send_verification_code: {e}")
+            import traceback
+            print(f"❌ Full traceback: {traceback.format_exc()}")
+            return JsonResponse({"error": f"Server error: {str(e)}"}, status=500)
 
 
 @csrf_exempt
