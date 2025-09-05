@@ -13,13 +13,11 @@ def generate_otp():
 
 
 def send_verification_email(email, otp_code):
-    """Send verification email with OTP - with comprehensive error handling for Railway"""
+    """Send verification email with OTP - Railway $5 plan should support SMTP"""
     import os
     
-    # On Railway, skip email sending entirely and return False for fallback
-    if os.getenv('RAILWAY_ENVIRONMENT'):
-        print(f"🚂 Railway detected - skipping email sending for {email}, using OTP fallback")
-        return False
+    # Try to send email even on Railway since you have the paid plan
+    print(f"📧 Attempting to send email to {email} (Railway $5 plan)")
     
     subject = "Email Verification - Complaint Management System"
     
@@ -39,6 +37,9 @@ CMS Team
     """.strip()
     
     try:
+        print(f"🔍 SMTP Config: Host={settings.EMAIL_HOST}, Port={settings.EMAIL_PORT}, TLS={settings.EMAIL_USE_TLS}")
+        print(f"🔍 Sending from: {settings.DEFAULT_FROM_EMAIL} to: {email}")
+        
         send_mail(
             subject=subject,
             message=message,
@@ -50,7 +51,10 @@ CMS Team
         return True
     except Exception as e:
         print(f"❌ SMTP Error sending email to {email}: {e}")
-        # On local development, SMTP might fail but we want to continue with OTP fallback
+        print(f"🔍 SMTP Error Details: {type(e).__name__}: {str(e)}")
+        import traceback
+        print(f"🔍 Full traceback: {traceback.format_exc()}")
+        # Even on Railway $5 plan, if SMTP fails, continue with OTP fallback
         return False
 
 
