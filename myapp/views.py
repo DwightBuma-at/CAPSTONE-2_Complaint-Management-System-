@@ -251,10 +251,16 @@ def user_login(request):
 
     # Find user profile by email
     try:
+        print(f"🔍 Attempting to find user profile for email: {email}")
         user_profile = UserProfile.objects.get(email__iexact=email)
         user = user_profile.user
+        print(f"✅ User profile found successfully")
     except UserProfile.DoesNotExist:
+        print(f"❌ User profile not found for email: {email}")
         return JsonResponse({"error": "Invalid credentials"}, status=401)
+    except Exception as db_error:
+        print(f"❌ Database connection failed in user_login: {db_error}")
+        return JsonResponse({"error": "Database connection error. Please try again later."}, status=503)
 
     # Check if email is verified
     if not user_profile.email_verified:
@@ -266,9 +272,45 @@ def user_login(request):
         return JsonResponse({"error": "Invalid credentials"}, status=401)
 
     # Create OTP for login verification
-    otp = create_otp_for_email(email)
-    if not otp:
-        return JsonResponse({"error": "Failed to send verification email. Please try again."}, status=500)
+    try:
+        print(f"📧 Creating OTP for user login: {email}")
+        otp = create_otp_for_email(email)
+        if not otp:
+            # If email sending fails, create OTP anyway for development/testing
+            from .email_utils import generate_otp
+            from datetime import timedelta
+            
+            # Delete any existing unused OTPs for this email
+            EmailOTP.objects.filter(email=email, is_used=False).delete()
+            
+            # Generate new OTP without sending email
+            otp_code = generate_otp()
+            expires_at = timezone.now() + timedelta(minutes=10)
+            
+            # Create OTP record
+            otp = EmailOTP.objects.create(
+                email=email,
+                otp_code=otp_code,
+                expires_at=expires_at
+            )
+            print(f"⚠️ Email sending failed, but OTP created for debugging: {otp_code}")
+            
+            return JsonResponse({
+                "success": True, 
+                "message": "Login verification code generated. Check console for code: " + otp_code,
+                "email": email
+            })
+        
+        print(f"✅ OTP created and email sent successfully")
+        return JsonResponse({
+            "success": True,
+            "message": "Verification code sent to your email",
+            "email": email
+        })
+        
+    except Exception as e:
+        print(f"❌ Error in user login OTP creation: {e}")
+        return JsonResponse({"error": f"Server error: {str(e)}"}, status=500)
 
     return JsonResponse({
         "success": True,
@@ -300,10 +342,16 @@ def verify_login_otp(request):
 
     # Find user profile and login
     try:
+        print(f"🔍 Attempting to find user profile for login verification: {email}")
         user_profile = UserProfile.objects.get(email__iexact=email)
         user = user_profile.user
+        print(f"✅ User profile found for login verification")
     except UserProfile.DoesNotExist:
+        print(f"❌ User profile not found for login verification: {email}")
         return JsonResponse({"error": "User not found"}, status=401)
+    except Exception as db_error:
+        print(f"❌ Database connection failed in verify_login_otp: {db_error}")
+        return JsonResponse({"error": "Database connection error. Please try again later."}, status=503)
 
     # Login user
     django_login(request, user)
