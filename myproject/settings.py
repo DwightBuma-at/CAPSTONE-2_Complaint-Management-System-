@@ -29,7 +29,14 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-x6r&=8w9%$#0#4kbmi%4+4i13k
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if os.getenv('ALLOWED_HOSTS') else []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,capstone-2complaint-management-system-production.up.railway.app').split(',') if os.getenv('ALLOWED_HOSTS') else ['localhost', '127.0.0.1', 'capstone-2complaint-management-system-production.up.railway.app']
+
+# CSRF Trusted Origins for Railway
+CSRF_TRUSTED_ORIGINS = [
+    'https://capstone-2complaint-management-system-production.up.railway.app',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
 
 
 # Application definition
@@ -53,6 +60,7 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 MIDDLEWARE.extend([
+    'myapp.middleware.RoleBasedAuthMiddleware',  # Custom auth middleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
