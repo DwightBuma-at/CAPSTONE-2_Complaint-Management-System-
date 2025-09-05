@@ -149,11 +149,12 @@ def send_verification_code(request):
             "message": "Verification code sent to your email",
             "email": email
         })
-            except Exception as e:
-            print(f"❌ CRITICAL ERROR in send_verification_code: {e}")
-            import traceback
-            print(f"❌ Full traceback: {traceback.format_exc()}")
-            return JsonResponse({"error": f"Server error: {str(e)}"}, status=500)
+        
+    except Exception as e:
+        print(f"❌ CRITICAL ERROR in send_verification_code: {e}")
+        import traceback
+        print(f"❌ Full traceback: {traceback.format_exc()}")
+        return JsonResponse({"error": f"Server error: {str(e)}"}, status=500)
 
 
 @csrf_exempt
