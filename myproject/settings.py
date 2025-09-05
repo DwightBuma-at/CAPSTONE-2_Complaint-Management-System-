@@ -133,28 +133,44 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 # Database Configuration - Use Railway PostgreSQL in production, Supabase for development
-if os.getenv('RAILWAY_ENVIRONMENT') or os.getenv('PGDATABASE'):
+import dj_database_url
+
+if os.getenv('RAILWAY_ENVIRONMENT') or os.getenv('DATABASE_URL') or os.getenv('PGDATABASE'):
     # Production: Use Railway PostgreSQL
     print("🚀 Using Railway PostgreSQL database for production.")
-    print(f"🔍 DB Config: HOST={os.getenv('PGHOST')}, NAME={os.getenv('PGDATABASE')}, USER={os.getenv('PGUSER')}, PORT={os.getenv('PGPORT', '5432')}")
     
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('PGDATABASE'),
-            'USER': os.getenv('PGUSER'),
-            'PASSWORD': os.getenv('PGPASSWORD'),
-            'HOST': os.getenv('PGHOST'),
-            'PORT': os.getenv('PGPORT', '5432'),
-            'OPTIONS': {
-                'connect_timeout': 60,
-                'sslmode': 'require',
-            },
+    # Try DATABASE_URL first (Railway's preferred method)
+    database_url = os.getenv('DATABASE_URL')
+    if database_url:
+        print(f"🔍 Using DATABASE_URL connection")
+        DATABASES = {
+            'default': dj_database_url.config(
+                default=database_url,
+                conn_max_age=600,
+                conn_health_checks=True,
+            )
         }
-    }
+    else:
+        # Fallback to individual environment variables
+        print(f"🔍 DB Config: HOST={os.getenv('PGHOST')}, NAME={os.getenv('PGDATABASE')}, USER={os.getenv('PGUSER')}, PORT={os.getenv('PGPORT', '5432')}")
+        
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': os.getenv('PGDATABASE'),
+                'USER': os.getenv('PGUSER'),
+                'PASSWORD': os.getenv('PGPASSWORD'),
+                'HOST': os.getenv('PGHOST'),
+                'PORT': os.getenv('PGPORT', '5432'),
+                'OPTIONS': {
+                    'connect_timeout': 60,
+                    'sslmode': 'require',
+                },
+            }
+        }
 else:
-    # Development: Use Supabase PostgreSQL database for user registration tracking
-    print("🚀 Using Supabase PostgreSQL database for development.")
+    # Development OR Railway fallback: Use Supabase PostgreSQL database
+    print("🚀 Using Supabase PostgreSQL database (development or Railway fallback).")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -165,9 +181,11 @@ else:
             'PORT': '5432',
             'OPTIONS': {
                 'sslmode': 'require',
+                'connect_timeout': 60,
             },
         }
     }
+    print("⚠️  FALLBACK: If this is Railway, please add PostgreSQL service in Railway dashboard")
 
 
 
