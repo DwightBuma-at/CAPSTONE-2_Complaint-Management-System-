@@ -13,7 +13,14 @@ def generate_otp():
 
 
 def send_verification_email(email, otp_code):
-    """Send verification email with OTP"""
+    """Send verification email with OTP - with comprehensive error handling for Railway"""
+    import os
+    
+    # On Railway, skip email sending entirely and return False for fallback
+    if os.getenv('RAILWAY_ENVIRONMENT'):
+        print(f"🚂 Railway detected - skipping email sending for {email}, using OTP fallback")
+        return False
+    
     subject = "Email Verification - Complaint Management System"
     
     message = f"""
@@ -43,7 +50,7 @@ CMS Team
         return True
     except Exception as e:
         print(f"❌ SMTP Error sending email to {email}: {e}")
-        # On Railway, SMTP might fail but we want to continue with OTP fallback
+        # On local development, SMTP might fail but we want to continue with OTP fallback
         return False
 
 
