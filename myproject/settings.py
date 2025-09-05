@@ -133,9 +133,11 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 # Database Configuration - Use Railway PostgreSQL in production, Supabase for development
-if os.getenv('RAILWAY_ENVIRONMENT'):
+if os.getenv('RAILWAY_ENVIRONMENT') or os.getenv('PGDATABASE'):
     # Production: Use Railway PostgreSQL
     print("🚀 Using Railway PostgreSQL database for production.")
+    print(f"🔍 DB Config: HOST={os.getenv('PGHOST')}, NAME={os.getenv('PGDATABASE')}, USER={os.getenv('PGUSER')}, PORT={os.getenv('PGPORT', '5432')}")
+    
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -144,6 +146,10 @@ if os.getenv('RAILWAY_ENVIRONMENT'):
             'PASSWORD': os.getenv('PGPASSWORD'),
             'HOST': os.getenv('PGHOST'),
             'PORT': os.getenv('PGPORT', '5432'),
+            'OPTIONS': {
+                'connect_timeout': 60,
+                'sslmode': 'require',
+            },
         }
     }
 else:

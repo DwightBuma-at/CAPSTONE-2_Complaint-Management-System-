@@ -111,8 +111,14 @@ def send_verification_code(request):
         return JsonResponse({"error": "Password must be at least 6 characters"}, status=400)
 
     # Check if email already exists
-    if UserProfile.objects.filter(email__iexact=email).exists():
-        return JsonResponse({"error": "Email already registered"}, status=400)
+    try:
+        print(f"🔍 Checking if email exists in database: {email}")
+        if UserProfile.objects.filter(email__iexact=email).exists():
+            return JsonResponse({"error": "Email already registered"}, status=400)
+        print(f"✅ Database connection successful, email not found")
+    except Exception as db_error:
+        print(f"❌ Database connection failed: {db_error}")
+        return JsonResponse({"error": "Database connection error. Please try again later."}, status=503)
 
     # Create OTP and send email
     try:
