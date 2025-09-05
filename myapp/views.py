@@ -711,24 +711,34 @@ Message:
 This message was sent from the CMS Contact Form.
         """.strip()
         
-        # Send to admin email
-        send_mail(
-            subject=subject,
-            message=email_body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=["complaintmanagementsystem5@gmail.com"],
-            fail_silently=False,
-        )
-        
-        return JsonResponse({
-            "success": True,
-            "message": "Thank you! Your message has been sent successfully. We'll get back to you within 24 hours."
-        })
+        try:
+            # Try to send email to admin
+            send_mail(
+                subject=subject,
+                message=email_body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=["complaintmanagementsystem5@gmail.com"],
+                fail_silently=False,
+            )
+            
+            return JsonResponse({
+                "success": True,
+                "message": "Thank you! Your message has been sent successfully. We'll get back to you within 24 hours."
+            })
+        except Exception as email_error:
+            print(f"Email sending failed: {email_error}")
+            # Even if email fails, we can still log the contact form submission
+            print(f"Contact form submission (email failed): Name={name}, Email={email}, Message={message}")
+            
+            return JsonResponse({
+                "success": True,
+                "message": "Thank you! Your message has been received. We'll get back to you within 24 hours. (Note: Email service temporarily unavailable)"
+            })
         
     except Exception as e:
-        print(f"Error sending contact form email: {e}")
+        print(f"Error processing contact form: {e}")
         return JsonResponse({
-            "error": "Failed to send message. Please try again later."
+            "error": f"Server error: {str(e)}"
         }, status=500)
 
 
