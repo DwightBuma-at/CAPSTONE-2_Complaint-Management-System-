@@ -242,6 +242,28 @@
       color: #eaf0ff;
       font-size: 0.98rem;
       margin: 0 32px;
+      max-height: 300px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    
+    /* Custom scrollbar for history section */
+    #historySection::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    #historySection::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+    
+    #historySection::-webkit-scrollbar-thumb {
+      background: rgba(34, 211, 238, 0.5);
+      border-radius: 3px;
+    }
+    
+    #historySection::-webkit-scrollbar-thumb:hover {
+      background: rgba(34, 211, 238, 0.7);
     }
     .history-entry {
       margin-bottom: 18px;
