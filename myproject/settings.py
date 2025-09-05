@@ -43,37 +43,37 @@ CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
 ]
 
-# CORS Configuration for API requests
-CORS_ALLOWED_ORIGINS = [
-    'https://capstone-2complaint-management-system-production.up.railway.app',
-    'http://localhost:8000',
-    'http://127.0.0.1:8000',
-]
-
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = False
-
-# Additional CORS settings for better compatibility
-CORS_ALLOWED_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-]
-
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
+# CORS Configuration for API requests - TEMPORARILY DISABLED
+# CORS_ALLOWED_ORIGINS = [
+#     'https://capstone-2complaint-management-system-production.up.railway.app',
+#     'http://localhost:8000',
+#     'http://127.0.0.1:8000',
+# ]
+# 
+# CORS_ALLOW_CREDENTIALS = True
+# CORS_ALLOW_ALL_ORIGINS = False
+# 
+# # Additional CORS settings for better compatibility
+# CORS_ALLOWED_HEADERS = [
+#     'accept',
+#     'accept-encoding',
+#     'authorization',
+#     'content-type',
+#     'dnt',
+#     'origin',
+#     'user-agent',
+#     'x-csrftoken',
+#     'x-requested-with',
+# ]
+# 
+# CORS_ALLOW_METHODS = [
+#     'DELETE',
+#     'GET',
+#     'OPTIONS',
+#     'PATCH',
+#     'POST',
+#     'PUT',
+# ]
 
 
 # Application definition
@@ -85,12 +85,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'corsheaders',  # CORS headers for API requests
+    # 'corsheaders',  # Temporarily disabled - causing import error
     'myapp',
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',  # CORS middleware first
+    # 'corsheaders.middleware.CorsMiddleware',  # Temporarily disabled - causing import error
     'django.middleware.security.SecurityMiddleware',
 ]
 
