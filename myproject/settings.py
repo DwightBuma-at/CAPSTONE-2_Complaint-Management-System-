@@ -30,7 +30,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-x6r&=8w9%$#0#4kbmi%4+4i13k
 # TEMPORARILY enable DEBUG for Railway to see error details
 if os.getenv('RAILWAY_ENVIRONMENT'):
     DEBUG = True  # TEMPORARY: Enable to see errors in production
-    print("🚨 DEBUG=True enabled for Railway error diagnosis")
+    print("🚨 DEBUG=True enabled for Railway error diagnosis - Migration Fix Attempt")
 else:
     DEBUG = True   # Development can have DEBUG=True
 
