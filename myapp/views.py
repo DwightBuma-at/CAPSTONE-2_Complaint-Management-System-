@@ -13,9 +13,7 @@ import os
 from datetime import datetime
 import pytz
 
-# Temporarily comment out AdminActivityLog to debug Railway startup issue
-from .models import Complaint, AdminProfile, UserProfile, EmailOTP, ChatConversation, ChatMessage
-# from .models import AdminActivityLog  # Commented out for debugging
+from .models import Complaint, AdminProfile, UserProfile, EmailOTP, ChatConversation, ChatMessage, AdminActivityLog
 from .supabase_client import supabase
 from .email_utils import create_otp_for_email, verify_otp
 
@@ -36,16 +34,24 @@ def health_check(request):
     
     # Test model imports
     try:
-        # from .models import AdminActivityLog  # Commented out for debugging
-        model_status = "OK - AdminActivityLog temporarily disabled"
+        from .models import AdminActivityLog
+        model_status = "OK - AdminActivityLog enabled"
     except Exception as e:
         model_status = f"ERROR: {str(e)}"
+    
+    # Test pytz import
+    try:
+        import pytz
+        pytz_status = "OK"
+    except Exception as e:
+        pytz_status = f"ERROR: {str(e)}"
     
     return JsonResponse({
         "status": "OK",
         "database": db_status,
         "models": model_status,
-        "timestamp": get_current_ph_time().isoformat()
+        "pytz": pytz_status,
+        "timestamp": timezone.now().isoformat()  # Use simple timezone.now() instead of custom function
     })
 
 # Centralized time utility functions
