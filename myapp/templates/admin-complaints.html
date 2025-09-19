@@ -794,14 +794,14 @@ function populateStatusDropdown(currentStatus) {
   const statusDropdown = document.getElementById('detailStatus');
   statusDropdown.innerHTML = ''; // Clear existing options
   
-  // Define status progression order
-  const statusProgression = ['Pending', 'Reported', 'In Progress', 'Resolved', 'Declined/Spam'];
+  // Define status progression order (excluding Pending as it's the default status)
+  const statusProgression = ['Reported', 'In Progress', 'Resolved', 'Declined/Spam'];
   
   // Find current status index
   const currentIndex = statusProgression.indexOf(currentStatus);
   
   if (currentIndex === -1) {
-    // If current status not found, show all options (fallback)
+    // If current status not found (e.g., "Pending"), show all available options
     statusProgression.forEach(status => {
       const option = document.createElement('option');
       option.value = status;
