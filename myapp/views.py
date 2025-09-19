@@ -10,12 +10,67 @@ from django.utils import timezone
 from functools import wraps
 import json
 import os
+from datetime import datetime
+import pytz
 
-from .models import Complaint, AdminProfile, UserProfile, EmailOTP, ChatConversation, ChatMessage
+from .models import Complaint, AdminProfile, UserProfile, EmailOTP, ChatConversation, ChatMessage, AdminActivityLog
 from .supabase_client import supabase
 from .email_utils import create_otp_for_email, verify_otp
 
 ADMIN_ACTIVATION_KEY = "F32024"
+
+# Centralized time utility functions
+def get_ph_timezone():
+    """Get Philippine timezone object"""
+    return pytz.timezone('Asia/Manila')
+
+def format_ph_datetime(dt):
+    """Convert any datetime to Philippine time and format as string"""
+    if not dt:
+        return ''
+    
+    ph_tz = get_ph_timezone()
+    
+    # Handle different input types
+    if isinstance(dt, str):
+        # Parse string datetime
+        try:
+            if 'T' in dt:
+                # ISO format from Supabase
+                if dt.endswith('Z'):
+                    dt = dt.replace('Z', '+00:00')
+                parsed_dt = datetime.fromisoformat(dt)
+            else:
+                # Django format
+                parsed_dt = datetime.fromisoformat(dt)
+            
+            # If timezone-naive, assume UTC
+            if parsed_dt.tzinfo is None:
+                parsed_dt = pytz.UTC.localize(parsed_dt)
+            
+            # Convert to PH time
+            ph_time = parsed_dt.astimezone(ph_tz)
+            return ph_time.strftime("%Y-%m-%d %H:%M")
+        except Exception as e:
+            print(f"Error parsing datetime string: {dt}, error: {e}")
+            return ''
+    
+    elif hasattr(dt, 'astimezone'):
+        # Django timezone-aware datetime
+        ph_time = dt.astimezone(ph_tz)
+        return ph_time.strftime("%Y-%m-%d %H:%M")
+    
+    else:
+        # Fallback for other types
+        try:
+            ph_time = timezone.localtime(dt)
+            return ph_time.strftime("%Y-%m-%d %H:%M")
+        except:
+            return ''
+
+def get_current_ph_time():
+    """Get current time in Philippine timezone"""
+    return timezone.now().astimezone(get_ph_timezone())
 
 # Authentication decorator for admin pages
 def require_admin_auth(view_func):
@@ -84,7 +139,6 @@ def send_verification_code(request):
         return JsonResponse({"error": f"Server error: {str(e)}"}, status=500)
 
     email = (payload.get("email") or "").strip().lower()
-    full_name = (payload.get("full_name") or "").strip()
     barangay = (payload.get("barangay") or "").strip()
     password = (payload.get("password") or "").strip()
     confirm_password = (payload.get("confirm_password") or "").strip()
@@ -180,7 +234,7 @@ def verify_email_and_register(request):
     otp_code = (payload.get("otp_code") or "").strip()
 
     # Validation
-    if not all([email, full_name, barangay, password, otp_code]):
+    if not all([email, barangay, password, otp_code]):
         return JsonResponse({"error": "All fields are required"}, status=400)
 
     if len(otp_code) != 6:
@@ -417,6 +471,7 @@ def admin_login(request):
 
     email = (payload.get("email") or "").strip().lower()
     password = (payload.get("password") or "").strip()
+    admin_name = (payload.get("admin_name") or "").strip()
 
     if not email or not password:
         return JsonResponse({"error": "Email and password are required"}, status=400)
@@ -447,6 +502,7 @@ def admin_login(request):
         "success": True,
         "message": "Please enter your 6-digit admin access key",
         "email": email,
+        "admin_name": admin_name,
         "requires_access_key": True
     })
 
@@ -462,6 +518,7 @@ def admin_verify_access_key(request):
 
     email = (payload.get("email") or "").strip().lower()
     access_key = (payload.get("access_key") or "").strip()
+    admin_name = (payload.get("admin_name") or "").strip()
 
     if not email or not access_key:
         return JsonResponse({"error": "Email and access key are required"}, status=400)
@@ -493,9 +550,20 @@ def admin_verify_access_key(request):
     # Login successful
     django_login(request, user)
     
+    # Get admin profile info
+    display_name = admin_name if admin_name else "Admin"  # Use provided name or default
+    admin_barangay = "Admin"
+    try:
+        admin_profile = user.admin_profile
+        admin_barangay = admin_profile.barangay
+    except AdminProfile.DoesNotExist:
+        pass
+    
     # Set admin authentication flag in session
     request.session['admin_authenticated'] = True
     request.session['admin_email'] = email
+    request.session['admin_name'] = display_name
+    request.session['admin_barangay'] = admin_barangay
     
     return JsonResponse({
         "success": True,
@@ -504,7 +572,8 @@ def admin_verify_access_key(request):
             "id": user.id,
             "email": user.email,
             "username": user.username,
-            "barangay": admin_profile.barangay if hasattr(user, 'admin_profile') else "Admin"
+            "full_name": display_name,
+            "barangay": admin_barangay
         },
         "redirect": "/admin-dashboard.html"
     })
@@ -519,6 +588,10 @@ def admin_logout(request):
         del request.session['admin_authenticated']
     if 'admin_email' in request.session:
         del request.session['admin_email']
+    if 'admin_name' in request.session:
+        del request.session['admin_name']
+    if 'admin_barangay' in request.session:
+        del request.session['admin_barangay']
     return JsonResponse({"ok": True})
 
 
@@ -529,17 +602,23 @@ def admin_me(request):
     session_authenticated = request.session.get('admin_authenticated', False)
     
     if user and user.is_authenticated and (user.is_staff or user.is_superuser) and session_authenticated:
-        # Get admin profile to include barangay
-        try:
-            admin_profile = user.admin_profile
-            barangay = admin_profile.barangay
-        except:
-            barangay = None
+        # Get admin info from session (name from login, barangay from profile)
+        full_name = request.session.get('admin_name', 'Admin')
+        barangay = request.session.get('admin_barangay', None)
+        
+        # If no barangay in session, get from profile
+        if not barangay:
+            try:
+                admin_profile = user.admin_profile
+                barangay = admin_profile.barangay
+            except:
+                barangay = None
             
         return JsonResponse({
             "authenticated": True, 
             "username": user.get_username(),
             "email": user.email,
+            "full_name": full_name,
             "barangay": barangay
         })
     return JsonResponse({"authenticated": False})
@@ -859,18 +938,8 @@ def list_complaints(request):
             complaints = response.data
             data = []
             for c in complaints:
-                # Handle Supabase date conversion to Philippine time
-                created_at = c.get('created_at')
-                if created_at:
-                    # Parse the UTC timestamp from Supabase and convert to Philippine time
-                    from datetime import datetime
-                    import pytz
-                    utc_time = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
-                    ph_tz = pytz.timezone('Asia/Manila')
-                    ph_time = utc_time.astimezone(ph_tz)
-                    formatted_date = ph_time.strftime("%Y-%m-%d %H:%M")
-                else:
-                    formatted_date = ''
+                # Use centralized time formatting
+                formatted_date = format_ph_datetime(c.get('created_at'))
                 
                 data.append({
                     "id": c.get('id'),
@@ -903,7 +972,7 @@ def list_complaints(request):
         {
             "id": c.id,
             "tracking_id": c.tracking_id,
-            "date": timezone.localtime(c.created_at).strftime("%Y-%m-%d %H:%M"),
+            "date": format_ph_datetime(c.created_at),
             "barangay": c.barangay,
             "type": c.complaint_type,
             "status": c.status,
@@ -955,18 +1024,8 @@ def list_complaints_history(request):
             complaints = response.data
             data = []
             for c in complaints:
-                # Handle Supabase date conversion to Philippine time
-                created_at = c.get('created_at')
-                if created_at:
-                    # Parse the UTC timestamp from Supabase and convert to Philippine time
-                    from datetime import datetime
-                    import pytz
-                    utc_time = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
-                    ph_tz = pytz.timezone('Asia/Manila')
-                    ph_time = utc_time.astimezone(ph_tz)
-                    formatted_date = ph_time.strftime("%Y-%m-%d %H:%M")
-                else:
-                    formatted_date = ''
+                # Use centralized time formatting
+                formatted_date = format_ph_datetime(c.get('created_at'))
                 
                 data.append({
                     "id": c.get('id'),
@@ -1003,7 +1062,7 @@ def list_complaints_history(request):
         {
             "id": c.id,
             "tracking_id": c.tracking_id,
-            "date": timezone.localtime(c.created_at).strftime("%Y-%m-%d %H:%M"),
+            "date": format_ph_datetime(c.created_at),
             "user_name": c.user_full_name or 'Unknown User',
             "barangay": c.barangay,
             "type": c.complaint_type,
@@ -1013,7 +1072,7 @@ def list_complaints_history(request):
             "image": c.image_base64 or None,
             "resolution_image": c.resolution_image or None,
             "admin_update": c.admin_update or None,
-            "resolved_date": timezone.localtime(c.created_at).strftime("%Y-%m-%d %H:%M"),  # For now, use created_at as resolved_date
+            "resolved_date": format_ph_datetime(c.created_at),  # For now, use created_at as resolved_date
         }
         for c in complaints
     ]
@@ -1113,7 +1172,7 @@ def create_complaint(request):
                         "id": created_complaint.get('id'),
                         "tracking_id": created_complaint.get('tracking_id'),
                         "status": created_complaint.get('status'),
-                        "date": timezone.localtime(timezone.now()).strftime("%Y-%m-%d %H:%M"),
+                        "date": format_ph_datetime(timezone.now()),
                     },
                     status=201,
                 )
@@ -1140,7 +1199,7 @@ def create_complaint(request):
                 "id": complaint.id,
                 "tracking_id": complaint.tracking_id,
                 "status": complaint.status,
-                "date": timezone.localtime(complaint.created_at).strftime("%Y-%m-%d %H:%M"),
+                "date": format_ph_datetime(complaint.created_at),
             },
             status=201,
         )
@@ -1160,7 +1219,7 @@ def complaint_detail(request, tracking_id: str):
         {
             "id": c.id,
             "tracking_id": c.tracking_id,
-            "date": timezone.localtime(c.created_at).strftime("%Y-%m-%d %H:%M"),
+            "date": format_ph_datetime(c.created_at),
             "barangay": c.barangay,
             "type": c.complaint_type,
             "status": c.status,
@@ -1210,18 +1269,8 @@ def list_transactions(request):
             complaints = response.data
             data = []
             for c in complaints:
-                # Handle Supabase date conversion to Philippine time
-                created_at = c.get('created_at')
-                if created_at:
-                    # Parse the UTC timestamp from Supabase and convert to Philippine time
-                    from datetime import datetime
-                    import pytz
-                    utc_time = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
-                    ph_tz = pytz.timezone('Asia/Manila')
-                    ph_time = utc_time.astimezone(ph_tz)
-                    formatted_date = ph_time.strftime("%Y-%m-%d %H:%M")
-                else:
-                    formatted_date = ''
+                # Use centralized time formatting
+                formatted_date = format_ph_datetime(c.get('created_at'))
                 
                 data.append({
                     "id": c.get('tracking_id'),
@@ -1256,7 +1305,7 @@ def list_transactions(request):
     data = [
         {
             "id": c.tracking_id,
-            "date": timezone.localtime(c.created_at).strftime("%Y-%m-%d %H:%M"),
+            "date": format_ph_datetime(c.created_at),
             "user_name": c.user_full_name or 'N/A',  # Use user_full_name field
             "user": c.user_full_name or 'N/A',  # Keep for backward compatibility
             "user_barangay": c.user_barangay or 'N/A',  # Add user's barangay
@@ -1300,7 +1349,7 @@ def transaction_detail(request, tracking_id: str):
     return JsonResponse(
         {
             "id": complaint.tracking_id,
-            "date": timezone.localtime(complaint.created_at).strftime("%Y-%m-%d %H:%M"),
+            "date": format_ph_datetime(complaint.created_at),
             "user": complaint.user_full_name or 'N/A',  # Use user_full_name field
             "type": complaint.complaint_type,
             "status": complaint.status,
@@ -1411,6 +1460,31 @@ def update_transaction_status(request, tracking_id: str):
             complaint.resolution_image = resolution_image
             
         complaint.save()
+        
+        # Log admin activity for audit trail with personalized message
+        admin_display_name = request.session.get('admin_name', 'Admin')
+        
+        # Create personalized status change description
+        status_descriptions = {
+            'Reported': f"Hello! This is {admin_display_name} from barangay {admin_barangay}. Your complaint has been received and is now in review for processing.",
+            'In Progress': f"Hello! This is {admin_display_name} from barangay {admin_barangay}. We are now working on your complaint. {admin_update if admin_update else 'Our team is actively addressing this issue.'}",
+            'Resolved': f"Hello! This is {admin_display_name} from barangay {admin_barangay}. Your complaint has been successfully resolved. Thank you for reporting this issue.",
+            'Declined/Spam': f"Hello! This is {admin_display_name} from barangay {admin_barangay}. After review, this complaint has been declined. If you believe this is an error, please contact our office directly."
+        }
+        
+        personalized_description = status_descriptions.get(new_status, f"Hello! This is {admin_display_name} from barangay {admin_barangay}. Status changed from '{old_status}' to '{new_status}'.")
+        
+        AdminActivityLog.objects.create(
+            complaint=complaint,
+            admin_user=user,
+            admin_name=admin_display_name,
+            admin_barangay=admin_barangay,
+            action_type=AdminActivityLog.ActionType.STATUS_CHANGE,
+            description=personalized_description,
+            old_value=old_status,
+            new_value=new_status
+        )
+        print(f"📋 Audit log created: {admin_display_name} changed status of {tracking_id} from {old_status} to {new_status}")
         
         # Send email notification to user if status changed
         if old_status != new_status:
@@ -1921,13 +1995,35 @@ def send_chat_message(request):
             defaults={'created_at': timezone.now()}
         )
 
-        # Create the message
+        # Get admin display name from session
+        admin_display_name = request.session.get('admin_name', 'Admin')
+        
+        # Create the message with admin name
         chat_message = ChatMessage.objects.create(
             conversation=conversation,
             sender=user,
             content=message_content,
-            is_admin_message=True
+            is_admin_message=True,
+            admin_name=admin_display_name
         )
+
+        # Log admin activity for audit trail
+        try:
+            admin_profile = user.admin_profile
+            admin_barangay = admin_profile.barangay
+        except:
+            admin_barangay = "Unknown"
+            
+        AdminActivityLog.objects.create(
+            complaint=complaint,
+            admin_user=user,
+            admin_name=admin_display_name,
+            admin_barangay=admin_barangay,
+            action_type=AdminActivityLog.ActionType.CHAT_MESSAGE,
+            description=f"Sent chat message: {message_content[:50]}{'...' if len(message_content) > 50 else ''}",
+            new_value=message_content
+        )
+        print(f"📋 Audit log created: {admin_display_name} sent chat message to {tracking_id}")
 
         # Update conversation timestamp to move it to top of list
         conversation.update_timestamp()
@@ -1984,12 +2080,15 @@ def get_chat_messages(request, complaint_id):
         for msg in messages:
             # Determine sender name based on message type
             if msg.is_admin_message:
-                # For admin messages, get the admin's barangay and show "Barangay Admin"
-                try:
-                    admin_profile = AdminProfile.objects.get(user=msg.sender)
-                    sender_name = f"{admin_profile.barangay} Admin"
-                except AdminProfile.DoesNotExist:
-                    sender_name = "Admin"
+                # For admin messages, use the stored admin name or fallback to barangay admin
+                if msg.admin_name:
+                    sender_name = msg.admin_name
+                else:
+                    try:
+                        admin_profile = AdminProfile.objects.get(user=msg.sender)
+                        sender_name = f"{admin_profile.barangay} Admin"
+                    except AdminProfile.DoesNotExist:
+                        sender_name = "Admin"
             else:
                 # For user messages, use their full name or email
                 sender_name = msg.sender.user_profile.full_name if hasattr(msg.sender, 'user_profile') else msg.sender.email
@@ -2275,12 +2374,15 @@ def get_user_chat_messages(request, complaint_id):
         for msg in messages:
             # Determine sender name based on message type
             if msg.is_admin_message:
-                # For admin messages, get the admin's barangay and show "Barangay Admin"
-                try:
-                    admin_profile = AdminProfile.objects.get(user=msg.sender)
-                    sender_name = f"{admin_profile.barangay} Admin"
-                except AdminProfile.DoesNotExist:
-                    sender_name = "Admin"
+                # For admin messages, use the stored admin name or fallback to barangay admin
+                if msg.admin_name:
+                    sender_name = msg.admin_name
+                else:
+                    try:
+                        admin_profile = AdminProfile.objects.get(user=msg.sender)
+                        sender_name = f"{admin_profile.barangay} Admin"
+                    except AdminProfile.DoesNotExist:
+                        sender_name = "Admin"
             else:
                 # For user messages, use their full name or email
                 sender_name = msg.sender.user_profile.full_name if hasattr(msg.sender, 'user_profile') else msg.sender.email
@@ -2379,3 +2481,85 @@ def send_user_chat_message(request):
     except Exception as e:
         print(f"Error sending user chat message: {e}")
         return JsonResponse({"error": "Failed to send message"}, status=500)
+
+
+@require_http_methods(["GET"]) 
+def get_complaint_activity_log(request, tracking_id):
+    """Get activity log for a specific complaint"""
+    # Check if user is authenticated as admin
+    user = request.user
+    if not user.is_authenticated or not (user.is_staff or user.is_superuser):
+        return JsonResponse({"error": "Admin authentication required"}, status=401)
+    
+    try:
+        # Get the complaint
+        complaint = Complaint.objects.get(tracking_id=tracking_id)
+        
+        # Get all activity logs for this complaint
+        activity_logs = AdminActivityLog.objects.filter(complaint=complaint).order_by('-created_at')
+        
+        log_data = []
+        for log in activity_logs:
+            log_data.append({
+                "id": log.id,
+                "admin_name": log.admin_name,
+                "admin_barangay": log.admin_barangay,
+                "action_type": log.action_type,
+                "description": log.description,
+                "old_value": log.old_value,
+                "new_value": log.new_value,
+                "timestamp": log.created_at.isoformat(),
+                "formatted_time": format_ph_datetime(log.created_at)
+            })
+
+        return JsonResponse({
+            "success": True,
+            "activity_logs": log_data
+        })
+
+    except Complaint.DoesNotExist:
+        return JsonResponse({"error": "Complaint not found"}, status=404)
+    except Exception as e:
+        print(f"Error getting activity log: {e}")
+        return JsonResponse({"error": "Failed to get activity log"}, status=500)
+
+
+@require_http_methods(["GET"]) 
+def get_user_complaint_activity(request, tracking_id):
+    """Get activity log for a specific complaint (user view)"""
+    # Check if user is authenticated
+    user = request.user
+    if not user.is_authenticated:
+        return JsonResponse({"error": "Authentication required"}, status=401)
+    
+    try:
+        # Get the complaint (only if it belongs to the user)
+        complaint = Complaint.objects.get(tracking_id=tracking_id, user=user)
+        
+        # Get all activity logs for this complaint
+        activity_logs = AdminActivityLog.objects.filter(
+            complaint=complaint, 
+            action_type=AdminActivityLog.ActionType.STATUS_CHANGE
+        ).order_by('created_at')
+        
+        log_data = []
+        for log in activity_logs:
+            log_data.append({
+                "status": log.new_value,
+                "description": log.description,
+                "admin_name": log.admin_name,
+                "admin_barangay": log.admin_barangay,
+                "timestamp": log.created_at.isoformat(),
+                "formatted_time": format_ph_datetime(log.created_at)
+            })
+
+        return JsonResponse({
+            "success": True,
+            "activity_logs": log_data
+        })
+
+    except Complaint.DoesNotExist:
+        return JsonResponse({"error": "Complaint not found"}, status=404)
+    except Exception as e:
+        print(f"Error getting user complaint activity: {e}")
+        return JsonResponse({"error": "Failed to get complaint activity"}, status=500)

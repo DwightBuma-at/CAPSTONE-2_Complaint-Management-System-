@@ -647,7 +647,14 @@
       document.getElementById('viewHistoryBtn').style.display = 'inline-block';
       document.getElementById('viewHistoryBtn').textContent = 'View Transaction History';
       document.getElementById('historySection').style.display = 'none';
-      document.getElementById('historySection').innerHTML = renderHistory(txn);
+      
+      // Load history asynchronously
+      renderHistory(txn).then(historyHtml => {
+        document.getElementById('historySection').innerHTML = historyHtml;
+      }).catch(error => {
+        console.error('Error rendering history:', error);
+        document.getElementById('historySection').innerHTML = '<p style="color: var(--muted);">Error loading transaction history.</p>';
+      });
 
       const modal = document.getElementById('transactionModal');
     modal.style.display = 'flex';
@@ -721,62 +728,97 @@
       }
     }
 
-    // Render Transaction History (demo, static for now)
-    function renderHistory(txn) {
-      let entries = [];
-      
-      // Always start with PENDING
-      entries.push({
-        date: txn.date,
-        status: 'pending',
-        label: 'PENDING',
-        color: 'pending',
-        details: 'Your complaint has been submitted and is waiting for initial review.'
-      });
-      
-      // Add REPORTED if status is beyond pending
-      if (txn.status.toLowerCase() !== 'pending') {
-        entries.push({
-          date: addDays(txn.date, 1),
-          status: 'reported',
-          label: 'REPORTED',
-          color: 'reported',
-          details: 'Your report has been successfully accepted and is now in review for processing.'
-        });
-      }
-      
-      // Add IN-PROGRESS if status is in progress or resolved
-      if (txn.status.toLowerCase() === 'in progress' || txn.status.toLowerCase() === 'in-progress' || txn.status.toLowerCase() === 'resolved') {
-        // Use admin update if available, otherwise use generic message
-        const inProgressDetails = txn.admin_update || "Your complaint is currently being handled by barangay staff. We'll update you once actions are resolved.";
+    // Render Transaction History using real activity log data
+    async function renderHistory(txn) {
+      try {
+        // Fetch real activity log from backend
+        const response = await fetch(`/api/user/complaint/${txn.id}/activity/`);
+        const data = await response.json();
         
+        let entries = [];
+        
+        // Always start with PENDING (complaint submission)
         entries.push({
-          date: addDays(txn.date, 2),
-          status: 'inprogress',
-          label: 'IN-PROGRESS',
-          color: 'inprogress',
-          details: inProgressDetails
+          date: txn.date,
+          status: 'pending',
+          label: 'PENDING',
+          color: 'pending',
+          details: 'Your complaint has been submitted and is waiting for initial review.'
         });
-      }
+        
+        // Add real activity log entries
+        if (data.success && data.activity_logs.length > 0) {
+          data.activity_logs.forEach(log => {
+            const statusLower = log.status.toLowerCase();
+            let color = 'pending';
+            let label = log.status.toUpperCase();
+            
+            if (statusLower === 'reported') color = 'reported';
+            else if (statusLower === 'in progress') { color = 'inprogress'; label = 'IN-PROGRESS'; }
+            else if (statusLower === 'resolved') color = 'resolved';
+            else if (statusLower === 'declined/spam') { color = 'declined'; label = 'DECLINED'; }
+            
+            entries.push({
+              date: log.timestamp,
+              status: statusLower.replace(' ', ''),
+              label: label,
+              color: color,
+              details: log.description  // This contains the personalized message
+            });
+          });
+        } else {
+          // Fallback to static entries if no activity log
+          if (txn.status.toLowerCase() !== 'pending') {
+            entries.push({
+              date: addDays(txn.date, 1),
+              status: 'reported',
+              label: 'REPORTED',
+              color: 'reported',
+              details: 'Your report has been successfully accepted and is now in review for processing.'
+            });
+          }
+          
+          if (txn.status.toLowerCase() === 'in progress' || txn.status.toLowerCase() === 'resolved') {
+            const inProgressDetails = txn.admin_update || "Your complaint is currently being handled by barangay staff.";
+            entries.push({
+              date: addDays(txn.date, 2),
+              status: 'inprogress',
+              label: 'IN-PROGRESS',
+              color: 'inprogress',
+              details: inProgressDetails
+            });
+          }
+          
+          if (txn.status.toLowerCase() === 'resolved') {
+            entries.push({
+              date: addDays(txn.date, 5),
+              status: 'resolved',
+              label: 'RESOLVED',
+              color: 'resolved',
+              details: 'The barangay has marked this complaint as resolved. Thank you for reporting.'
+            });
+          }
+        }
       
-      // Add RESOLVED if status is resolved
-      if (txn.status.toLowerCase() === 'resolved') {
-        entries.push({
-          date: addDays(txn.date, 5),
-          status: 'resolved',
-          label: 'RESOLVED',
-          color: 'resolved',
-          details: 'The barangay has marked this complaint as resolved. Thank you for reporting.'
-        });
+        return entries.map(e => `
+          <div class="history-entry">
+            <div class="history-date">${formatDate(e.date)}</div>
+            <div class="history-status ${e.color}">${e.label}</div>
+            <div>${e.details}</div>
+          </div>
+        `).join('');
+        
+      } catch (error) {
+        console.error('Error loading activity log:', error);
+        // Fallback to basic status display
+        return `
+          <div class="history-entry">
+            <div class="history-date">${formatDate(txn.date)}</div>
+            <div class="history-status pending">PENDING</div>
+            <div>Your complaint has been submitted and is waiting for review.</div>
+          </div>
+        `;
       }
-      
-      return entries.map(e => `
-        <div class="history-entry">
-          <div class="history-date">${formatDate(e.date)}</div>
-          <div class="history-status ${e.color}">${e.label}</div>
-          <div>${e.details}</div>
-        </div>
-      `).join('');
     }
 
     // Helper to add days to a date string and include time
@@ -790,12 +832,28 @@
       return d.toISOString();
     }
 
-         // Helper to format date with time
+         // Helper to format date with time in PH timezone
      function formatDate(dateStr) {
-       const d = new Date(dateStr);
-       const date = d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: '2-digit' });
-       const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
-       return `${date} ${time}`;
+       // Parse the date string (backend provides PH time)
+       let d;
+       if (dateStr.includes(' ')) {
+         d = new Date(dateStr + ' GMT+0800'); // Specify PH timezone
+       } else {
+         d = new Date(dateStr);
+       }
+       
+       // Format in PH locale
+       const options = { 
+         timeZone: 'Asia/Manila',
+         year: 'numeric', 
+         month: 'long', 
+         day: '2-digit',
+         hour: '2-digit',
+         minute: '2-digit',
+         hour12: false
+       };
+       
+       return d.toLocaleString('en-PH', options);
      }
      
      // Toast notification function

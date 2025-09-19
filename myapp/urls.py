@@ -81,4 +81,10 @@ urlpatterns = [
     path('api/user/chat/list/', views.get_user_chat_list, name='get_user_chat_list'),
     path('api/user/chat/<str:complaint_id>/messages/', views.get_user_chat_messages, name='get_user_chat_messages'),
     path('api/user/chat/send/', views.send_user_chat_message, name='send_user_chat_message'),
+    
+    # Admin activity log
+    path('api/admin/complaint/<str:tracking_id>/activity/', views.get_complaint_activity_log, name='get_complaint_activity_log'),
+    
+    # User complaint activity
+    path('api/user/complaint/<str:tracking_id>/activity/', views.get_user_complaint_activity, name='get_user_complaint_activity'),
 ]

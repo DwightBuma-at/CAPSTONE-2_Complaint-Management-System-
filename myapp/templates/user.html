@@ -1224,9 +1224,21 @@
      }
 
      function formatChatTime(timestamp) {
-       const date = new Date(timestamp);
+       // Parse timestamp (backend provides PH time)
+       let date;
+       if (timestamp.includes(' ')) {
+         date = new Date(timestamp + ' GMT+0800');
+       } else {
+         date = new Date(timestamp);
+       }
+       
+       // Get current time in PH timezone
        const now = new Date();
-       const diffInHours = (now - date) / (1000 * 60 * 60);
+       const phOffset = 8 * 60; // PH is UTC+8
+       const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+       const phNow = new Date(utc + (phOffset * 60000));
+       
+       const diffInHours = (phNow - date) / (1000 * 60 * 60);
        
        if (diffInHours < 1) {
          return 'Just now';
@@ -1363,9 +1375,21 @@
      }
 
      function formatMessageTime(timestamp) {
-       const date = new Date(timestamp);
+       // Parse timestamp (backend provides PH time)
+       let date;
+       if (timestamp.includes(' ')) {
+         date = new Date(timestamp + ' GMT+0800');
+       } else {
+         date = new Date(timestamp);
+       }
+       
+       // Get current time in PH timezone
        const now = new Date();
-       const diffInHours = (now - date) / (1000 * 60 * 60);
+       const phOffset = 8 * 60; // PH is UTC+8
+       const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+       const phNow = new Date(utc + (phOffset * 60000));
+       
+       const diffInHours = (phNow - date) / (1000 * 60 * 60);
        
        if (diffInHours < 24) {
          return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });

@@ -106,6 +106,7 @@ class ChatMessage(models.Model):
     content = models.TextField()
     is_admin_message = models.BooleanField(default=False)  # True if sent by admin, False if by user
     is_read = models.BooleanField(default=False)  # Track if message has been read by admin
+    admin_name = models.CharField(max_length=255, blank=True, null=True)  # Store admin display name
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -114,4 +115,29 @@ class ChatMessage(models.Model):
     def __str__(self) -> str:
         sender_type = "Admin" if self.is_admin_message else "User"
         return f"{sender_type} message in {self.conversation.complaint.tracking_id}"
+
+
+class AdminActivityLog(models.Model):
+    """Track all admin actions for audit purposes"""
+    class ActionType(models.TextChoices):
+        STATUS_CHANGE = "status_change", "Status Change"
+        CHAT_MESSAGE = "chat_message", "Chat Message"
+        COMPLAINT_VIEW = "complaint_view", "Complaint View"
+        USER_MANAGEMENT = "user_management", "User Management"
+    
+    complaint = models.ForeignKey(Complaint, on_delete=models.CASCADE, related_name='activity_logs', null=True, blank=True)
+    admin_user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='admin_activities')
+    admin_name = models.CharField(max_length=255)  # Store the display name used during login
+    admin_barangay = models.CharField(max_length=120)
+    action_type = models.CharField(max_length=20, choices=ActionType.choices)
+    description = models.TextField()  # Detailed description of the action
+    old_value = models.TextField(blank=True, null=True)  # Previous value (for status changes)
+    new_value = models.TextField(blank=True, null=True)  # New value (for status changes)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.admin_name} - {self.action_type} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
 

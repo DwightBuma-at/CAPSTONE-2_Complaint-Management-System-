@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin Complaints — CMS</title>
+  <title>Admin Complaints — CMS v2</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root{
@@ -21,14 +21,15 @@
       --border:1px solid rgba(255,255,255,.10);
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
+    html,body{height:100%;overflow-x:hidden}
     body{
       margin:0;
       font-family:Inter,sans-serif;
       background:var(--bg);
       color:var(--text);
+      position:relative;
     }
-    .layout{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+    .layout{display:grid;grid-template-columns:260px 1fr;min-height:100vh;position:relative}
     .sidebar{
       background:linear-gradient(180deg,#181f36,#0b1020);
       color:var(--text);
@@ -49,7 +50,7 @@
     .logout{position:absolute;bottom:16px;left:18px;right:18px}
     .logout a{display:flex;gap:8px;align-items:center;color:#fca5a5;text-decoration:none;padding:10px 12px;border-radius:12px;font-weight:700;}
     .logout a:hover{background:rgba(239,68,68,.10);color:#fff}
-    .content{padding:32px 36px}
+    .content{padding:32px 36px;min-height:100vh;overflow-x:auto}
     .top h1{margin:0 0 8px;font-size:clamp(1.4rem,2.2vw,2rem);font-weight:800;letter-spacing:.2px}
     .top .sub{color:var(--muted);margin:0 0 18px 0}
     .tabs{display:flex;gap:8px;margin:16px 0 18px}
@@ -64,9 +65,9 @@
     .card{background:var(--card);border:var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
     .card-head{padding:18px 18px 0}
     .card-body{padding:18px}
-    .tablewrap{overflow:auto;border-radius:14px;border:1px solid rgba(255,255,255,.10);background:var(--card)}
-    table{width:100%;border-collapse:collapse;background:transparent}
-    th,td{padding:14px 10px;text-align:left;border-bottom:1px solid rgba(255,255,255,.06);white-space:nowrap}
+    .tablewrap{overflow:auto;border-radius:14px;border:1px solid rgba(255,255,255,.10);background:var(--card);min-height:200px}
+    table{width:100%;min-width:800px;border-collapse:collapse;background:transparent;table-layout:fixed}
+    th,td{padding:14px 10px;text-align:left;border-bottom:1px solid rgba(255,255,255,.06);white-space:nowrap;vertical-align:middle}
     th{background:rgba(34,211,238,.10);color:#b7f9ff;font-weight:800}
     .status{padding:6px 14px;border-radius:8px;font-weight:800;font-size:.95rem;display:inline-block}
     .status.pending{background:rgba(245,158,11,0.12);color:var(--accent);}
@@ -228,9 +229,12 @@
       .content{padding:18px 6vw}
     }
     @media (max-width:720px){
+      .layout{grid-template-columns:1fr}
+      .sidebar{display:none}
       .controls{grid-template-columns:1fr 1fr auto;gap:8px}
       th:nth-child(3),td:nth-child(3),th:nth-child(6),td:nth-child(6){display:none}
       .sheet-body{padding:12px}
+      .content{padding:18px 12px}
     }
 
     .status.declined {
@@ -292,7 +296,7 @@
     <aside class="sidebar">
       <a class="brand" href="#" aria-label="Admin Home">
         <div class="shield" aria-hidden="true"></div>
-        <span>Admin</span>
+        <span id="adminBrandName">Admin</span>
       </a>
       <div class="badge" id="adminBarangayBadge">Barangay: Loading...</div>
       <nav class="nav">
@@ -336,17 +340,17 @@
             <table id="tbl">
               <thead>
                                  <tr>
-                   <th style="width:140px">Tracking ID</th>
-                   <th>Date Reported</th>
-                   <th>Name of the User</th>
-                                       <th>Barangay</th>
-                   <th>Complaint Type</th>
-                   <th>Status</th>
-                   <th style="min-width:200px">Action</th>
+                   <th style="width:120px">Tracking ID</th>
+                   <th style="width:140px">Date Reported</th>
+                   <th style="width:180px">Name of the User</th>
+                   <th style="width:120px">Barangay</th>
+                   <th style="width:140px">Complaint Type</th>
+                   <th style="width:100px">Status</th>
+                   <th style="width:240px">Action</th>
                  </tr>
               </thead>
               <tbody id="tbody">
-                <tr><td colspan="6" style="text-align:center;color:var(--muted)">Loading…</td></tr>
+                <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px;">Loading complaints...</td></tr>
               </tbody>
             </table>
           </div>
@@ -518,21 +522,43 @@ let currentChat = null;
  }
 
 function fmtDate(d){ 
-  const x = new Date(d); 
+  if (!d) return '';
+  
+  // Parse the date string (backend provides PH time)
+  let x;
+  if (d.includes(' ')) {
+    x = new Date(d + ' GMT+0800'); // Specify PH timezone for Django format
+  } else {
+    x = new Date(d); // ISO format from Supabase
+  }
+  
   if(isNaN(x)) return d; 
-  // Format: YYYY-MM-DD HH:MM (24-hour format)
-  const year = x.getFullYear();
-  const month = String(x.getMonth() + 1).padStart(2, '0');
-  const day = String(x.getDate()).padStart(2, '0');
-  const hours = String(x.getHours()).padStart(2, '0');
-  const minutes = String(x.getMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
+  
+  // Format in PH timezone: MM/DD/YYYY HH:MM (24-hour format)
+  const options = {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit', 
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  };
+  
+  return x.toLocaleString('en-PH', options).replace(',', '');
 }
 
 function render(){
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
-  if(filtered.length===0){ tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted)">No records found.</td></tr>`; }
+  
+  console.log('🎨 Rendering table with', filtered.length, 'filtered complaints');
+  
+  if(filtered.length===0){ 
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px;">No complaints found.</td></tr>`; 
+    console.log('ℹ️ No complaints to display');
+    return;
+  }
   const start=(page-1)*pageSize, end=Math.min(start+pageSize, filtered.length);
   for(let i=start;i<end;i++){
     const r = filtered[i];
@@ -547,12 +573,16 @@ function render(){
         <td>
           <button class="btn small ghost" onclick="openDetail('${r.id}')">Action</button>
           <button class="btn small ghost" onclick="openMessage('${r.id}')" style="margin-left: 8px;">Message</button>
+          <button class="btn small ghost" onclick="showActivityLog('${r.id}')" style="margin-left: 8px;">History</button>
         </td>
       </tr>
     `;
   }
-  document.getElementById('countNote').textContent = `${filtered.length} total • showing ${Math.min(pageSize, Math.max(0, filtered.length-(page-1)*pageSize))} item(s)`;
+  const showing = Math.min(pageSize, Math.max(0, filtered.length-(page-1)*pageSize));
+  document.getElementById('countNote').textContent = `${filtered.length} total • showing ${showing} item(s)`;
   document.getElementById('pageNote').textContent = `Page ${page}`;
+  
+  console.log(`📊 Displayed ${showing} items on page ${page} of ${filtered.length} total`);
   document.getElementById('prevBtn').disabled = page<=1;
   document.getElementById('nextBtn').disabled = end>=filtered.length;
 }
@@ -603,6 +633,7 @@ function openDetail(id){
     <div class="k">Type</div><div>${r.type}</div>
     <div class="k">Status</div><div><span class="status ${statusClass(r.status)}">${r.status}</span></div>
     <div class="k">Description</div><div>${r.description||''}</div>
+    <div class="k">Activity Log</div><div><button class="btn small ghost" onclick="showActivityLog('${r.id}')">View History</button></div>
   `;
   const imgBox = document.getElementById('imgBox');
   imgBox.innerHTML = r.image ? `<img src="${r.image}" alt="Complaint image">` : `<span style="color:var(--muted)">No image attached.</span>`;
@@ -950,15 +981,30 @@ async function quickSet(id, st){
 /* ======= API hooks (replace later) ======= */
 async function fetchComplaints(){
   try {
+    console.log('🔍 Fetching complaints data...');
     const response = await fetch('/api/transactions/');
-    if (!response.ok) throw new Error('Failed to fetch transactions');
+    if (!response.ok) {
+      console.error('❌ Response not OK:', response.status, response.statusText);
+      throw new Error(`Failed to fetch transactions: ${response.status}`);
+    }
     const data = await response.json();
     allData = data.results || [];
     totalCount = allData.length;
+    console.log('✅ Fetched data successfully:', allData.length, 'complaints');
+    
+    if (allData.length === 0) {
+      console.log('ℹ️ No complaints found for this admin');
+    }
+    
     filtered = allData.slice(0);
     render();
   } catch (error) {
-    console.error('Error fetching transactions:', error);
+    console.error('❌ Error fetching transactions:', error);
+    // Show error message to user
+    const tbody = document.getElementById('tbody');
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--danger);padding:20px;">Error loading complaints: ${error.message}</td></tr>`;
+    }
   }
 }
 async function updateStatus(id, status, adminUpdate = null){
@@ -1122,57 +1168,40 @@ function openModal(modalId){
       window.location.href = '/index.html';
     });
   }
-/* ======= Load Admin Barangay ======= */
-async function loadAdminBarangay() {
+/* ======= Load Admin Info ======= */
+async function loadAdminInfo() {
   try {
-    // Check if we have cached barangay data
-    const cachedBarangay = localStorage.getItem('adminBarangay');
-    if (cachedBarangay) {
-      document.getElementById('adminBarangayBadge').textContent = `Barangay: ${cachedBarangay}`;
-      return; // Use cached data, no need to make API call
-    }
+    // Always fetch fresh admin data from server (no cache for barangay)
+    console.log('🔄 Loading fresh admin info from server...');
 
-    // Get email from localStorage (this is set during login)
-    const userData = localStorage.getItem('userData');
-    if (!userData) {
-      document.getElementById('adminBarangayBadge').textContent = 'Barangay: Not logged in';
-      return;
-    }
-
-    const adminData = JSON.parse(userData);
-    const email = adminData.email;
-
-    if (!email) {
-      document.getElementById('adminBarangayBadge').textContent = 'Barangay: Email not found';
-      return;
-    }
-
-    // Fetch admin data from database
-    const response = await fetch('/api/admin/get-data/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email: email })
-    });
-
+    // Use the updated admin/me endpoint
+    const response = await fetch('/api/admin/me/');
     if (response.ok) {
-      const result = await response.json();
-      if (result.success && result.admin_data.barangay) {
-        const barangay = result.admin_data.barangay;
-        // Cache the barangay data
-        localStorage.setItem('adminBarangay', barangay);
-        document.getElementById('adminBarangayBadge').textContent = `Barangay: ${barangay}`;
+      const data = await response.json();
+      if (data.authenticated) {
+        const adminName = data.full_name || 'Admin';
+        const adminBarangay = data.barangay || 'Unknown';
+        
+        document.getElementById('adminBrandName').textContent = adminName;
+        // Clean up barangay display - remove "Barangay" prefix if present
+        const cleanBarangay = adminBarangay.replace(/^Barangay\s+/i, '');
+        document.getElementById('adminBarangayBadge').textContent = `Barangay: ${cleanBarangay}`;
+        
+        // Cache the data
+        localStorage.setItem('adminName', adminName);
+        localStorage.setItem('adminBarangay', adminBarangay);
       } else {
+        document.getElementById('adminBrandName').textContent = 'Admin';
         document.getElementById('adminBarangayBadge').textContent = 'Barangay: Unknown';
       }
     } else {
-      console.error('Failed to fetch admin data from database');
-      document.getElementById('adminBarangayBadge').textContent = 'Barangay: Database Error';
+      document.getElementById('adminBrandName').textContent = 'Admin';
+      document.getElementById('adminBarangayBadge').textContent = 'Barangay: Error loading';
     }
   } catch (error) {
-    console.error('Error loading admin barangay from database:', error);
-    document.getElementById('adminBarangayBadge').textContent = 'Barangay: Error';
+    console.error('Error loading admin info:', error);
+    document.getElementById('adminBrandName').textContent = 'Admin';
+    document.getElementById('adminBarangayBadge').textContent = 'Barangay: Error loading';
   }
 }
 
@@ -1192,31 +1221,211 @@ function getCookie(name) {
   return cookieValue;
 }
 
+/* ======= Activity Log Functions ======= */
+async function showActivityLog(complaintId) {
+  try {
+    const response = await fetch(`/api/admin/complaint/${complaintId}/activity/`);
+    const data = await response.json();
+    
+    if (data.success) {
+      let logHtml = '<div style="max-height: 400px; overflow-y: auto;">';
+      
+      if (data.activity_logs.length === 0) {
+        logHtml += '<p style="color: var(--muted); text-align: center; padding: 20px;">No activity recorded yet.</p>';
+      } else {
+        data.activity_logs.forEach(log => {
+          const actionIcon = {
+            'status_change': '📝',
+            'chat_message': '💬',
+            'complaint_view': '👁️',
+            'user_management': '👥'
+          }[log.action_type] || '📋';
+          
+          logHtml += `
+            <div style="border-bottom: 1px solid rgba(255,255,255,.1); padding: 12px 0;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <strong style="color: var(--brand);">${actionIcon} ${log.admin_name}</strong>
+                <span style="color: var(--muted); font-size: 0.9rem;">${log.formatted_time}</span>
+              </div>
+              <div style="color: var(--text); margin-bottom: 4px;">${log.description}</div>
+              <div style="color: var(--muted); font-size: 0.8rem;">Barangay: ${log.admin_barangay}</div>
+            </div>
+          `;
+        });
+      }
+      
+      logHtml += '</div>';
+      
+      // Create activity modal with proper cleanup
+      const activityModal = document.createElement('div');
+      activityModal.className = 'activity-modal';
+      activityModal.style.cssText = `
+        position: fixed; 
+        top: 0; left: 0; right: 0; bottom: 0; 
+        background: rgba(0,0,0,0.8); 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        z-index: 10000;
+        backdrop-filter: blur(4px);
+      `;
+      
+      activityModal.innerHTML = `
+        <div style="background: var(--card); border-radius: 12px; padding: 24px; max-width: 600px; width: 90%; max-height: 80vh; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); box-shadow: var(--shadow);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="margin: 0; color: var(--text);">Activity Log - ${complaintId}</h3>
+            <button onclick="closeActivityModal()" style="background: none; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; padding: 4px; border-radius: 4px; transition: all 0.2s;">&times;</button>
+          </div>
+          ${logHtml}
+        </div>
+      `;
+      
+      // Add to body and prevent background scroll
+      document.body.appendChild(activityModal);
+      document.body.style.overflow = 'hidden';
+      
+      // Store reference for cleanup
+      window.currentActivityModal = activityModal;
+    } else {
+      toast('Failed to load activity log');
+    }
+  } catch (error) {
+    console.error('Error loading activity log:', error);
+    toast('Error loading activity log');
+  }
+}
+
+// Function to properly close activity modal
+function closeActivityModal() {
+  if (window.currentActivityModal) {
+    window.currentActivityModal.remove();
+    window.currentActivityModal = null;
+    // Restore body scroll
+    document.body.style.overflow = '';
+    console.log('✅ Activity modal closed and layout restored');
+  }
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('activity-modal')) {
+    closeActivityModal();
+  }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    // Close activity modal if open
+    if (window.currentActivityModal) {
+      closeActivityModal();
+    }
+    // Also close other modals
+    const detailModal = document.getElementById('detailModal');
+    const chatModal = document.getElementById('chatModal');
+    
+    if (detailModal && !detailModal.classList.contains('hidden')) {
+      closeModal();
+    }
+    if (chatModal && !chatModal.classList.contains('hidden')) {
+      closeChatModal();
+    }
+  }
+});
+
+// Ensure layout is always restored when page becomes visible
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden) {
+    // Page became visible, ensure layout is restored
+    document.body.style.overflow = '';
+    console.log('🔄 Page visibility restored, layout reset');
+  }
+});
+
 /* ======= Init ======= */
 const q = document.getElementById('q');
 const fStatus = document.getElementById('fStatus');
 
-// Load admin barangay when page loads
+// Function to reset page layout
+function resetPageLayout() {
+  document.body.style.overflow = '';
+  
+  // Close any open activity modals
+  if (window.currentActivityModal) {
+    window.currentActivityModal.remove();
+    window.currentActivityModal = null;
+  }
+  
+  // Hide other modals
+  const detailModal = document.getElementById('detailModal');
+  const chatModal = document.getElementById('chatModal');
+  
+  if (detailModal) {
+    detailModal.classList.add('hidden');
+    detailModal.style.display = 'none';
+  }
+  if (chatModal) {
+    chatModal.classList.add('hidden');
+    chatModal.style.display = 'none';
+  }
+  
+  console.log('🔄 Page layout reset complete');
+}
+
+// Clear cached admin data to force refresh
+function clearAdminCache() {
+  localStorage.removeItem('adminName');
+  localStorage.removeItem('adminBarangay');
+  localStorage.removeItem('userData');
+  console.log('🗑️ Admin cache cleared - will fetch fresh data');
+}
+
+// Load admin info when page loads
 document.addEventListener('DOMContentLoaded', function() {
-  loadAdminBarangay();
+  console.log('🚀 Admin Complaints page loading...');
+  
+  // Clear cache to ensure fresh barangay data
+  clearAdminCache();
+  
+  // Ensure clean layout on page load
+  resetPageLayout();
+  
+  loadAdminInfo();
   
   // Check if user is authenticated
   checkAdminAuth();
+  
+  // Fetch complaints data
+  fetchComplaints();
+  
+  console.log('✅ Admin Complaints page initialization complete');
 });
 
 // Check admin authentication
 async function checkAdminAuth() {
   try {
+    console.log('🔐 Checking admin authentication...');
     const response = await fetch('/api/admin/me/');
-    const data = await response.json();
+    console.log('🔍 Auth response status:', response.status);
     
-    if (!data.authenticated) {
-      // Redirect to index with login modal
+    if (!response.ok) {
+      console.log('❌ Auth response not OK, redirecting to login');
       window.location.href = '/index.html?show_login=true';
       return;
     }
+    
+    const data = await response.json();
+    console.log('🔍 Auth data:', data);
+    
+    if (!data.authenticated) {
+      console.log('❌ Not authenticated, redirecting to login');
+      window.location.href = '/index.html?show_login=true';
+      return;
+    }
+    
+    console.log('✅ Admin authentication successful');
   } catch (error) {
-    console.error('Auth check failed:', error);
+    console.error('❌ Auth check failed:', error);
     // Redirect to index with login modal
     window.location.href = '/index.html?show_login=true';
   }

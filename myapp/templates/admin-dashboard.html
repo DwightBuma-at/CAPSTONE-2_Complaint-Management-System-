@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin Dashboard — CMS</title>
+  <title>Admin Dashboard — CMS v2</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root{
@@ -126,7 +126,7 @@
     <aside class="sidebar">
       <a class="brand" href="admin-dashboard.html" aria-label="Admin Home">
         <div class="shield" aria-hidden="true"></div>
-        <span>Admin</span>
+        <span id="adminBrandName">Admin</span>
       </a>
       <div class="badge" id="adminBarangayBadge">Barangay: Loading...</div>
       <nav class="nav">
@@ -371,11 +371,11 @@
         return 'Unknown time';
       }
       
-      // Try parsing the date string
+      // Try parsing the date string - backend already provides PH time
       try {
-        // Handle format like "2025-01-21 14:30" (from Django)
+        // Handle format like "2025-01-21 14:30" (from Django - already in PH time)
         if (dateString.includes(' ')) {
-          date = new Date(dateString);
+          date = new Date(dateString + ' GMT+0800'); // Specify PH timezone
         } 
         // Handle format like "2025-01-21T14:30:00.000Z" (from Supabase)
         else if (dateString.includes('T')) {
@@ -383,7 +383,7 @@
         }
         // Handle other formats
         else {
-          date = new Date(dateString);
+          date = new Date(dateString + ' GMT+0800'); // Specify PH timezone
         }
         
         // Check if date is valid
@@ -396,8 +396,12 @@
         return 'Invalid date';
       }
       
+      // Get current time in PH timezone
       const now = new Date();
-      const diffInMilliseconds = now.getTime() - date.getTime();
+      const phOffset = 8 * 60; // PH is UTC+8
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const phNow = new Date(utc + (phOffset * 60000));
+      const diffInMilliseconds = phNow.getTime() - date.getTime();
       const diffInHours = Math.floor(diffInMilliseconds / (1000 * 60 * 60));
       
       if (diffInHours < 1) {
@@ -541,15 +545,11 @@
       container.innerHTML = html;
     }
 
-    /* ======= Load Admin Barangay ======= */
-    async function loadAdminBarangay() {
+    /* ======= Load Admin Info ======= */
+    async function loadAdminInfo() {
       try {
-        // Check if we have cached barangay data
-        const cachedBarangay = localStorage.getItem('adminBarangay');
-        if (cachedBarangay) {
-          document.getElementById('adminBarangayBadge').textContent = `Barangay: ${cachedBarangay}`;
-          return; // Use cached data, no need to make API call
-        }
+        // Always fetch fresh data from server (don't rely on cache for barangay)
+        console.log('🔄 Loading fresh admin info from server...');
 
         // Try to get admin data from server session
         const response = await fetch('/api/admin/me/', {
@@ -559,12 +559,20 @@
 
         if (response.ok) {
           const adminData = await response.json();
-          if (adminData.authenticated && adminData.barangay) {
-            const barangay = adminData.barangay;
-            // Cache the barangay data
+          if (adminData.authenticated) {
+            const adminName = adminData.full_name || 'Admin';
+            const barangay = adminData.barangay || 'Unknown';
+            
+            // Cache the data
+            localStorage.setItem('adminName', adminName);
             localStorage.setItem('adminBarangay', barangay);
-            document.getElementById('adminBarangayBadge').textContent = `Barangay: ${barangay}`;
+            
+            document.getElementById('adminBrandName').textContent = adminName;
+            // Clean up barangay display - remove "Barangay" prefix if present
+            const cleanBarangay = barangay.replace(/^Barangay\s+/i, '');
+            document.getElementById('adminBarangayBadge').textContent = `Barangay: ${cleanBarangay}`;
           } else {
+            document.getElementById('adminBrandName').textContent = 'Admin';
             document.getElementById('adminBarangayBadge').textContent = 'Barangay: Unknown';
           }
         } else {
@@ -638,9 +646,20 @@
       }
     }
 
+    // Clear cached admin data to force refresh
+    function clearAdminCache() {
+      localStorage.removeItem('adminName');
+      localStorage.removeItem('adminBarangay');
+      localStorage.removeItem('userData');
+      console.log('🗑️ Admin cache cleared - will fetch fresh data');
+    }
+
     // Load dashboard data when page loads
     document.addEventListener('DOMContentLoaded', function() {
-      loadAdminBarangay();
+      // Clear cache to ensure fresh barangay data
+      clearAdminCache();
+      
+      loadAdminInfo();
       fetchDashboardStats();
       fetchRecentComplaints();
       

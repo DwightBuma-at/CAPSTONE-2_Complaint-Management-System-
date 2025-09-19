@@ -235,7 +235,7 @@
     <aside class="sidebar">
                            <a href="#" class="brand" onclick="return false;">
           <div class="shield"></div>
-          <span>Admin</span>
+          <span id="adminBrandName">Admin</span>
         </a>
       <div class="badge" id="adminBarangayBadge">Barangay: Loading...</div>
       <nav class="nav">
@@ -682,11 +682,18 @@
 
          if (response.ok) {
            const adminData = await response.json();
-           if (adminData.authenticated && adminData.barangay) {
-             const barangay = adminData.barangay;
-             // Cache the barangay data
+           if (adminData.authenticated) {
+             const adminName = adminData.full_name || 'Admin';
+             const barangay = adminData.barangay || 'Unknown';
+             
+             // Cache the data
+             localStorage.setItem('adminName', adminName);
              localStorage.setItem('adminBarangay', barangay);
-             document.getElementById('adminBarangayBadge').textContent = `Barangay: ${barangay}`;
+             
+             document.getElementById('adminBrandName').textContent = adminName;
+             // Clean up barangay display - remove "Barangay" prefix if present
+             const cleanBarangay = barangay.replace(/^Barangay\s+/i, '');
+             document.getElementById('adminBarangayBadge').textContent = `Barangay: ${cleanBarangay}`;
              return;
            }
          }
