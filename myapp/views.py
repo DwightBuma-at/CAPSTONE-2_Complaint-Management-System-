@@ -883,6 +883,7 @@ def list_complaints(request):
                     "location": c.get('location'),
                     "image": c.get('image_base64'),
                     "resolution_image": c.get('resolution_image'),
+                    "admin_update": c.get('admin_update'),
                 })
             print(f"Found {len(data)} complaints in Supabase")  # Debug logging
             return JsonResponse({"results": data})
@@ -910,6 +911,7 @@ def list_complaints(request):
             "location": c.location,
             "image": c.image_base64 or None,
             "resolution_image": c.resolution_image or None,
+            "admin_update": c.admin_update or None,
         }
         for c in complaints
     ]
@@ -978,6 +980,7 @@ def list_complaints_history(request):
                     "location": c.get('location'),
                     "image": c.get('image_base64'),
                     "resolution_image": c.get('resolution_image'),
+                    "admin_update": c.get('admin_update'),
                     "resolved_date": formatted_date,  # For now, use created_at as resolved_date
                 })
             print(f"Found {len(data)} resolved complaints in Supabase")  # Debug logging
@@ -1009,6 +1012,7 @@ def list_complaints_history(request):
             "location": c.location,
             "image": c.image_base64 or None,
             "resolution_image": c.resolution_image or None,
+            "admin_update": c.admin_update or None,
             "resolved_date": timezone.localtime(c.created_at).strftime("%Y-%m-%d %H:%M"),  # For now, use created_at as resolved_date
         }
         for c in complaints
@@ -1233,6 +1237,7 @@ def list_transactions(request):
                     "location": c.get('location'),
                     "image": c.get('image_base64'),
                     "resolution_image": c.get('resolution_image'),
+                    "admin_update": c.get('admin_update'),
                 })
             print(f"Found {len(data)} complaints in Supabase for barangay {admin_barangay}")  # Debug logging
             return JsonResponse({"results": data})
@@ -1263,6 +1268,7 @@ def list_transactions(request):
             "location": c.location,
             "image": c.image_base64 or None,
             "resolution_image": c.resolution_image or None,
+            "admin_update": c.admin_update or None,
         }
         for c in complaints
     ]
@@ -1331,6 +1337,13 @@ def update_transaction_status(request, tracking_id: str):
     if not new_status:
         return HttpResponseBadRequest("Status is required")
 
+    # Get admin update if provided
+    admin_update = payload.get("admin_update", "").strip()
+    
+    # If status is being set to "In Progress", require admin update
+    if new_status == "In Progress" and not admin_update:
+        return JsonResponse({"error": "Admin update is required when setting status to In Progress"}, status=400)
+
     # If status is being set to "Resolved", require resolution image
     resolution_image = payload.get("resolution_image")
     if new_status == "Resolved" and not resolution_image:
@@ -1351,6 +1364,8 @@ def update_transaction_status(request, tracking_id: str):
             
             # Update complaint in Supabase
             update_data = {'status': new_status}
+            if admin_update:
+                update_data['admin_update'] = admin_update
             if resolution_image:
                 update_data['resolution_image'] = resolution_image
             
@@ -1386,6 +1401,10 @@ def update_transaction_status(request, tracking_id: str):
         complaint = Complaint.objects.get(tracking_id=tracking_id, barangay=admin_barangay)
         old_status = complaint.status  # Store old status for notification
         complaint.status = new_status
+        
+        # Save admin update if provided
+        if admin_update:
+            complaint.admin_update = admin_update
         
         # Save resolution image if provided
         if resolution_image:

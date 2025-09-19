@@ -414,6 +414,7 @@
           location: r.location,
           image: r.image,
           resolution_image: r.resolution_image,
+          admin_update: r.admin_update,
           resolved_date: r.resolved_date
         }));
         
@@ -656,12 +657,15 @@
       });
       
       // Add IN-PROGRESS
+      // Use admin update if available, otherwise use generic message
+      const inProgressDetails = txn.admin_update || "Your complaint was handled by barangay staff. Actions were completed successfully.";
+      
       entries.push({
         date: addDays(txn.date, 2),
         status: 'inprogress',
         label: 'IN-PROGRESS',
         color: 'inprogress',
-        details: "Your complaint was handled by barangay staff. Actions were completed successfully."
+        details: inProgressDetails
       });
       
       // Add RESOLVED

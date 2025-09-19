@@ -21,6 +21,8 @@ class Complaint(models.Model):
     image_base64 = models.TextField(blank=True, null=True)
     # Store resolution image as base64 string for resolved cases
     resolution_image = models.TextField(blank=True, null=True, help_text='Base64 image showing evidence of resolution')
+    # Store admin update text for In Progress status
+    admin_update = models.TextField(blank=True, null=True, help_text='Admin-provided update when status is In Progress')
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.PENDING
     )

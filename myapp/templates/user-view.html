@@ -443,7 +443,8 @@
           description: r.description,
           location: r.location,
           image: r.image,
-          resolution_image: r.resolution_image
+          resolution_image: r.resolution_image,
+          admin_update: r.admin_update
         }));
         
         // Check for status changes and show notifications
@@ -746,12 +747,15 @@
       
       // Add IN-PROGRESS if status is in progress or resolved
       if (txn.status.toLowerCase() === 'in progress' || txn.status.toLowerCase() === 'in-progress' || txn.status.toLowerCase() === 'resolved') {
+        // Use admin update if available, otherwise use generic message
+        const inProgressDetails = txn.admin_update || "Your complaint is currently being handled by barangay staff. We'll update you once actions are resolved.";
+        
         entries.push({
           date: addDays(txn.date, 2),
           status: 'inprogress',
           label: 'IN-PROGRESS',
           color: 'inprogress',
-          details: "Your complaint is currently being handled by barangay staff. We'll update you once actions are resolved."
+          details: inProgressDetails
         });
       }
       

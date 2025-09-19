@@ -60,6 +60,7 @@
       width:100%;height:44px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:#181f36;color:var(--text);padding:0 12px;outline:none;
     }
     .input:focus,.select:focus{box-shadow:0 0 0 3px var(--brand-2);border-color:var(--brand)}
+    .select option[selected]{background:var(--brand);color:#031026;font-weight:700}
     .card{background:var(--card);border:var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
     .card-head{padding:18px 18px 0}
     .card-body{padding:18px}
@@ -377,14 +378,28 @@
             <!-- key-values injected here -->
           </div>
           <div style="display:flex;gap:8px;margin-top:14px">
-                         <select id="detailStatus" class="select" style="max-width:220px" onchange="handleStatusChange()">
-               <option>Reported</option>
-               <option>In Progress</option>
-               <option>Resolved</option>
-               <option>Declined/Spam</option>
-             </select>
-
+            <select id="detailStatus" class="select" style="max-width:220px" onchange="handleStatusChange()">
+              <!-- Options will be dynamically populated based on current status -->
+            </select>
             <button class="btn" id="saveStatusBtn" onclick="saveStatus()">Save Status</button>
+          </div>
+          
+          <!-- Admin Update Field - Only shown when In Progress is selected -->
+          <div id="adminUpdateSection" style="display:none;margin-top:16px;padding:16px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(59,130,246,.05);">
+            <h4 style="margin:0 0 12px;color:var(--text);font-size:1rem;">📝 Admin Update Required</h4>
+            <p style="margin:0 0 12px;color:var(--muted);font-size:0.9rem;">Please provide a specific update about the actions being taken for this complaint.</p>
+            
+            <textarea 
+              id="adminUpdateText" 
+              placeholder="Describe what actions are being taken to address this complaint..."
+              style="width:100%;min-height:80px;padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:rgba(255,255,255,.05);color:var(--text);resize:vertical;outline:none;font-family:inherit;font-size:0.95rem;"
+            ></textarea>
+          </div>
+          
+          <!-- Info message for complaints already in In Progress status -->
+          <div id="inProgressInfoSection" style="display:none;margin-top:16px;padding:16px;border:1px solid rgba(255,193,7,.3);border-radius:12px;background:rgba(255,193,7,.05);">
+            <h4 style="margin:0 0 12px;color:var(--text);font-size:1rem;">ℹ️ Already In Progress</h4>
+            <p style="margin:0;color:var(--muted);font-size:0.9rem;">This complaint is already in "In Progress" status. The admin update was provided when the status was initially set. No additional updates can be added.</p>
           </div>
           
           <!-- Resolution Image Upload Section -->
@@ -591,13 +606,18 @@ function openDetail(id){
   `;
   const imgBox = document.getElementById('imgBox');
   imgBox.innerHTML = r.image ? `<img src="${r.image}" alt="Complaint image">` : `<span style="color:var(--muted)">No image attached.</span>`;
-  document.getElementById('detailStatus').value = r.status;
+  
+  // Populate status dropdown based on current status
+  populateStatusDropdown(r.status);
   
   // Reset resolution image form
   selectedResolutionImage = null;
   document.getElementById('resolutionImageName').textContent = '';
   document.getElementById('resolutionImagePreview').style.display = 'none';
   document.getElementById('resolutionImageInput').value = '';
+  
+  // Clear admin update text when opening detail
+  document.getElementById('adminUpdateText').value = '';
   
   // Show/hide resolution image section based on current status
   handleStatusChange();
@@ -718,10 +738,34 @@ async function saveStatus(){
   saveBtn.disabled = true;
   
   const newStatus = document.getElementById('detailStatus').value;
+  const adminUpdateText = document.getElementById('adminUpdateText').value.trim();
+  
+  // Check if complaint is already in In Progress status
+  const isAlreadyInProgress = currentDetail.status === 'In Progress';
+  
+  // Validate admin update for In Progress status
+  if (newStatus === 'In Progress' && !adminUpdateText) {
+    toast('Please provide an admin update when setting status to In Progress');
+    saveBtn.textContent = originalText;
+    saveBtn.disabled = false;
+    return;
+  }
+  
+  // Prevent adding new admin updates to complaints already in In Progress status
+  if (isAlreadyInProgress && newStatus === 'In Progress' && adminUpdateText) {
+    toast('Cannot add new updates to complaints already in In Progress status');
+    saveBtn.textContent = originalText;
+    saveBtn.disabled = false;
+    return;
+  }
+  
   console.log('Updating status for:', currentDetail.id, 'to:', newStatus);
+  if (adminUpdateText) {
+    console.log('Admin update:', adminUpdateText);
+  }
   
   try {
-    await updateStatus(currentDetail.id, newStatus);
+    await updateStatus(currentDetail.id, newStatus, adminUpdateText);
     console.log('Status updated successfully, closing modal');
     // Close modal immediately after successful update
     const modal = document.getElementById('detailModal');
@@ -745,21 +789,96 @@ async function saveStatus(){
   }
 }
 
+/* ======= Status Progression Functions ======= */
+function populateStatusDropdown(currentStatus) {
+  const statusDropdown = document.getElementById('detailStatus');
+  statusDropdown.innerHTML = ''; // Clear existing options
+  
+  // Define status progression order
+  const statusProgression = ['Pending', 'Reported', 'In Progress', 'Resolved', 'Declined/Spam'];
+  
+  // Find current status index
+  const currentIndex = statusProgression.indexOf(currentStatus);
+  
+  if (currentIndex === -1) {
+    // If current status not found, show all options (fallback)
+    statusProgression.forEach(status => {
+      const option = document.createElement('option');
+      option.value = status;
+      option.textContent = status;
+      if (status === currentStatus) {
+        option.selected = true;
+      }
+      statusDropdown.appendChild(option);
+    });
+    return;
+  }
+  
+  // Add current status as first option (always available)
+  const currentOption = document.createElement('option');
+  currentOption.value = currentStatus;
+  currentOption.textContent = `${currentStatus} (Current)`;
+  currentOption.selected = true;
+  statusDropdown.appendChild(currentOption);
+  
+  // Add forward progression options only
+  for (let i = currentIndex + 1; i < statusProgression.length; i++) {
+    const option = document.createElement('option');
+    option.value = statusProgression[i];
+    option.textContent = statusProgression[i];
+    statusDropdown.appendChild(option);
+  }
+}
+
+
 /* ======= Resolution Image Functions ======= */
 let selectedResolutionImage = null;
 
 function handleStatusChange() {
   const status = document.getElementById('detailStatus').value;
   const resolutionSection = document.getElementById('resolutionImageSection');
+  const adminUpdateSection = document.getElementById('adminUpdateSection');
+  const inProgressInfoSection = document.getElementById('inProgressInfoSection');
+  
+  // Check if the complaint is already in "In Progress" status
+  const isAlreadyInProgress = currentDetail && currentDetail.status === 'In Progress';
   
   if (status === 'Resolved') {
     resolutionSection.style.display = 'block';
-  } else {
+    adminUpdateSection.style.display = 'none';
+    inProgressInfoSection.style.display = 'none';
+    // Clear admin update text when status is not In Progress
+    document.getElementById('adminUpdateText').value = '';
+  } else if (status === 'In Progress' && !isAlreadyInProgress) {
+    // Only show admin update section if changing TO In Progress (not already In Progress)
+    adminUpdateSection.style.display = 'block';
     resolutionSection.style.display = 'none';
+    inProgressInfoSection.style.display = 'none';
     // Clear any selected image when status is not Resolved
     selectedResolutionImage = null;
     document.getElementById('resolutionImageName').textContent = '';
     document.getElementById('resolutionImagePreview').style.display = 'none';
+  } else if (status === 'In Progress' && isAlreadyInProgress) {
+    // Show info section for complaints already in In Progress status
+    adminUpdateSection.style.display = 'none';
+    resolutionSection.style.display = 'none';
+    inProgressInfoSection.style.display = 'block';
+    // Clear any selected image when status is not Resolved
+    selectedResolutionImage = null;
+    document.getElementById('resolutionImageName').textContent = '';
+    document.getElementById('resolutionImagePreview').style.display = 'none';
+    // Clear admin update text
+    document.getElementById('adminUpdateText').value = '';
+  } else {
+    resolutionSection.style.display = 'none';
+    adminUpdateSection.style.display = 'none';
+    inProgressInfoSection.style.display = 'none';
+    // Clear any selected image when status is not Resolved
+    selectedResolutionImage = null;
+    document.getElementById('resolutionImageName').textContent = '';
+    document.getElementById('resolutionImagePreview').style.display = 'none';
+    // Clear admin update text when status is not In Progress
+    document.getElementById('adminUpdateText').value = '';
   }
 }
 
@@ -842,12 +961,20 @@ async function fetchComplaints(){
     console.error('Error fetching transactions:', error);
   }
 }
-async function updateStatus(id, status){
+async function updateStatus(id, status, adminUpdate = null){
   try {
     console.log('Sending status update request for:', id, 'status:', status);
+    if (adminUpdate) {
+      console.log('Admin update:', adminUpdate);
+    }
     
     // Prepare request body
     const requestBody = { status: status };
+    
+    // If status is In Progress, include admin update
+    if (status === 'In Progress' && adminUpdate) {
+      requestBody.admin_update = adminUpdate;
+    }
     
     // If status is Resolved, include resolution image
     if (status === 'Resolved') {
