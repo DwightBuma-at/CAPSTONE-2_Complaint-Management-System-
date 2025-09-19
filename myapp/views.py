@@ -19,6 +19,33 @@ from .email_utils import create_otp_for_email, verify_otp
 
 ADMIN_ACTIVATION_KEY = "F32024"
 
+# Health check endpoint for Railway debugging
+@csrf_exempt
+def health_check(request):
+    """Simple health check to test Railway deployment"""
+    try:
+        # Test database connection
+        from django.db import connection
+        cursor = connection.cursor()
+        cursor.execute("SELECT 1")
+        db_status = "OK"
+    except Exception as e:
+        db_status = f"ERROR: {str(e)}"
+    
+    # Test model imports
+    try:
+        from .models import AdminActivityLog
+        model_status = "OK"
+    except Exception as e:
+        model_status = f"ERROR: {str(e)}"
+    
+    return JsonResponse({
+        "status": "OK",
+        "database": db_status,
+        "models": model_status,
+        "timestamp": get_current_ph_time().isoformat()
+    })
+
 # Centralized time utility functions
 def get_ph_timezone():
     """Get Philippine timezone object"""
@@ -1474,16 +1501,21 @@ def update_transaction_status(request, tracking_id: str):
         
         personalized_description = status_descriptions.get(new_status, f"Hello! This is {admin_display_name} from barangay {admin_barangay}. Status changed from '{old_status}' to '{new_status}'.")
         
-        AdminActivityLog.objects.create(
-            complaint=complaint,
-            admin_user=user,
-            admin_name=admin_display_name,
-            admin_barangay=admin_barangay,
-            action_type=AdminActivityLog.ActionType.STATUS_CHANGE,
-            description=personalized_description,
-            old_value=old_status,
-            new_value=new_status
-        )
+        # Log admin activity for audit trail (with error handling for production)
+        try:
+            AdminActivityLog.objects.create(
+                complaint=complaint,
+                admin_user=user,
+                admin_name=admin_display_name,
+                admin_barangay=admin_barangay,
+                action_type=AdminActivityLog.ActionType.STATUS_CHANGE,
+                description=personalized_description,
+                old_value=old_status,
+                new_value=new_status
+            )
+        except Exception as e:
+            # Log the error but don't crash the status update
+            print(f"Warning: Could not log admin activity: {e}")
         print(f"📋 Audit log created: {admin_display_name} changed status of {tracking_id} from {old_status} to {new_status}")
         
         # Send email notification to user if status changed
@@ -2014,16 +2046,21 @@ def send_chat_message(request):
         except:
             admin_barangay = "Unknown"
             
-        AdminActivityLog.objects.create(
-            complaint=complaint,
-            admin_user=user,
-            admin_name=admin_display_name,
-            admin_barangay=admin_barangay,
-            action_type=AdminActivityLog.ActionType.CHAT_MESSAGE,
-            description=f"Sent chat message: {message_content[:50]}{'...' if len(message_content) > 50 else ''}",
-            new_value=message_content
-        )
-        print(f"📋 Audit log created: {admin_display_name} sent chat message to {tracking_id}")
+        # Log admin activity for audit trail (with error handling for production)
+        try:
+            AdminActivityLog.objects.create(
+                complaint=complaint,
+                admin_user=user,
+                admin_name=admin_display_name,
+                admin_barangay=admin_barangay,
+                action_type=AdminActivityLog.ActionType.CHAT_MESSAGE,
+                description=f"Sent chat message: {message_content[:50]}{'...' if len(message_content) > 50 else ''}",
+                new_value=message_content
+            )
+            print(f"📋 Audit log created: {admin_display_name} sent chat message to {tracking_id}")
+        except Exception as e:
+            # Log the error but don't crash the chat message
+            print(f"Warning: Could not log chat activity: {e}")
 
         # Update conversation timestamp to move it to top of list
         conversation.update_timestamp()
@@ -2495,22 +2532,26 @@ def get_complaint_activity_log(request, tracking_id):
         # Get the complaint
         complaint = Complaint.objects.get(tracking_id=tracking_id)
         
-        # Get all activity logs for this complaint
-        activity_logs = AdminActivityLog.objects.filter(complaint=complaint).order_by('-created_at')
-        
+        # Get all activity logs for this complaint (with error handling)
         log_data = []
-        for log in activity_logs:
-            log_data.append({
-                "id": log.id,
-                "admin_name": log.admin_name,
-                "admin_barangay": log.admin_barangay,
-                "action_type": log.action_type,
-                "description": log.description,
-                "old_value": log.old_value,
-                "new_value": log.new_value,
-                "timestamp": log.created_at.isoformat(),
-                "formatted_time": format_ph_datetime(log.created_at)
-            })
+        try:
+            activity_logs = AdminActivityLog.objects.filter(complaint=complaint).order_by('-created_at')
+            
+            for log in activity_logs:
+                log_data.append({
+                    "id": log.id,
+                    "admin_name": log.admin_name,
+                    "admin_barangay": log.admin_barangay,
+                    "action_type": log.action_type,
+                    "description": log.description,
+                    "old_value": log.old_value,
+                    "new_value": log.new_value,
+                    "timestamp": log.created_at.isoformat(),
+                    "formatted_time": format_ph_datetime(log.created_at)
+                })
+        except Exception as e:
+            print(f"Warning: Could not retrieve activity logs: {e}")
+            # Return empty log data if AdminActivityLog is not available
 
         return JsonResponse({
             "success": True,
@@ -2536,22 +2577,26 @@ def get_user_complaint_activity(request, tracking_id):
         # Get the complaint (only if it belongs to the user)
         complaint = Complaint.objects.get(tracking_id=tracking_id, user=user)
         
-        # Get all activity logs for this complaint
-        activity_logs = AdminActivityLog.objects.filter(
-            complaint=complaint, 
-            action_type=AdminActivityLog.ActionType.STATUS_CHANGE
-        ).order_by('created_at')
-        
+        # Get all activity logs for this complaint (with error handling)
         log_data = []
-        for log in activity_logs:
-            log_data.append({
-                "status": log.new_value,
-                "description": log.description,
-                "admin_name": log.admin_name,
-                "admin_barangay": log.admin_barangay,
-                "timestamp": log.created_at.isoformat(),
-                "formatted_time": format_ph_datetime(log.created_at)
-            })
+        try:
+            activity_logs = AdminActivityLog.objects.filter(
+                complaint=complaint, 
+                action_type=AdminActivityLog.ActionType.STATUS_CHANGE
+            ).order_by('created_at')
+            
+            for log in activity_logs:
+                log_data.append({
+                    "status": log.new_value,
+                    "description": log.description,
+                    "admin_name": log.admin_name,
+                    "admin_barangay": log.admin_barangay,
+                    "timestamp": log.created_at.isoformat(),
+                    "formatted_time": format_ph_datetime(log.created_at)
+                })
+        except Exception as e:
+            print(f"Warning: Could not retrieve user activity logs: {e}")
+            # Return empty log data if AdminActivityLog is not available
 
         return JsonResponse({
             "success": True,

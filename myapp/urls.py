@@ -87,4 +87,7 @@ urlpatterns = [
     
     # User complaint activity
     path('api/user/complaint/<str:tracking_id>/activity/', views.get_user_complaint_activity, name='get_user_complaint_activity'),
+    
+    # Health check for Railway debugging
+    path('health/', views.health_check, name='health_check'),
 ]
