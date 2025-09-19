@@ -13,7 +13,9 @@ import os
 from datetime import datetime
 import pytz
 
-from .models import Complaint, AdminProfile, UserProfile, EmailOTP, ChatConversation, ChatMessage, AdminActivityLog
+# Temporarily comment out AdminActivityLog to debug Railway startup issue
+from .models import Complaint, AdminProfile, UserProfile, EmailOTP, ChatConversation, ChatMessage
+# from .models import AdminActivityLog  # Commented out for debugging
 from .supabase_client import supabase
 from .email_utils import create_otp_for_email, verify_otp
 
@@ -34,8 +36,8 @@ def health_check(request):
     
     # Test model imports
     try:
-        from .models import AdminActivityLog
-        model_status = "OK"
+        # from .models import AdminActivityLog  # Commented out for debugging
+        model_status = "OK - AdminActivityLog temporarily disabled"
     except Exception as e:
         model_status = f"ERROR: {str(e)}"
     
@@ -1501,18 +1503,19 @@ def update_transaction_status(request, tracking_id: str):
         
         personalized_description = status_descriptions.get(new_status, f"Hello! This is {admin_display_name} from barangay {admin_barangay}. Status changed from '{old_status}' to '{new_status}'.")
         
-        # Log admin activity for audit trail (with error handling for production)
+        # Log admin activity for audit trail (TEMPORARILY DISABLED FOR DEBUGGING)
         try:
-            AdminActivityLog.objects.create(
-                complaint=complaint,
-                admin_user=user,
-                admin_name=admin_display_name,
-                admin_barangay=admin_barangay,
-                action_type=AdminActivityLog.ActionType.STATUS_CHANGE,
-                description=personalized_description,
-                old_value=old_status,
-                new_value=new_status
-            )
+            # AdminActivityLog.objects.create(
+            #     complaint=complaint,
+            #     admin_user=user,
+            #     admin_name=admin_display_name,
+            #     admin_barangay=admin_barangay,
+            #     action_type=AdminActivityLog.ActionType.STATUS_CHANGE,
+            #     description=personalized_description,
+            #     old_value=old_status,
+            #     new_value=new_status
+            # )
+            print(f"DEBUG: Would log status change by {admin_display_name}")
         except Exception as e:
             # Log the error but don't crash the status update
             print(f"Warning: Could not log admin activity: {e}")
@@ -2046,18 +2049,18 @@ def send_chat_message(request):
         except:
             admin_barangay = "Unknown"
             
-        # Log admin activity for audit trail (with error handling for production)
+        # Log admin activity for audit trail (TEMPORARILY DISABLED FOR DEBUGGING)
         try:
-            AdminActivityLog.objects.create(
-                complaint=complaint,
-                admin_user=user,
-                admin_name=admin_display_name,
-                admin_barangay=admin_barangay,
-                action_type=AdminActivityLog.ActionType.CHAT_MESSAGE,
-                description=f"Sent chat message: {message_content[:50]}{'...' if len(message_content) > 50 else ''}",
-                new_value=message_content
-            )
-            print(f"📋 Audit log created: {admin_display_name} sent chat message to {tracking_id}")
+            # AdminActivityLog.objects.create(
+            #     complaint=complaint,
+            #     admin_user=user,
+            #     admin_name=admin_display_name,
+            #     admin_barangay=admin_barangay,
+            #     action_type=AdminActivityLog.ActionType.CHAT_MESSAGE,
+            #     description=f"Sent chat message: {message_content[:50]}{'...' if len(message_content) > 50 else ''}",
+            #     new_value=message_content
+            # )
+            print(f"DEBUG: Would log chat message by {admin_display_name}")
         except Exception as e:
             # Log the error but don't crash the chat message
             print(f"Warning: Could not log chat activity: {e}")
@@ -2532,23 +2535,24 @@ def get_complaint_activity_log(request, tracking_id):
         # Get the complaint
         complaint = Complaint.objects.get(tracking_id=tracking_id)
         
-        # Get all activity logs for this complaint (with error handling)
+        # Get all activity logs for this complaint (TEMPORARILY DISABLED FOR DEBUGGING)
         log_data = []
         try:
-            activity_logs = AdminActivityLog.objects.filter(complaint=complaint).order_by('-created_at')
+            # activity_logs = AdminActivityLog.objects.filter(complaint=complaint).order_by('-created_at')
             
-            for log in activity_logs:
-                log_data.append({
-                    "id": log.id,
-                    "admin_name": log.admin_name,
-                    "admin_barangay": log.admin_barangay,
-                    "action_type": log.action_type,
-                    "description": log.description,
-                    "old_value": log.old_value,
-                    "new_value": log.new_value,
-                    "timestamp": log.created_at.isoformat(),
-                    "formatted_time": format_ph_datetime(log.created_at)
-                })
+            # for log in activity_logs:
+            #     log_data.append({
+            #         "id": log.id,
+            #         "admin_name": log.admin_name,
+            #         "admin_barangay": log.admin_barangay,
+            #         "action_type": log.action_type,
+            #         "description": log.description,
+            #         "old_value": log.old_value,
+            #         "new_value": log.new_value,
+            #         "timestamp": log.created_at.isoformat(),
+            #         "formatted_time": format_ph_datetime(log.created_at)
+            #     })
+            print("DEBUG: Activity log queries temporarily disabled")
         except Exception as e:
             print(f"Warning: Could not retrieve activity logs: {e}")
             # Return empty log data if AdminActivityLog is not available
@@ -2577,23 +2581,24 @@ def get_user_complaint_activity(request, tracking_id):
         # Get the complaint (only if it belongs to the user)
         complaint = Complaint.objects.get(tracking_id=tracking_id, user=user)
         
-        # Get all activity logs for this complaint (with error handling)
+        # Get all activity logs for this complaint (TEMPORARILY DISABLED FOR DEBUGGING)
         log_data = []
         try:
-            activity_logs = AdminActivityLog.objects.filter(
-                complaint=complaint, 
-                action_type=AdminActivityLog.ActionType.STATUS_CHANGE
-            ).order_by('created_at')
+            # activity_logs = AdminActivityLog.objects.filter(
+            #     complaint=complaint, 
+            #     action_type=AdminActivityLog.ActionType.STATUS_CHANGE
+            # ).order_by('created_at')
             
-            for log in activity_logs:
-                log_data.append({
-                    "status": log.new_value,
-                    "description": log.description,
-                    "admin_name": log.admin_name,
-                    "admin_barangay": log.admin_barangay,
-                    "timestamp": log.created_at.isoformat(),
-                    "formatted_time": format_ph_datetime(log.created_at)
-                })
+            # for log in activity_logs:
+            #     log_data.append({
+            #         "status": log.new_value,
+            #         "description": log.description,
+            #         "admin_name": log.admin_name,
+            #         "admin_barangay": log.admin_barangay,
+            #         "timestamp": log.created_at.isoformat(),
+            #         "formatted_time": format_ph_datetime(log.created_at)
+            #     })
+            print("DEBUG: User activity log queries temporarily disabled")
         except Exception as e:
             print(f"Warning: Could not retrieve user activity logs: {e}")
             # Return empty log data if AdminActivityLog is not available
