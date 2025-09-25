@@ -73,11 +73,13 @@
     .status.pending{background:rgba(245,158,11,0.12);color:var(--accent);}
     .status.reported{background:rgba(239,68,68,0.12);color:var(--danger);}
     .status.inprogress{background:rgba(59,130,246,0.12);color:var(--brand);}
+    .status.forwarded{background:rgba(168,85,247,0.12);color:#a855f7;}
     .status.resolved{background:rgba(16,185,129,0.12);color:var(--ok);}
+    .status.resolvedbyagency{background:rgba(34,197,94,0.12);color:#22c55e;}
     .status.declined{background:rgba(239,68,68,0.12);color:var(--danger);}
     .btn{
       display:inline-flex;align-items:center;gap:8px;justify-content:center;
-      height:40px;padding:0 16px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#031026;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(34,211,238,.10);transition:.18s;
+      height:40px;padding:0 16px;border-radius:12px;border:none;background:linear-gradient(90deg,#22d3ee,#06b6d4);color:#031026;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(34,211,238,.10);transition:.18s;
     }
     .btn.ghost{background:#181f36;color:var(--text);border:1px solid rgba(255,255,255,.12)}
     .btn.small{height:34px;padding:0 12px;font-size:.92rem}
@@ -286,8 +288,25 @@
 .confirmation-body{padding:0px 24px 24px 24px}
 .confirmation-body p{margin:0;color:var(--muted);font-size:1.1rem;line-height:1.5}
 .confirmation-actions{display:flex;gap:16px;padding:0px 24px 24px 24px;justify-content:flex-end}
-.confirmation-actions .btn{min-width:80px;height:44px;font-weight:700;font-size:1rem}
+    .confirmation-actions .btn{min-width:80px;height:44px;font-weight:700;font-size:1rem}
 @media (max-width:768px){.confirmation-actions{flex-direction:column}.confirmation-actions .btn{width:100%}}
+
+    /* Custom Scrollbar Styles for Activity Log */
+    .activity-log-scroll::-webkit-scrollbar {
+      width: 8px;
+    }
+    .activity-log-scroll::-webkit-scrollbar-track {
+      background: rgba(255,255,255,.05);
+      border-radius: 4px;
+    }
+    .activity-log-scroll::-webkit-scrollbar-thumb {
+      background: var(--brand);
+      border-radius: 4px;
+      transition: background 0.2s ease;
+    }
+    .activity-log-scroll::-webkit-scrollbar-thumb:hover {
+      background: var(--brand-2);
+    }
   </style>
 </head>
 <body>
@@ -325,7 +344,9 @@
           <option>Pending</option>
           <option>Reported</option>
           <option>In Progress</option>
+          <option>Forwarded to Agency</option>
           <option>Resolved</option>
+          <option>Resolved by Agency</option>
           <option>Declined/Spam</option>
         </select>
         <button class="btn small ghost" onclick="resetFilters()">Reset</button>
@@ -502,6 +523,47 @@
       </div>
     </div>
   </div>
+
+  <!-- Forwarding Modal -->
+  <div id="forwardingModal" class="modal hidden">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="confirmation-header">
+        <div class="confirmation-icon" style="background: rgba(168,85,247,.15); color: #a855f7;">📤</div>
+        <h3>Forward Complaint to Higher Agency</h3>
+        <button class="modal-close" onclick="closeForwardingModal()">&times;</button>
+      </div>
+      <div class="confirmation-body">
+        <p style="margin-bottom: 20px; color: var(--muted);">Select the appropriate agency to handle this complaint and provide a reason for forwarding.</p>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text);">Select Agency:</label>
+          <select id="agencySelect" class="select" style="width: 100%;">
+            <option value="">Choose an agency...</option>
+            <option value="PNP">🚔 PNP – Philippine National Police</option>
+            <option value="PDEA">💊 PDEA – Philippine Drug Enforcement Agency</option>
+            <option value="DSWD">👥 DSWD – Department of Social Welfare and Development</option>
+            <option value="CHR">⚖️ CHR – Commission on Human Rights</option>
+            <option value="BFP">🚒 BFP – Bureau of Fire Protection</option>
+            <option value="DOH">🏥 DOH – Department of Health</option>
+            <option value="PNP-ACG">💻 PNP-ACG – Philippine National Police Anti-Cybercrime Group</option>
+          </select>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text);">Reason for Forwarding:</label>
+          <textarea 
+            id="forwardReason" 
+            placeholder="Explain why this complaint needs to be forwarded to the selected agency..."
+            style="width: 100%; min-height: 100px; padding: 12px; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; background: rgba(255,255,255,.05); color: var(--text); resize: vertical; outline: none; font-family: inherit; font-size: 0.95rem;"
+          ></textarea>
+        </div>
+      </div>
+      <div class="confirmation-actions">
+        <button class="btn ghost" onclick="closeForwardingModal()">Cancel</button>
+        <button class="btn" onclick="confirmForwarding()">Forward Complaint</button>
+      </div>
+    </div>
+  </div>
 <script>
 /* ======= Mock + State ======= */
 let page = 1, pageSize = 5, totalCount = 0;
@@ -516,7 +578,9 @@ let currentChat = null;
    if(v==='pending') return 'pending';
    if(v==='reported') return 'reported';
    if(v==='in progress') return 'inprogress';
+   if(v==='forwarded to agency') return 'forwarded';
    if(v==='resolved') return 'resolved';
+   if(v==='resolved by agency') return 'resolvedbyagency';
    if(v==='declined/spam') return 'declined';
    return '';
  }
@@ -633,6 +697,9 @@ function openDetail(id){
     <div class="k">Type</div><div>${r.type}</div>
     <div class="k">Status</div><div><span class="status ${statusClass(r.status)}">${r.status}</span></div>
     <div class="k">Description</div><div>${r.description||''}</div>
+    ${r.forwarded_to_agency ? `<div class="k">Forwarded to</div><div><strong>${r.forwarded_to_agency}</strong></div>` : ''}
+    ${r.forward_reason ? `<div class="k">Forward Reason</div><div>${r.forward_reason}</div>` : ''}
+    ${r.forward_date ? `<div class="k">Forward Date</div><div>${fmtDate(r.forward_date)}</div>` : ''}
     <div class="k">Activity Log</div><div><button class="btn small ghost" onclick="showActivityLog('${r.id}')">View History</button></div>
   `;
   const imgBox = document.getElementById('imgBox');
@@ -651,7 +718,26 @@ function openDetail(id){
   document.getElementById('adminUpdateText').value = '';
   
   // Show/hide resolution image section based on current status
-  handleStatusChange();
+  // Don't call handleStatusChange() here as it will trigger modal opening
+  const currentStatus = r.status;
+  const resolutionSection = document.getElementById('resolutionImageSection');
+  const adminUpdateSection = document.getElementById('adminUpdateSection');
+  const inProgressInfoSection = document.getElementById('inProgressInfoSection');
+  
+  // Set initial visibility based on current status
+  if (currentStatus === 'Resolved') {
+    resolutionSection.style.display = 'block';
+    adminUpdateSection.style.display = 'none';
+    inProgressInfoSection.style.display = 'none';
+  } else if (currentStatus === 'In Progress') {
+    adminUpdateSection.style.display = 'none';
+    resolutionSection.style.display = 'none';
+    inProgressInfoSection.style.display = 'block';
+  } else {
+    resolutionSection.style.display = 'none';
+    adminUpdateSection.style.display = 'none';
+    inProgressInfoSection.style.display = 'none';
+  }
   
   // Show existing resolution image if status is Resolved
   if (r.status === 'Resolved' && r.resolution_image) {
@@ -826,7 +912,16 @@ function populateStatusDropdown(currentStatus) {
   statusDropdown.innerHTML = ''; // Clear existing options
   
   // Define status progression order (excluding Pending as it's the default status)
-  const statusProgression = ['Reported', 'In Progress', 'Resolved', 'Declined/Spam'];
+  let statusProgression = ['Reported', 'In Progress', 'Forwarded to Agency', 'Resolved', 'Resolved by Agency', 'Declined/Spam'];
+  
+  // If current status is "Forwarded to Agency", replace "Resolved" with "Resolved by Agency" and remove duplicate
+  if (currentStatus === 'Forwarded to Agency') {
+    statusProgression = statusProgression.map(status => 
+      status === 'Resolved' ? 'Resolved by Agency' : status
+    );
+    // Remove duplicate "Resolved by Agency" entries
+    statusProgression = [...new Set(statusProgression)];
+  }
   
   // Find current status index
   const currentIndex = statusProgression.indexOf(currentStatus);
@@ -874,7 +969,22 @@ function handleStatusChange() {
   // Check if the complaint is already in "In Progress" status
   const isAlreadyInProgress = currentDetail && currentDetail.status === 'In Progress';
   
-  if (status === 'Resolved') {
+  // Only open forwarding modal if user is actually changing TO "Forwarded to Agency"
+  // Don't open if it's already the current status
+  if (status === 'Forwarded to Agency' && currentDetail && currentDetail.status !== 'Forwarded to Agency') {
+    // Show forwarding modal
+    openForwardingModal();
+    // Hide other sections
+    resolutionSection.style.display = 'none';
+    adminUpdateSection.style.display = 'none';
+    inProgressInfoSection.style.display = 'none';
+    // Clear any selected image when status is not Resolved
+    selectedResolutionImage = null;
+    document.getElementById('resolutionImageName').textContent = '';
+    document.getElementById('resolutionImagePreview').style.display = 'none';
+    // Clear admin update text when status is not In Progress
+    document.getElementById('adminUpdateText').value = '';
+  } else if (status === 'Resolved' || status === 'Resolved by Agency') {
     resolutionSection.style.display = 'block';
     adminUpdateSection.style.display = 'none';
     inProgressInfoSection.style.display = 'none';
@@ -1007,11 +1117,15 @@ async function fetchComplaints(){
     }
   }
 }
-async function updateStatus(id, status, adminUpdate = null){
+async function updateStatus(id, status, adminUpdate = null, forwardedToAgency = null, forwardReason = null){
   try {
     console.log('Sending status update request for:', id, 'status:', status);
     if (adminUpdate) {
       console.log('Admin update:', adminUpdate);
+    }
+    if (forwardedToAgency) {
+      console.log('Forwarded to agency:', forwardedToAgency);
+      console.log('Forward reason:', forwardReason);
     }
     
     // Prepare request body
@@ -1022,10 +1136,16 @@ async function updateStatus(id, status, adminUpdate = null){
       requestBody.admin_update = adminUpdate;
     }
     
-    // If status is Resolved, include resolution image
-    if (status === 'Resolved') {
+    // If status is Forwarded to Agency, include forwarding details
+    if (status === 'Forwarded to Agency' && forwardedToAgency && forwardReason) {
+      requestBody.forwarded_to_agency = forwardedToAgency;
+      requestBody.forward_reason = forwardReason;
+    }
+    
+    // If status is Resolved or Resolved by Agency, include resolution image
+    if (status === 'Resolved' || status === 'Resolved by Agency') {
       if (!selectedResolutionImage) {
-        throw new Error('Resolution image is required when setting status to Resolved');
+        throw new Error('Resolution image is required when setting status to Resolved or Resolved by Agency');
       }
       
       // Compress the image before sending
@@ -1160,6 +1280,81 @@ function openModal(modalId){
       console.error('Confirmation modal element not found');
     }
   }
+
+  // Forwarding Modal Functions
+  function openForwardingModal() {
+    const modal = document.getElementById('forwardingModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+      setTimeout(() => modal.classList.add('show'), 10);
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  function closeForwardingModal() {
+    const modal = document.getElementById('forwardingModal');
+    if (modal) {
+      modal.classList.remove('show');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+      }, 300);
+      // Clear form
+      document.getElementById('agencySelect').value = '';
+      document.getElementById('forwardReason').value = '';
+    }
+  }
+
+  function confirmForwarding() {
+    const agency = document.getElementById('agencySelect').value;
+    const reason = document.getElementById('forwardReason').value.trim();
+    
+    if (!agency) {
+      toast('Please select an agency');
+      return;
+    }
+    
+    if (!reason) {
+      toast('Please provide a reason for forwarding');
+      return;
+    }
+    
+    // Close forwarding modal
+    closeForwardingModal();
+    
+    // Update status with forwarding details
+    updateStatusWithForwarding(agency, reason);
+  }
+
+  async function updateStatusWithForwarding(agency, reason) {
+    if (!currentDetail) {
+      console.error('No current detail selected');
+      return;
+    }
+    
+    const saveBtn = document.getElementById('saveStatusBtn');
+    const originalText = saveBtn.textContent;
+    
+    // Show loading state
+    saveBtn.textContent = 'Forwarding...';
+    saveBtn.disabled = true;
+    
+    try {
+      await updateStatus(currentDetail.id, 'Forwarded to Agency', null, agency, reason);
+      console.log('Complaint forwarded successfully');
+      // Close detail modal
+      closeModal();
+    } catch (error) {
+      console.error('Error forwarding complaint:', error);
+      toast('Error forwarding complaint');
+    } finally {
+      // Reset button state
+      saveBtn.textContent = originalText;
+      saveBtn.disabled = false;
+    }
+  }
   function logout(){
     showConfirmation('Are you sure you want to logout?','Logout Confirmation',function(){
       // Clear localStorage
@@ -1228,7 +1423,7 @@ async function showActivityLog(complaintId) {
     const data = await response.json();
     
     if (data.success) {
-      let logHtml = '<div style="max-height: 400px; overflow-y: auto;">';
+      let logHtml = '<div class="activity-log-scroll" style="max-height: 500px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--brand) rgba(255,255,255,.1); padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,.02);">';
       
       if (data.activity_logs.length === 0) {
         logHtml += '<p style="color: var(--muted); text-align: center; padding: 20px;">No activity recorded yet.</p>';

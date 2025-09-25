@@ -71,7 +71,9 @@
     .status.pending { background: rgba(245,158,11,0.12); color: #f59e0b; }
     .status.reported { background: rgba(239,68,68,0.12); color: #ef4444; }
     .status.inprogress { background: rgba(59,130,246,0.12); color: #3b82f6; }
-         .status.resolved { background: rgba(16,185,129,0.12); color: #10b981; }
+    .status.forwarded { background: rgba(168,85,247,0.12); color: #a855f7; }
+    .status.resolved { background: rgba(16,185,129,0.12); color: #10b981; }
+    .status.resolvedbyagency { background: rgba(34,197,94,0.12); color: #22c55e; }
      .status.resolved { background: rgba(16,185,129,0.12); color: #10b981; }
      .clickable-status:hover { 
        background: rgba(16,185,129,0.20) !important; 
@@ -287,9 +289,13 @@
     .history-entry:last-child { border-bottom: none; }
     .history-date { font-size: 0.95rem; color: #9aa4bf; margin-bottom: 2px; }
     .history-status { font-weight: 700; margin-bottom: 2px; }
+    .history-status.pending { color: #f59e0b; }
     .history-status.reported { color: #3b82f6; }
     .history-status.inprogress { color: #f59e0b; }
+    .history-status.forwarded { color: #a855f7; }
     .history-status.resolved { color: #10b981; }
+    .history-status.resolvedbyagency { color: #22c55e; }
+    .history-status.declined { color: #ef4444; }
     @keyframes fadeIn { from { opacity:0; transform:translateY(-20px);} to { opacity:1; transform:translateY(0);} }
     @media (max-width: 600px) {
       .txn-modal-content { padding: 0 0 18px 0; }
@@ -545,7 +551,9 @@
         case 'pending': return 'pending';
         case 'reported': return 'reported';
         case 'in progress': return 'inprogress';
+        case 'forwarded to agency': return 'forwarded';
         case 'resolved': return 'resolved';
+        case 'resolved by agency': return 'resolvedbyagency';
         default: return '';
       }
     }
@@ -596,7 +604,8 @@
       if (txn.status.toLowerCase() === 'pending') statusIdx = 0;
       else if (txn.status.toLowerCase() === 'reported' || txn.status.toLowerCase() === 'submitted') statusIdx = 1;
       else if (txn.status.toLowerCase() === 'in progress' || txn.status.toLowerCase() === 'in-progress') statusIdx = 2;
-      else if (txn.status.toLowerCase() === 'resolved') statusIdx = 3;
+      else if (txn.status.toLowerCase() === 'forwarded to agency') statusIdx = 3;
+      else if (txn.status.toLowerCase() === 'resolved' || txn.status.toLowerCase() === 'resolved by agency') statusIdx = 4;
       else if (txn.status.toLowerCase() === 'declined/spam') statusIdx = -1; // Special handling for declined
 
       if (statusIdx === -1) {
@@ -613,32 +622,39 @@
         document.getElementById('modalProgress').innerHTML = `
           <div class="txn-progress-bar">
             <div class="txn-progress-step">
-                        <div class="txn-progress-circle ${statusIdx >= 0 ? 'active' : ''} ${statusIdx > 0 ? 'resolved' : ''}">
-              <span style="font-size:1.3rem;">⏳</span>
+              <div class="txn-progress-circle ${statusIdx >= 0 ? 'active' : ''} ${statusIdx > 0 ? 'resolved' : ''}">
+                <span style="font-size:1.3rem;">⏳</span>
+              </div>
+              <div class="txn-progress-label">Pending</div>
             </div>
-            <div class="txn-progress-label">Pending</div>
-          </div>
-          <div class="txn-progress-line ${statusIdx > 0 ? (statusIdx >= 2 ? 'resolved' : 'active') : ''}"></div>
-          <div class="txn-progress-step">
-            <div class="txn-progress-circle ${statusIdx >= 1 ? 'active' : ''} ${statusIdx > 1 ? 'resolved' : ''}">
-              <span style="font-size:1.3rem;">&#9992;</span>
+            <div class="txn-progress-line ${statusIdx > 0 ? (statusIdx >= 2 ? 'resolved' : 'active') : ''}"></div>
+            <div class="txn-progress-step">
+              <div class="txn-progress-circle ${statusIdx >= 1 ? 'active' : ''} ${statusIdx > 1 ? 'resolved' : ''}">
+                <span style="font-size:1.3rem;">&#9992;</span>
+              </div>
+              <div class="txn-progress-label">Reported</div>
             </div>
-            <div class="txn-progress-label">Reported</div>
-          </div>
-          <div class="txn-progress-line ${statusIdx > 1 ? (statusIdx === 3 ? 'resolved' : 'active') : ''}"></div>
-          <div class="txn-progress-step">
-            <div class="txn-progress-circle ${statusIdx >= 2 ? 'active' : ''} ${statusIdx > 2 ? 'resolved' : ''}">
-              <span style="font-size:1.3rem;">&#8635;</span>
+            <div class="txn-progress-line ${statusIdx > 1 ? (statusIdx >= 3 ? 'resolved' : 'active') : ''}"></div>
+            <div class="txn-progress-step">
+              <div class="txn-progress-circle ${statusIdx >= 2 ? 'active' : ''} ${statusIdx > 2 ? 'resolved' : ''}">
+                <span style="font-size:1.3rem;">&#8635;</span>
+              </div>
+              <div class="txn-progress-label">In-Progress</div>
             </div>
-            <div class="txn-progress-label">In-Progress</div>
-          </div>
-          <div class="txn-progress-line ${statusIdx === 3 ? 'resolved' : ''}"></div>
-          <div class="txn-progress-step">
-            <div class="txn-progress-circle ${statusIdx === 3 ? 'resolved' : ''}">
-              <span style="font-size:1.3rem;">&#10003;</span>
+            <div class="txn-progress-line ${statusIdx > 2 ? (statusIdx >= 4 ? 'resolved' : 'active') : ''}"></div>
+            <div class="txn-progress-step">
+              <div class="txn-progress-circle ${statusIdx >= 3 ? 'active' : ''} ${statusIdx > 3 ? 'resolved' : ''}" style="${statusIdx >= 3 ? 'border-color: #a855f7; background: #a855f7;' : ''}">
+                <span style="font-size:1.3rem;">📤</span>
+              </div>
+              <div class="txn-progress-label">Forwarded</div>
             </div>
-            <div class="txn-progress-label">Resolved</div>
-          </div>
+            <div class="txn-progress-line ${statusIdx === 4 ? 'resolved' : ''}"></div>
+            <div class="txn-progress-step">
+              <div class="txn-progress-circle ${statusIdx === 4 ? 'resolved' : ''}">
+                <span style="font-size:1.3rem;">&#10003;</span>
+              </div>
+              <div class="txn-progress-label">Resolved</div>
+            </div>
           </div>
         `;
       }
@@ -755,7 +771,9 @@
             
             if (statusLower === 'reported') color = 'reported';
             else if (statusLower === 'in progress') { color = 'inprogress'; label = 'IN-PROGRESS'; }
+            else if (statusLower === 'forwarded to agency') { color = 'forwarded'; label = 'FORWARDED'; }
             else if (statusLower === 'resolved') color = 'resolved';
+            else if (statusLower === 'resolved by agency') { color = 'resolvedbyagency'; label = 'RESOLVED BY AGENCY'; }
             else if (statusLower === 'declined/spam') { color = 'declined'; label = 'DECLINED'; }
             
             entries.push({

@@ -1322,6 +1322,9 @@ def list_transactions(request):
                     "image": c.get('image_base64'),
                     "resolution_image": c.get('resolution_image'),
                     "admin_update": c.get('admin_update'),
+                    "forwarded_to_agency": c.get('forwarded_to_agency'),
+                    "forward_reason": c.get('forward_reason'),
+                    "forward_date": c.get('forward_date'),
                 })
             print(f"Found {len(data)} complaints in Supabase for barangay {admin_barangay}")  # Debug logging
             return JsonResponse({"results": data})
@@ -1353,6 +1356,9 @@ def list_transactions(request):
             "image": c.image_base64 or None,
             "resolution_image": c.resolution_image or None,
             "admin_update": c.admin_update or None,
+            "forwarded_to_agency": c.forwarded_to_agency or None,
+            "forward_reason": c.forward_reason or None,
+            "forward_date": c.forward_date.isoformat() if c.forward_date else None,
         }
         for c in complaints
     ]
@@ -1424,14 +1430,25 @@ def update_transaction_status(request, tracking_id: str):
     # Get admin update if provided
     admin_update = payload.get("admin_update", "").strip()
     
+    # Get forwarding details if provided
+    forwarded_to_agency = payload.get("forwarded_to_agency", "").strip()
+    forward_reason = payload.get("forward_reason", "").strip()
+    
     # If status is being set to "In Progress", require admin update
     if new_status == "In Progress" and not admin_update:
         return JsonResponse({"error": "Admin update is required when setting status to In Progress"}, status=400)
 
-    # If status is being set to "Resolved", require resolution image
+    # If status is being set to "Forwarded to Agency", require agency and reason
+    if new_status == "Forwarded to Agency":
+        if not forwarded_to_agency:
+            return JsonResponse({"error": "Agency selection is required when forwarding complaint"}, status=400)
+        if not forward_reason:
+            return JsonResponse({"error": "Forward reason is required when forwarding complaint"}, status=400)
+
+    # If status is being set to "Resolved" or "Resolved by Agency", require resolution image
     resolution_image = payload.get("resolution_image")
-    if new_status == "Resolved" and not resolution_image:
-        return JsonResponse({"error": "Resolution image is required when setting status to Resolved"}, status=400)
+    if (new_status == "Resolved" or new_status == "Resolved by Agency") and not resolution_image:
+        return JsonResponse({"error": "Resolution image is required when setting status to Resolved or Resolved by Agency"}, status=400)
 
     # Try Supabase first, fallback to Django ORM
     if supabase:
@@ -1452,6 +1469,12 @@ def update_transaction_status(request, tracking_id: str):
                 update_data['admin_update'] = admin_update
             if resolution_image:
                 update_data['resolution_image'] = resolution_image
+            if forwarded_to_agency:
+                update_data['forwarded_to_agency'] = forwarded_to_agency
+            if forward_reason:
+                update_data['forward_reason'] = forward_reason
+            if new_status == "Forwarded to Agency":
+                update_data['forward_date'] = timezone.now().isoformat()
             
             update_response = supabase.table('complaints').update(update_data).eq('tracking_id', tracking_id).eq('barangay', admin_barangay).execute()
             
@@ -1494,6 +1517,14 @@ def update_transaction_status(request, tracking_id: str):
         if resolution_image:
             complaint.resolution_image = resolution_image
             
+        # Save forwarding details if provided
+        if forwarded_to_agency:
+            complaint.forwarded_to_agency = forwarded_to_agency
+        if forward_reason:
+            complaint.forward_reason = forward_reason
+        if new_status == "Forwarded to Agency":
+            complaint.forward_date = timezone.now()
+            
         complaint.save()
         
         # Log admin activity for audit trail with personalized message
@@ -1503,6 +1534,8 @@ def update_transaction_status(request, tracking_id: str):
         status_descriptions = {
             'Reported': f"Hello! This is {admin_display_name} from barangay {admin_barangay}. Your complaint has been received and is now in review for processing.",
             'In Progress': f"Hello! This is {admin_display_name} from barangay {admin_barangay}. We are now working on your complaint. {admin_update if admin_update else 'Our team is actively addressing this issue.'}",
+            'Forwarded to Agency': f"Hello! This is {admin_display_name} from barangay {admin_barangay}. Your complaint has been forwarded to {forwarded_to_agency} for further investigation. Reason: {forward_reason}",
+            'Resolved by Agency': f"Hello! This is {admin_display_name} from barangay {admin_barangay}. Your complaint has been successfully resolved by {forwarded_to_agency}. Thank you for reporting this issue.",
             'Resolved': f"Hello! This is {admin_display_name} from barangay {admin_barangay}. Your complaint has been successfully resolved. Thank you for reporting this issue.",
             'Declined/Spam': f"Hello! This is {admin_display_name} from barangay {admin_barangay}. After review, this complaint has been declined. If you believe this is an error, please contact our office directly."
         }
@@ -1511,12 +1544,15 @@ def update_transaction_status(request, tracking_id: str):
         
         # Log admin activity for audit trail
         try:
+            # Use different action type for forwarding
+            action_type = AdminActivityLog.ActionType.COMPLAINT_FORWARD if new_status == "Forwarded to Agency" else AdminActivityLog.ActionType.STATUS_CHANGE
+            
             AdminActivityLog.objects.create(
                 complaint=complaint,
                 admin_user=user,
                 admin_name=admin_display_name,
                 admin_barangay=admin_barangay,
-                action_type=AdminActivityLog.ActionType.STATUS_CHANGE,
+                action_type=action_type,
                 description=personalized_description,
                 old_value=old_status,
                 new_value=new_status

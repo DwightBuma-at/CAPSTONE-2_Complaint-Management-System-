@@ -8,6 +8,8 @@ class Complaint(models.Model):
         IN_PROGRESS = "In Progress", "In Progress"
         RESOLVED = "Resolved", "Resolved"
         DECLINED = "Declined/Spam", "Declined/Spam"
+        FORWARDED = "Forwarded to Agency", "Forwarded to Agency"
+        RESOLVED_BY_AGENCY = "Resolved by Agency", "Resolved by Agency"
 
     tracking_id = models.CharField(max_length=20, unique=True)
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='complaints', null=True, blank=True)
@@ -23,8 +25,12 @@ class Complaint(models.Model):
     resolution_image = models.TextField(blank=True, null=True, help_text='Base64 image showing evidence of resolution')
     # Store admin update text for In Progress status
     admin_update = models.TextField(blank=True, null=True, help_text='Admin-provided update when status is In Progress')
+    # Forwarding fields
+    forwarded_to_agency = models.CharField(max_length=100, blank=True, null=True, help_text='Agency where complaint was forwarded')
+    forward_reason = models.TextField(blank=True, null=True, help_text='Reason for forwarding to higher agency')
+    forward_date = models.DateTimeField(blank=True, null=True, help_text='Date when complaint was forwarded')
     status = models.CharField(
-        max_length=20, choices=Status.choices, default=Status.PENDING
+        max_length=30, choices=Status.choices, default=Status.PENDING
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -124,6 +130,7 @@ class AdminActivityLog(models.Model):
         CHAT_MESSAGE = "chat_message", "Chat Message"
         COMPLAINT_VIEW = "complaint_view", "Complaint View"
         USER_MANAGEMENT = "user_management", "User Management"
+        COMPLAINT_FORWARD = "complaint_forward", "Complaint Forward"
     
     complaint = models.ForeignKey(Complaint, on_delete=models.CASCADE, related_name='activity_logs', null=True, blank=True)
     admin_user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='admin_activities')
