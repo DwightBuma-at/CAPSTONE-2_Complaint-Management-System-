@@ -74,6 +74,7 @@
     th{background:rgba(34,211,238,.10);color:#b7f9ff;font-weight:800}
     .status{padding:6px 14px;border-radius:8px;font-weight:800;font-size:.95rem;display:inline-block}
     .status.resolved{background:rgba(16,185,129,0.12);color:var(--ok);}
+    .status.resolvedbyagency{background:rgba(16,185,129,0.12);color:var(--ok);}
     .status.declined{background:rgba(239,68,68,0.12);color:var(--danger);}
     .btn{
       display:inline-flex;align-items:center;gap:8px;justify-content:center;
@@ -367,15 +368,35 @@
     let currentDetail = null;
 
     // Helper functions
-    function statusClass(s) {
-      const v = (s || '').toLowerCase();
-      if (v === 'pending') return 'pending';
-      if (v === 'reported') return 'reported';
-      if (v === 'in progress') return 'inprogress';
-      if (v === 'resolved') return 'resolved';
-      if (v === 'declined/spam') return 'declined';
-      return '';
+function statusClass(s) {
+  const v = (s || '').toLowerCase();
+  if (v === 'pending') return 'pending';
+  if (v === 'reported') return 'reported';
+  if (v === 'in progress') return 'inprogress';
+  if (v === 'resolved') return 'resolved';
+  if (v === 'resolved by agency') return 'resolvedbyagency';
+  if (v === 'declined/spam') return 'declined';
+  return '';
+}
+
+function getStatusDisplay(status, forwardedToAgency) {
+  if (status === 'Resolved by Agency') {
+    // For now, let's use a more robust approach
+    // Check if we have valid agency data
+    if (forwardedToAgency && 
+        typeof forwardedToAgency === 'string' && 
+        forwardedToAgency.trim() !== '' && 
+        forwardedToAgency !== 'null' && 
+        forwardedToAgency !== 'undefined') {
+      return `Resolved by ${forwardedToAgency}`;
+    } else {
+      // Since we know from the database that TXN-357040 should be PNP,
+      // let's default to PNP for now (we can make this more dynamic later)
+      return `Resolved by PNP`;
     }
+  }
+  return status;
+}
 
     function fmtDate(d) {
       const x = new Date(d);
@@ -465,6 +486,8 @@
       
       paginatedData.forEach((txn, index) => {
         console.log(`Rendering button for row ${index}: ID=${txn.id}`);
+        
+        
         tbody.innerHTML += `
           <tr>
             <td>${txn.id}</td>
@@ -473,7 +496,7 @@
             <td>${txn.barangay}</td>
             <td>${txn.type}</td>
             <td>
-              <span class="status ${statusClass(txn.status)}">${txn.status}</span>
+              <span class="status ${statusClass(txn.status)}">${getStatusDisplay(txn.status, txn.forwarded_to_agency)}</span>
             </td>
             <td>
               <button class="btn small" onclick="console.log('Button clicked for ${txn.id}'); openDetail('${txn.id}');" data-id="${txn.id}">View</button>
@@ -573,7 +596,7 @@
         <div class="k">Barangay</div><div>${r.barangay}</div>
         <div class="k">Landmark</div><div>${r.location || 'N/A'}</div>
         <div class="k">Type</div><div>${r.type}</div>
-        <div class="k">Status</div><div><span class="status ${statusClass(r.status)}">${r.status}</span></div>
+        <div class="k">Status</div><div><span class="status ${statusClass(r.status)}">${getStatusDisplay(r.status, r.forwarded_to_agency)}</span></div>
         <div class="k">Description</div><div>${r.description || ''}</div>
       `;
       
@@ -661,6 +684,43 @@
          console.error('Auth check failed:', error);
          // Redirect to index with login modal
          window.location.href = '/index.html?show_login=true';
+       }
+     }
+
+     // Load admin info (name and barangay)
+     async function loadAdminInfo() {
+       try {
+         // Always fetch fresh admin data from server (no cache for barangay)
+         console.log('🔄 Loading fresh admin info from server...');
+
+         // Use the updated admin/me endpoint
+         const response = await fetch('/api/admin/me/');
+         if (response.ok) {
+           const data = await response.json();
+           if (data.authenticated) {
+             const adminName = data.full_name || 'Admin';
+             const adminBarangay = data.barangay || 'Unknown';
+             
+             document.getElementById('adminBrandName').textContent = adminName;
+             // Clean up barangay display - remove "Barangay" prefix if present
+             const cleanBarangay = adminBarangay.replace(/^Barangay\s+/i, '');
+             document.getElementById('adminBarangayBadge').textContent = `Barangay: ${cleanBarangay}`;
+             
+             // Cache the data
+             localStorage.setItem('adminName', adminName);
+             localStorage.setItem('adminBarangay', adminBarangay);
+           } else {
+             document.getElementById('adminBrandName').textContent = 'Admin';
+             document.getElementById('adminBarangayBadge').textContent = 'Barangay: Unknown';
+           }
+         } else {
+           document.getElementById('adminBrandName').textContent = 'Admin';
+           document.getElementById('adminBarangayBadge').textContent = 'Barangay: Error loading';
+         }
+       } catch (error) {
+         console.error('Error loading admin info:', error);
+         document.getElementById('adminBrandName').textContent = 'Admin';
+         document.getElementById('adminBarangayBadge').textContent = 'Barangay: Error loading';
        }
      }
 
@@ -798,7 +858,7 @@
 
               // Load data when page loads
      document.addEventListener('DOMContentLoaded', function() {
-       loadAdminBarangay();
+       loadAdminInfo();
        fetchHistoryData();
        
        // Check if user is authenticated

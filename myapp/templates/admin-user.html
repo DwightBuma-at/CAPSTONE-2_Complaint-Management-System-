@@ -427,8 +427,45 @@ async function checkAdminAuth() {
   }
 }
 
+// Load admin info (name and barangay)
+async function loadAdminInfo() {
+  try {
+    // Always fetch fresh admin data from server (no cache for barangay)
+    console.log('🔄 Loading fresh admin info from server...');
+
+    // Use the updated admin/me endpoint
+    const response = await fetch('/api/admin/me/');
+    if (response.ok) {
+      const data = await response.json();
+      if (data.authenticated) {
+        const adminName = data.full_name || 'Admin';
+        const adminBarangay = data.barangay || 'Unknown';
+        
+        document.getElementById('adminBrandName').textContent = adminName;
+        // Clean up barangay display - remove "Barangay" prefix if present
+        const cleanBarangay = adminBarangay.replace(/^Barangay\s+/i, '');
+        document.getElementById('adminBarangayBadge').textContent = `Barangay: ${cleanBarangay}`;
+        
+        // Cache the data
+        localStorage.setItem('adminName', adminName);
+        localStorage.setItem('adminBarangay', adminBarangay);
+      } else {
+        document.getElementById('adminBrandName').textContent = 'Admin';
+        document.getElementById('adminBarangayBadge').textContent = 'Barangay: Unknown';
+      }
+    } else {
+      document.getElementById('adminBrandName').textContent = 'Admin';
+      document.getElementById('adminBarangayBadge').textContent = 'Barangay: Error loading';
+    }
+  } catch (error) {
+    console.error('Error loading admin info:', error);
+    document.getElementById('adminBrandName').textContent = 'Admin';
+    document.getElementById('adminBarangayBadge').textContent = 'Barangay: Error loading';
+  }
+}
+
 function init(){
-  loadAdminBarangay();
+  loadAdminInfo();
   loadUsers();
   
   // Check if user is authenticated

@@ -1,0 +1,1978 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Super Admin Dashboard — CMS v2</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#121a33;
+      --muted:#9aa4bf;
+      --text:#eaf0ff;
+      --brand:#3b82f6;
+      --brand-2:#22d3ee;
+      --accent:#f59e0b;
+      --danger:#ef4444;
+      --ok:#10b981;
+      --shadow:0 10px 25px rgba(0,0,0,.35);
+      --radius:18px;
+      --border:1px solid rgba(255,255,255,.10);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter,sans-serif;
+      background:radial-gradient(1200px 600px at 20% -10%,rgba(34,211,238,.25),transparent 60%),
+                 radial-gradient(900px 500px at 90% 10%,rgba(59,130,246,.25),transparent 60%),
+                 var(--bg);
+      color:var(--text);
+    }
+    
+    /* Header */
+    .nav{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter: saturate(160%) blur(8px);
+      background: linear-gradient(180deg, rgba(11,16,32,.95), rgba(11,16,32,.85));
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .wrap{max-width:1400px;margin:0 auto;padding:0 20px}
+    .nav__inner{display:flex;align-items:center;justify-content:space-between;height:72px;}
+    .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)}
+    .shield{width:38px;height:38px;border-radius:12px;background:conic-gradient(from 210deg,var(--brand),var(--brand-2),var(--brand));box-shadow:0 8px 20px rgba(34,211,238,.28)}
+    .brand span{font-weight:800;letter-spacing:.2px}
+    .badge{display:inline-block;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.25);padding:6px 12px;border-radius:999px;font-weight:700;color:#fbbf24;margin-left:12px}
+    
+    /* Main Layout */
+    .content{padding:32px 0}
+    .top{text-align:center;margin-bottom:48px}
+    .top h1{margin:0 0 12px;font-size:clamp(2.5rem,4vw,3.5rem);font-weight:800;letter-spacing:.2px;background:linear-gradient(90deg,var(--brand),var(--brand-2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .top .sub{color:var(--muted);margin:0 0 24px 0;font-size:1.1rem}
+    
+    /* Stats Container */
+    .stats-container{max-width:1200px;margin:32px auto 0 auto;padding:0 16px}
+    .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;margin-bottom:0;max-width:800px;margin:0 auto}
+    .stat-card{
+      background:var(--card);border:var(--border);border-radius:var(--radius);padding:32px;box-shadow:var(--shadow);
+      transition:transform .2s ease,box-shadow .2s ease;text-align:center;
+    }
+    .stat-card:hover{transform:translateY(-2px);box-shadow:0 15px 35px rgba(0,0,0,.5)}
+    .stat-card h3{margin:0 0 8px;color:var(--muted);font-size:.9rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+    .stat-card .value{font-size:2.8rem;font-weight:800;margin:0 0 6px;background:linear-gradient(90deg,var(--brand),var(--brand-2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .stat-card .change{font-size:.9rem;color:var(--ok);font-weight:600}
+    
+    /* Main Content Grid */
+    .admin-section{max-width:1200px;margin:32px auto 0 auto}
+    
+    /* Management Container */
+    .management-container{background:var(--card);border:var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+    
+    /* Tab Navigation */
+    .tab-navigation{display:flex;align-items:center;padding:20px 24px;border-bottom:var(--border);background:rgba(255,255,255,.02);}
+    .tab-btn{background:none;border:none;color:var(--muted);padding:12px 20px;border-radius:8px;font-weight:600;font-size:1rem;cursor:pointer;transition:all .2s ease;display:flex;align-items:center;gap:8px;}
+    .tab-btn:hover{background:rgba(255,255,255,.05);color:var(--text);}
+    .tab-btn.active{background:var(--primary);color:white;box-shadow:0 2px 8px rgba(59,130,246,.3);}
+    .tab-actions{margin-left:auto;}
+    
+    /* Tab Content */
+    .tab-content{display:none;}
+    .tab-content.active{display:block;}
+    
+    /* Admin List */
+    .admin-list{
+      background:transparent;border:none;border-radius:0;box-shadow:none;
+    }
+    .card-head{padding:24px 28px 0;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:24px}
+    .card-head h3{margin:0 0 16px;font-weight:700;letter-spacing:.1px;display:flex;align-items:center;justify-content:space-between}
+    .card-body{padding:0 28px 28px}
+    
+    .admin-item{
+      display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.06);
+      transition:all .2s ease;border-radius:8px;margin-bottom:8px;
+    }
+    .admin-item:hover{
+      background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);
+      box-shadow:0 2px 8px rgba(0,0,0,.1);
+    }
+    .admin-item:last-child{border-bottom:none}
+    .admin-avatar{
+      width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--brand-2));
+      display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#031026;font-weight:800;
+    }
+    .admin-info{flex:1}
+    .admin-barangay{font-weight:600;margin-bottom:4px;color:var(--text);font-size:1rem}
+    .admin-name{font-size:.9rem;color:var(--muted);margin-bottom:4px}
+    .admin-users{font-size:.85rem;color:var(--brand);font-weight:500;display:flex;align-items:center;gap:4px}
+    .admin-status{
+      padding:4px 8px;border-radius:6px;font-size:.75rem;font-weight:700;
+    }
+    .status-active{background:rgba(16,185,129,.15);color:var(--ok)}
+    .status-inactive{background:rgba(239,68,68,.15);color:var(--danger)}
+    .admin-actions{display:flex;gap:8px;align-items:center}
+    .btn-details{background:var(--brand);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s ease;display:flex;align-items:center;gap:6px}
+    .btn-details:hover{background:var(--brand-2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(59,130,246,.3)}
+    
+    /* Officials List */
+    .officials-card{
+      background:var(--card);border:var(--border);border-radius:var(--radius);box-shadow:var(--shadow);
+    }
+    .official-item{
+      display:flex;align-items:center;gap:12px;padding:12px 0;
+    }
+    .official-icon{
+      width:32px;height:32px;border-radius:8px;background:rgba(34,211,238,.15);
+      display:flex;align-items:center;justify-content:center;font-size:1rem;
+    }
+    .official-title{font-weight:600;color:var(--text);font-size:.95rem}
+    
+    /* Buttons */
+    .btn{
+      display:inline-flex;align-items:center;gap:8px;justify-content:center;
+      height:44px;padding:0 20px;border-radius:12px;border:none;
+      background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#031026;
+      font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(34,211,238,.15);
+      transition:.2s;text-decoration:none;font-size:.95rem;
+    }
+    .btn:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(34,211,238,.25)}
+    .btn-primary{background:linear-gradient(90deg,var(--brand),var(--brand-2))}
+    .btn-success{background:linear-gradient(90deg,var(--ok),#059669)}
+    .btn-danger{background:linear-gradient(90deg,var(--danger),#dc2626);color:#fff}
+    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--text)}
+    .btn-ghost:hover{background:rgba(255,255,255,.05)}
+    
+    /* Modal Styles */
+    .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all .3s ease}
+    .modal.show{opacity:1;visibility:visible}
+    .modal-content{background:var(--card);border:var(--border);border-radius:var(--radius);box-shadow:var(--shadow);width:90%;max-width:700px;max-height:95vh;overflow-y:auto;transform:scale(.95);transition:transform .3s ease}
+    .modal.show .modal-content{transform:scale(1)}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;padding:24px 28px 0 28px;margin-bottom:24px;border-bottom:1px solid rgba(255,255,255,.1)}
+    .modal-header h3{margin:0;color:var(--text);font-size:1.5rem;font-weight:700}
+    .modal-close{background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;padding:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all .2s ease}
+    .modal-close:hover{background:rgba(255,255,255,.1);color:var(--text)}
+    .modal-body{padding:0 28px 28px 28px}
+    
+    /* Form Styles */
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .form-group{margin-bottom:20px}
+    .form-group.full-width{grid-column:1 / -1}
+    .form-group label{display:block;margin-bottom:8px;color:var(--text);font-weight:600;font-size:.9rem}
+    .form-group input,.form-group select{
+      width:100%;height:48px;padding:0 16px;border:1px solid rgba(255,255,255,.15);border-radius:12px;
+      background:rgba(11,18,38,.6);color:var(--text);font-size:1rem;transition:all .2s ease;
+    }
+    .form-group input:focus,.form-group select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+    .form-help{display:block;margin-top:4px;color:var(--muted);font-size:.8rem;line-height:1.4}
+    
+    /* Connected Inputs Styles */
+    .connected-inputs{display:flex;align-items:center;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .2s ease}
+    .connected-inputs:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+    .connected-inputs input{flex:1;border:none;border-radius:0;background:transparent;padding:12px 16px;margin:0}
+    .connected-inputs input:first-child{border-right:1px solid var(--border)}
+    .connected-inputs input:focus{box-shadow:none;border:none}
+    .input-separator{padding:0 12px;color:var(--muted);font-size:.9rem;font-weight:500;background:rgba(255,255,255,.05);border-left:1px solid var(--border);border-right:1px solid var(--border);white-space:nowrap}
+    
+    /* Admin Details Modal Styles - Enhanced */
+    #adminDetailsModal{
+      display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(3,16,38,.85);
+      backdrop-filter:blur(4px);z-index:10000;align-items:center;justify-content:center;
+    }
+    #adminDetailsModal.show{display:flex;}
+    #adminDetailsModal .modal-content{
+      background:linear-gradient(135deg,rgba(11,18,38,.95),rgba(17,28,58,.95));
+      border:1px solid rgba(59,130,246,.3);border-radius:20px;width:85%;max-width:800px;
+      max-height:85vh;overflow-y:auto;box-shadow:0 25px 50px rgba(0,0,0,.5),0 0 0 1px rgba(59,130,246,.2);
+      animation:modalSlideIn .3s ease-out;position:relative;margin:auto;
+    }
+    @keyframes modalSlideIn{
+      from{transform:scale(.9) translateY(-20px);opacity:0}
+      to{transform:scale(1) translateY(0);opacity:1}
+    }
+    #adminDetailsModal .modal-header{
+      background:linear-gradient(135deg,var(--brand),var(--brand-2));padding:24px 32px;
+      border-radius:20px 20px 0 0;border-bottom:1px solid rgba(255,255,255,.1);position:relative;
+    }
+    #adminDetailsModal .modal-header h2{
+      margin:0;color:#fff;font-size:1.8rem;font-weight:700;text-shadow:0 2px 4px rgba(0,0,0,.3);
+    }
+    #adminDetailsModal .modal-close{
+      position:absolute;top:20px;right:24px;background:rgba(255,255,255,.1);border:none;
+      color:#fff;font-size:28px;width:44px;height:44px;border-radius:50%;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;transition:all .2s ease;
+      backdrop-filter:blur(10px);
+    }
+    #adminDetailsModal .modal-close:hover{
+      background:rgba(255,255,255,.2);transform:scale(1.1);
+    }
+    #adminDetailsModal .modal-body{padding:24px;background:rgba(11,18,38,.8);}
+    
+    .details-section{
+      margin-bottom:24px;padding:20px;background:rgba(255,255,255,.02);
+      border-radius:16px;border:1px solid rgba(255,255,255,.08);
+      box-shadow:0 4px 12px rgba(0,0,0,.1);transition:all .2s ease;
+    }
+    .details-section:hover{
+      background:rgba(255,255,255,.04);border-color:rgba(59,130,246,.2);
+      transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,.15);
+    }
+    .details-section:last-child{margin-bottom:0;}
+    .details-section h3{
+      margin:0 0 24px;color:var(--text);font-size:1.3rem;font-weight:700;
+      display:flex;align-items:center;gap:12px;padding-bottom:12px;
+      border-bottom:1px solid rgba(59,130,246,.2);
+    }
+    .details-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .details-grid.system-grid{grid-template-rows:1fr 1fr auto;}
+    .system-users-item{grid-column:1/-1;text-align:center;}
+    .detail-item{
+      background:rgba(255,255,255,.03);border-radius:12px;padding:14px;
+      border:1px solid rgba(255,255,255,.08);transition:all .2s ease;
+    }
+    .detail-item:hover{
+      background:rgba(255,255,255,.06);border-color:rgba(59,130,246,.3);
+      transform:translateY(-1px);box-shadow:0 4px 12px rgba(59,130,246,.1);
+    }
+    .detail-item label{
+      color:var(--muted);font-size:.9rem;font-weight:600;text-transform:uppercase;
+      letter-spacing:.8px;margin-bottom:8px;display:block;
+    }
+    .detail-item span{
+      color:var(--text);font-size:1.1rem;font-weight:600;
+      background:linear-gradient(135deg,rgba(59,130,246,.1),rgba(99,102,241,.1));
+      padding:12px 16px;border-radius:8px;border:1px solid rgba(59,130,246,.2);
+      display:block;min-height:20px;
+    }
+    .status-badge{
+      padding:8px 16px;border-radius:25px;font-size:.9rem;font-weight:700;
+      text-align:center;display:inline-flex;align-items:center;gap:6px;
+      box-shadow:0 2px 8px rgba(0,0,0,.2);
+    }
+    .status-active{
+      background:linear-gradient(135deg,rgba(34,197,94,.2),rgba(16,185,129,.2));
+      color:#22c55e;border:1px solid rgba(34,197,94,.4);
+    }
+    .status-inactive{
+      background:linear-gradient(135deg,rgba(239,68,68,.2),rgba(220,38,38,.2));
+      color:#ef4444;border:1px solid rgba(239,68,68,.4);
+    }
+    .officials-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:16px;}
+    .official-item{
+      padding:18px;background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+      border-radius:12px;border:1px solid rgba(255,255,255,.1);transition:all .3s ease;
+      position:relative;overflow:hidden;min-height:80px;display:flex;flex-direction:column;
+      justify-content:space-between;
+    }
+    .official-item::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:3px;
+      background:linear-gradient(90deg,var(--brand),var(--brand-2));
+    }
+    .official-item:hover{
+      background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(99,102,241,.05));
+      border-color:rgba(59,130,246,.3);transform:translateY(-3px);
+      box-shadow:0 10px 30px rgba(59,130,246,.15);
+    }
+    .official-item.full-width{grid-column:1/-1;text-align:center;}
+    .official-item.full-width .official-name{text-align:center;}
+    .official-role{
+      color:var(--muted);font-size:.85rem;font-weight:600;margin-bottom:8px;
+      text-transform:uppercase;letter-spacing:.5px;line-height:1.2;
+      flex-shrink:0;
+    }
+    .official-name{
+      color:var(--text);font-size:1rem;font-weight:700;
+      line-height:1.4;word-wrap:break-word;overflow-wrap:break-word;
+      text-align:left;display:block;width:100%;
+    }
+    
+    /* Modal Footer Enhancement */
+    #adminDetailsModal .modal-footer{
+      padding:24px 32px;background:rgba(11,18,38,.6);border-top:1px solid rgba(255,255,255,.1);
+      border-radius:0 0 20px 20px;display:flex;gap:12px;justify-content:flex-end;
+    }
+    #adminDetailsModal .modal-footer .btn{
+      padding:12px 24px;border-radius:10px;font-weight:600;transition:all .2s ease;
+      box-shadow:0 4px 12px rgba(0,0,0,.2);
+    }
+    #adminDetailsModal .modal-footer .btn:hover{transform:translateY(-2px);}
+    
+    /* User Details Modal Styles */
+    .user-details-content{max-width:800px;width:85%;margin:auto;padding:0}
+    
+    
+    /* Confirmation Modal Styles */
+    .confirmation-content{max-width:450px;padding:0}
+    .confirmation-header{display:flex;align-items:center;gap:16px;padding:24px 24px 20px 24px;border-bottom:none}
+    .confirmation-icon{font-size:1.8rem;width:50px;height:50px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(239,68,68,.15);color:var(--danger)}
+    .confirmation-header h3{margin:0;color:var(--text);font-size:1.4rem;flex:1;font-weight:700}
+    .confirmation-body{padding:0px 24px 24px 24px}
+    .confirmation-body p{margin:0;color:var(--muted);font-size:1.1rem;line-height:1.5}
+    .confirmation-actions{display:flex;gap:16px;padding:0px 24px 24px 24px;justify-content:flex-end}
+    .confirmation-actions .btn{min-width:80px;height:44px;font-weight:700;font-size:1rem}
+    @media (max-width:768px){.confirmation-actions{flex-direction:column}.confirmation-actions .btn{width:100%}}
+    
+    /* GIS Location Styles */
+    .location-input{
+      display:flex;gap:8px;align-items:stretch;
+    }
+    .location-input input{flex:1;border-top-right-radius:0;border-bottom-right-radius:0}
+    .location-btn{
+      border-top-left-radius:0;border-bottom-left-radius:0;white-space:nowrap;min-width:100px;
+      background:linear-gradient(90deg,var(--accent),#d97706);color:#fff;
+    }
+    .location-btn:hover{background:linear-gradient(90deg,#d97706,var(--accent))}
+    
+    /* Special Input Styling */
+    .access-key-input{
+      font-family:'Courier New',monospace;letter-spacing:2px;text-align:center;font-weight:600;
+      background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);
+    }
+    .system-key-input{
+      text-transform:uppercase;letter-spacing:1px;font-weight:600;
+      background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3);
+    }
+    
+    /* Action Buttons */
+    .form-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:32px}
+    .form-actions .btn{min-width:100px}
+    
+    /* Empty State */
+    .empty-state{
+      text-align:center;padding:60px 20px;color:var(--muted);
+    }
+    .empty-state .icon{font-size:3rem;margin-bottom:16px;opacity:.6}
+    .empty-state h3{margin:0 0 8px;color:var(--text);font-size:1.2rem}
+    .empty-state p{margin:0;font-size:.9rem;line-height:1.5}
+    
+    /* Responsive Design */
+    @media (max-width:1200px){
+      .admin-section{padding:0 16px;margin-top:24px}
+    }
+    @media (max-width:768px){
+      .stats-grid{grid-template-columns:1fr}
+      .form-grid{grid-template-columns:1fr}
+      .content{padding:20px 0}
+      .card-head{padding:20px 20px 0}
+      .card-body{padding:0 20px 20px}
+      .modal-header{padding:20px 20px 0 20px}
+      .modal-body{padding:0 20px 20px 20px}
+      .form-actions{flex-direction:column}
+      .form-actions .btn{width:100%}
+    }
+    
+    /* Loading States */
+    .loading{
+      display:inline-flex;align-items:center;gap:8px;
+    }
+    .spinner{
+      width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top:2px solid currentColor;border-radius:50%;
+      animation:spin 1s linear infinite;
+    }
+    @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+    
+    /* Notification Styles */
+    .notification{
+      position:fixed;top:20px;right:20px;background:var(--card);border:var(--border);border-radius:var(--radius);
+      padding:16px 20px;color:var(--text);font-weight:600;box-shadow:var(--shadow);z-index:10000;
+      transform:translateX(100%);opacity:0;transition:all .3s ease;max-width:350px;
+    }
+    .notification.show{transform:translateX(0);opacity:1}
+    .notification.success{border-left:4px solid var(--ok)}
+    .notification.error{border-left:4px solid var(--danger)}
+    .notification.info{border-left:4px solid var(--brand)}
+    
+    /* Search and Filter */
+    .search-bar{
+      display:flex;gap:12px;margin-bottom:24px;align-items:center;
+    }
+    .search-input{
+      flex:1;height:44px;padding:0 16px;border:1px solid rgba(255,255,255,.15);
+      border-radius:12px;background:rgba(11,18,38,.6);color:var(--text);
+    }
+    .filter-select{
+      min-width:150px;height:44px;border:1px solid rgba(255,255,255,.15);
+      border-radius:12px;background:rgba(11,18,38,.6);color:var(--text);padding:0 12px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="nav">
+    <div class="wrap">
+      <nav class="nav__inner">
+        <a href="#" class="brand" onclick="return false;">
+          <div class="shield"></div>
+          <span>Super Admin</span>
+          <div class="badge">CMS v2</div>
+        </a>
+        <div style="display:flex;gap:12px;align-items:center">
+          <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+  
+  <!-- Main Content -->
+  <main class="content">
+    <div class="wrap">
+      <!-- Header Section -->
+      <div class="top">
+        <h1>Super Admin Dashboard</h1>
+        <p class="sub">Manage barangay admin registrations and monitor system usage</p>
+      </div>
+      
+      <!-- Stats Grid -->
+      <div class="stats-container">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Total Barangay Admins</h3>
+            <div class="value" id="totalAdmins">0</div>
+            <div class="change">Registered barangay administrators</div>
+          </div>
+          <div class="stat-card">
+            <h3>Total Registered Users</h3>
+            <div class="value" id="totalUsers">0</div>
+            <div class="change">Registered system users</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Management Section -->
+      <div class="admin-section">
+        <div class="management-container">
+          <!-- Tab Navigation -->
+          <div class="tab-navigation">
+            <button class="tab-btn active" onclick="switchTab('admins')" id="adminsTab">
+              👨‍💼 Barangay Administrators
+            </button>
+            <button class="tab-btn" onclick="switchTab('users')" id="usersTab">
+              👥 Registered Users
+            </button>
+            <div class="tab-actions">
+              <button class="btn btn-primary" onclick="openRegistrationModal()" id="registerBtn">
+                <span>➕</span> Register New Admin
+              </button>
+            </div>
+          </div>
+
+          <!-- Admin Management Tab -->
+          <div id="adminsContent" class="tab-content active">
+            <div class="admin-list">
+              <div class="card-body">
+                <!-- Search and Filter -->
+                <div class="search-bar">
+                  <input type="text" class="search-input" placeholder="Search administrators..." id="adminSearch">
+                  <select class="filter-select" id="statusFilter">
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+                
+                <!-- Admin List -->
+                <div id="adminListContainer">
+                  <!-- Admin list will be populated dynamically -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Users Management Tab -->
+          <div id="usersContent" class="tab-content">
+            <div class="admin-list">
+              <div class="card-body">
+                <!-- Search and Filter -->
+                <div class="search-bar">
+                  <input type="text" class="search-input" placeholder="Search users..." id="userSearch">
+                  <select class="filter-select" id="userStatusFilter">
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+                
+                <!-- Users List -->
+                <div id="userListContainer">
+                  <!-- Static example users -->
+                  <div class="admin-item">
+                    <div class="admin-avatar">JD</div>
+                    <div class="admin-info">
+                      <div class="admin-barangay">Juan Dela Cruz</div>
+                      <div class="admin-name">juan.delacruz@gmail.com</div>
+                      <div class="admin-users">🏠 Barangay Poblacion - 1-A</div>
+                    </div>
+                    <div class="admin-status status-active">Active</div>
+                    <div class="admin-actions">
+                      <button class="btn btn-details" onclick="showUserDetails('user1')">
+                        📋 Details
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="admin-item">
+                    <div class="admin-avatar">MS</div>
+                    <div class="admin-info">
+                      <div class="admin-barangay">Maria Santos</div>
+                      <div class="admin-name">maria.santos@gmail.com</div>
+                      <div class="admin-users">🏠 Barangay Agdao - AGD</div>
+                    </div>
+                    <div class="admin-status status-active">Active</div>
+                    <div class="admin-actions">
+                      <button class="btn btn-details" onclick="showUserDetails('user2')">
+                        📋 Details
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <!-- Admin Registration Modal -->
+  <div id="registrationModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Register Barangay Administrator</h3>
+        <button class="modal-close" onclick="closeRegistrationModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="adminRegistrationForm">
+          <div class="form-grid">
+            <!-- Email -->
+            <div class="form-group">
+              <label for="adminEmail">Email Address</label>
+              <input type="email" id="adminEmail" name="email" required>
+              <small class="form-help">Official barangay email address</small>
+            </div>
+            
+            <!-- Barangay Location (GIS) -->
+            <div class="form-group">
+              <label for="barangayLocation">Barangay Location</label>
+              <div class="location-input">
+                <input type="text" id="barangayLocation" name="barangay" placeholder="Enter barangay name" required>
+                <button type="button" class="btn location-btn" onclick="detectLocation()">
+                  <span id="locationBtnText">📍 Detect</span>
+                </button>
+              </div>
+              <small class="form-help">Click "Detect" to use GIS technology for precise location</small>
+            </div>
+            
+            <!-- Password -->
+            <div class="form-group">
+              <label for="adminPassword">Password</label>
+              <input type="password" id="adminPassword" name="password" required>
+              <small class="form-help">Minimum 8 characters with mixed case and numbers</small>
+            </div>
+            
+            <!-- Confirm Password -->
+            <div class="form-group">
+              <label for="confirmPassword">Confirm Password</label>
+              <input type="password" id="confirmPassword" name="confirmPassword" required>
+              <small class="form-help">Re-enter password to confirm</small>
+            </div>
+            
+            <!-- 6-digit Admin Access Key (2FA) -->
+            <div class="form-group">
+              <label for="adminAccessKey">6-digit Admin Access Key (2FA)</label>
+              <input type="text" id="adminAccessKey" name="accessKey" maxlength="6" pattern="[0-9]{6}" class="access-key-input" placeholder="000000" required>
+              <small class="form-help">Secure 6-digit key for two-factor authentication</small>
+            </div>
+            
+            <!-- System Activation Key -->
+            <div class="form-group">
+              <label for="systemActivationKey">System Activation Key</label>
+              <input type="text" id="systemActivationKey" name="activationKey" class="system-key-input" placeholder="F32024" required>
+              <small class="form-help">Master key provided by system administrators</small>
+            </div>
+          </div>
+          
+          <!-- Form Actions -->
+          <div class="form-actions">
+            <button type="button" class="btn btn-ghost" onclick="closeRegistrationModal()">Cancel</button>
+            <button type="button" class="btn btn-success" onclick="proceedToOfficialsStep()">
+              <span>Next Step: Officials Information</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Officials Information Modal -->
+  <div id="officialsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>👥 Barangay Officials Information</h3>
+        <button class="modal-close" onclick="closeOfficialsModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <p style="margin:0 0 24px;color:var(--muted);font-size:.9rem;line-height:1.5">
+          Please provide the names of key barangay officials. This information is required to complete the administrator registration.
+        </p>
+        
+        <form id="officialsForm">
+          <div class="form-grid">
+            <!-- Barangay Captain -->
+            <div class="form-group">
+              <label for="officialBarangayCaptain">👑 Barangay Captain</label>
+              <input type="text" id="officialBarangayCaptain" name="barangayCaptain" placeholder="Full Name" required>
+              <small class="form-help">Chief executive of the barangay</small>
+            </div>
+            
+            <!-- Barangay Secretary -->
+            <div class="form-group">
+              <label for="officialBarangaySecretary">📝 Barangay Secretary</label>
+              <input type="text" id="officialBarangaySecretary" name="barangaySecretary" placeholder="Full Name" required>
+              <small class="form-help">Administrative head of the barangay</small>
+            </div>
+            
+            <!-- Barangay Kagawad -->
+            <div class="form-group">
+              <label for="officialBarangayKagawad">⚖️ Barangay Kagawad</label>
+              <input type="text" id="officialBarangayKagawad" name="barangayKagawad" placeholder="Full Name" required>
+              <small class="form-help">Barangay council member</small>
+            </div>
+            
+            <!-- SK Chairman -->
+            <div class="form-group">
+              <label for="officialSKChairman">🎯 SK Chairman</label>
+              <input type="text" id="officialSKChairman" name="skChairman" placeholder="Full Name" required>
+              <small class="form-help">Sangguniang Kabataan chairman</small>
+            </div>
+            
+            <!-- Term of Year -->
+            <div class="form-group">
+              <label for="officialTermStartYear">📅 Term of Service</label>
+              <div class="connected-inputs">
+                <input type="number" id="officialTermStartYear" name="termStartYear" placeholder="2023" min="2020" max="2030" required>
+                <span class="input-separator">to</span>
+                <input type="number" id="officialTermEndYear" name="termEndYear" placeholder="2025" min="2020" max="2030" required>
+              </div>
+              <small class="form-help">Service period from start to end year</small>
+            </div>
+          </div>
+          
+          <!-- Form Actions -->
+          <div class="form-actions">
+            <button type="button" class="btn btn-ghost" onclick="goBackToRegistration()">← Back</button>
+            <button type="button" class="btn btn-success" onclick="proceedToOTP()">
+              <span>Next: Email Verification</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- OTP Verification Modal -->
+  <div id="otpModal" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+      <div class="modal-header">
+        <h3>Sign Up as Admin</h3>
+        <button class="modal-close" onclick="closeOTPModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div style="text-align: center; margin-bottom: 32px;">
+          <h4 style="margin: 0 0 16px; color: var(--text); font-size: 1.5rem; font-weight: 700;">Verify Your Email</h4>
+          <p style="margin: 0 0 8px; color: var(--muted); font-size: 0.95rem;">
+            We've sent a 6-digit verification code to
+          </p>
+          <p style="margin: 0; color: var(--text); font-weight: 600; font-size: 1.1rem;" id="otpEmailDisplay">
+            user@example.com
+          </p>
+        </div>
+        
+        <div class="form-group">
+          <label for="otpCode">Verification Code</label>
+          <input type="text" id="otpCode" name="otpCode" placeholder="Enter 6-digit code" maxlength="6" required style="text-align: center; font-size: 1.1rem; letter-spacing: 1px; padding: 12px 16px;">
+        </div>
+        
+        <div style="display: flex; gap: 12px; margin: 20px 0;">
+          <button class="btn btn-ghost" onclick="resendOTP()" id="resendBtn" style="flex: 1; font-size: 0.9rem; padding: 8px 12px;">
+            <span id="resendText">Resend Code</span>
+            <span id="resendTimer" style="display: none;">Resend in <span id="countdown">60</span>s</span>
+          </button>
+          <button class="btn btn-ghost" onclick="changeEmail()" style="flex: 1; font-size: 0.9rem; padding: 8px 12px;">
+            Change Email
+          </button>
+        </div>
+        
+        <button class="btn btn-primary" onclick="verifyOTP()" id="verifyBtn" style="width: 100%; padding: 12px; font-size: 1rem; font-weight: 600; margin-top: 8px;">
+          <span id="verifyText">Verify & Create Account</span>
+          <span id="verifySpinner" style="display: none;">⏳ Verifying...</span>
+        </button>
+        
+        <div style="text-align: center; margin-top: 16px; color: var(--muted); font-size: 0.85rem;" id="countdownDisplay">
+          Resend available in <span id="countdownText">60</span>s
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div id="successModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-body" style="text-align: center; padding: 40px 32px;">
+        <div style="font-size: 4rem; margin-bottom: 24px; color: var(--success);">✅</div>
+        <h3 style="margin: 0 0 16px; color: var(--text); font-size: 1.8rem; font-weight: 700;">Account Successfully Created!</h3>
+        <p style="margin: 0 0 24px; color: var(--muted); font-size: 1rem; line-height: 1.5;">
+          The barangay administrator account has been successfully registered and is now active in the system.
+        </p>
+        
+        <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 12px; padding: 20px; margin: 24px 0; text-align: left;">
+          <h4 style="margin: 0 0 12px; color: var(--text); font-size: 1.1rem; font-weight: 600;">📋 Account Details</h4>
+          <div style="display: grid; gap: 8px; font-size: 0.9rem;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--muted);">Email:</span>
+              <span style="color: var(--text); font-weight: 500;" id="successEmail">-</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--muted);">Barangay:</span>
+              <span style="color: var(--text); font-weight: 500;" id="successBarangay">-</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--muted);">Status:</span>
+              <span style="color: var(--success); font-weight: 600;">✅ Active</span>
+            </div>
+          </div>
+        </div>
+        
+        <div style="display: flex; gap: 12px; margin-top: 32px;">
+          <button class="btn btn-primary" onclick="closeSuccessModal()" style="flex: 1; padding: 12px; font-weight: 600;">
+            Continue to Dashboard
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Details Modal -->
+  <div id="adminDetailsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📋 Administrator Details</h2>
+        <button class="modal-close" onclick="closeAdminDetailsModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <!-- Admin Basic Info -->
+        <div class="details-section">
+          <h3>👤 Basic Information</h3>
+          <div class="details-grid">
+            <div class="detail-item">
+              <label>Email Address</label>
+              <span id="detailEmail">-</span>
+            </div>
+            <div class="detail-item">
+              <label>Barangay Location</label>
+              <span id="detailBarangay">-</span>
+            </div>
+            <div class="detail-item">
+              <label>Registration Date</label>
+              <span id="detailRegistrationDate">-</span>
+            </div>
+            <div class="detail-item">
+              <label>Status</label>
+              <span id="detailStatus" class="status-badge">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Officials Information -->
+        <div class="details-section">
+          <h3>👥 Barangay Officials</h3>
+          <div class="officials-grid">
+            <div class="official-item">
+              <div class="official-role">👑 Barangay Captain</div>
+              <div class="official-name" id="detailCaptain">-</div>
+            </div>
+            <div class="official-item">
+              <div class="official-role">📝 Barangay Secretary</div>
+              <div class="official-name" id="detailSecretary">-</div>
+            </div>
+            <div class="official-item">
+              <div class="official-role">⚖️ Barangay Kagawad</div>
+              <div class="official-name" id="detailKagawad">-</div>
+            </div>
+            <div class="official-item">
+              <div class="official-role">🎯 SK Chairman</div>
+              <div class="official-name" id="detailSKChairman">-</div>
+            </div>
+            <div class="official-item full-width">
+              <div class="official-role">📅 Term of Service</div>
+              <div class="official-name" id="detailTerm">-</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Information -->
+        <div class="details-section">
+          <h3>🔧 System Information</h3>
+          <div class="details-grid system-grid">
+            <div class="detail-item">
+              <label>Admin Access Key</label>
+              <span id="detailAccessKey">••••••</span>
+            </div>
+            <div class="detail-item">
+              <label>Last Login</label>
+              <span id="detailLastLogin">Never</span>
+            </div>
+            <div class="detail-item">
+              <label>Total Logins</label>
+              <span id="detailTotalLogins">0</span>
+            </div>
+            <div class="detail-item">
+              <label>Account Created</label>
+              <span id="detailAccountCreated">-</span>
+            </div>
+            <div class="detail-item system-users-item">
+              <label>Total Users</label>
+              <span id="detailUserCount">-</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeAdminDetailsModal()">Close</button>
+        <button class="btn btn-primary" onclick="editAdmin()">✏️ Edit Admin</button>
+        <button class="btn btn-danger" onclick="deactivateAdmin()">⚠️ Deactivate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Details Modal -->
+  <div id="userDetailsModal" class="modal">
+    <div class="modal-content user-details-content">
+      <div class="modal-header">
+        <h3>👤 User Details</h3>
+        <button class="modal-close" onclick="closeUserDetailsModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <!-- Basic Information Section -->
+        <div class="details-section">
+          <div class="details-header">
+            <h4>👤 Basic Information</h4>
+          </div>
+          <div class="details-grid">
+            <div class="detail-item">
+              <span class="detail-label">FULL NAME</span>
+              <span class="detail-value" id="userFullName">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">EMAIL ADDRESS</span>
+              <span class="detail-value" id="userEmail">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">BARANGAY LOCATION</span>
+              <span class="detail-value" id="userBarangay">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">COMPLAINTS SUBMITTED</span>
+              <span class="detail-value" id="userComplaints">-</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmationModal" class="modal hidden">
+    <div class="modal-content confirmation-content">
+      <div class="confirmation-header">
+        <div class="confirmation-icon" id="confirmationIcon">❓</div>
+        <h3 id="confirmationTitle">Logout Confirmation</h3>
+        <button class="modal-close" onclick="closeConfirmation()">&times;</button>
+      </div>
+      <div class="confirmation-body">
+        <p id="confirmationMessage">Are you sure you want to logout?</p>
+      </div>
+      <div class="confirmation-actions">
+        <button class="btn ghost" onclick="closeConfirmation()">NO</button>
+        <button class="btn" id="confirmYesBtn">YES</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Notification Container -->
+  <div id="notification" class="notification"></div>
+  
+  <script>
+    // Modal Functions
+    // Store registration data temporarily
+    let registrationData = {};
+    
+    function openRegistrationModal() {
+      document.getElementById('registrationModal').classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closeRegistrationModal() {
+      document.getElementById('registrationModal').classList.remove('show');
+      document.body.style.overflow = '';
+      document.getElementById('adminRegistrationForm').reset();
+      // Clear stored data
+      registrationData = {};
+    }
+    
+    function proceedToOfficialsStep() {
+      const form = document.getElementById('adminRegistrationForm');
+      const formData = new FormData(form);
+      
+      // Validate first step
+      const email = formData.get('email');
+      const barangay = formData.get('barangay');
+      const password = formData.get('password');
+      const confirmPassword = formData.get('confirmPassword');
+      const accessKey = formData.get('accessKey');
+      const activationKey = formData.get('activationKey');
+      
+      // Basic validation
+      if (!email || !barangay || !password || !confirmPassword || !accessKey || !activationKey) {
+        showNotification('Please fill in all required fields', 'error');
+        return;
+      }
+      
+      if (password !== confirmPassword) {
+        showNotification('Passwords do not match!', 'error');
+        return;
+      }
+      
+      if (accessKey.length !== 6) {
+        showNotification('Admin Access Key must be 6 digits', 'error');
+        return;
+      }
+      
+      if (activationKey !== 'F32024') {
+        showNotification('Invalid System Activation Key', 'error');
+        return;
+      }
+      
+      // Store first step data
+      registrationData = {
+        email: email,
+        barangay: barangay,
+        password: password,
+        confirmPassword: confirmPassword,
+        accessKey: accessKey,
+        activationKey: activationKey
+      };
+      
+      // Close first modal and open officials modal
+      document.getElementById('registrationModal').classList.remove('show');
+      document.getElementById('officialsModal').classList.add('show');
+    }
+    
+    function goBackToRegistration() {
+      document.getElementById('officialsModal').classList.remove('show');
+      document.getElementById('registrationModal').classList.add('show');
+    }
+    
+    function closeOfficialsModal() {
+      document.getElementById('officialsModal').classList.remove('show');
+      document.body.style.overflow = '';
+      document.getElementById('officialsForm').reset();
+      // Clear stored data
+      registrationData = {};
+    }
+    
+    // OTP Modal Functions
+    function proceedToOTP() {
+      // Validate officials form first
+      const form = document.getElementById('officialsForm');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      
+      // Collect officials data
+      const officialsData = {
+        barangayCaptain: document.getElementById('officialBarangayCaptain').value,
+        barangaySecretary: document.getElementById('officialBarangaySecretary').value,
+        barangayKagawad: document.getElementById('officialBarangayKagawad').value,
+        skChairman: document.getElementById('officialSKChairman').value,
+        termStartYear: document.getElementById('officialTermStartYear').value,
+        termEndYear: document.getElementById('officialTermEndYear').value
+      };
+      
+      // Merge with registration data
+      const completeData = { ...registrationData, ...officialsData };
+      
+      // Store complete data
+      window.registrationData = completeData;
+      
+      // Show email in OTP modal
+      document.getElementById('otpEmailDisplay').textContent = completeData.email;
+      
+      // Close officials modal and open OTP modal
+      document.getElementById('officialsModal').classList.remove('show');
+      document.getElementById('otpModal').classList.add('show');
+      
+      // Send OTP (simulate)
+      sendOTP(completeData.email);
+    }
+    
+    function goBackToOfficials() {
+      document.getElementById('otpModal').classList.remove('show');
+      document.getElementById('officialsModal').classList.add('show');
+    }
+    
+    function closeOTPModal() {
+      document.getElementById('otpModal').classList.remove('show');
+      document.body.style.overflow = '';
+      document.getElementById('otpCode').value = '';
+      // Clear stored data
+      window.registrationData = {};
+    }
+    
+    function sendOTP(email) {
+      // Simulate sending OTP
+      showNotification('OTP sent to ' + email, 'info');
+      
+      // Start resend timer
+      startResendTimer();
+    }
+    
+    function startResendTimer() {
+      let timeLeft = 60;
+      const resendBtn = document.getElementById('resendBtn');
+      const resendText = document.getElementById('resendText');
+      const resendTimer = document.getElementById('resendTimer');
+      const countdown = document.getElementById('countdown');
+      const countdownDisplay = document.getElementById('countdownDisplay');
+      const countdownText = document.getElementById('countdownText');
+      
+      resendBtn.disabled = true;
+      resendText.style.display = 'none';
+      resendTimer.style.display = 'inline';
+      countdownDisplay.style.display = 'block';
+      
+      const timer = setInterval(() => {
+        timeLeft--;
+        countdown.textContent = timeLeft;
+        countdownText.textContent = timeLeft;
+        
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          resendBtn.disabled = false;
+          resendText.style.display = 'inline';
+          resendTimer.style.display = 'none';
+          countdownDisplay.style.display = 'none';
+        }
+      }, 1000);
+    }
+    
+    function resendOTP() {
+      if (window.registrationData && window.registrationData.email) {
+        sendOTP(window.registrationData.email);
+        showNotification('OTP resent successfully!', 'success');
+      }
+    }
+    
+    function changeEmail() {
+      // Go back to registration modal to change email
+      document.getElementById('otpModal').classList.remove('show');
+      document.getElementById('registrationModal').classList.add('show');
+      showNotification('Please update your email address', 'info');
+    }
+    
+    function verifyOTP() {
+      const otpCode = document.getElementById('otpCode').value;
+      const verifyBtn = document.getElementById('verifyBtn');
+      const verifyText = document.getElementById('verifyText');
+      const verifySpinner = document.getElementById('verifySpinner');
+      
+      if (!otpCode || otpCode.length !== 6) {
+        showNotification('Please enter a valid 6-digit code', 'error');
+        return;
+      }
+      
+      // Show loading state
+      verifyBtn.disabled = true;
+      verifyText.style.display = 'none';
+      verifySpinner.style.display = 'inline';
+      
+      // Simulate OTP verification
+      setTimeout(() => {
+        // Only accept specific OTP codes for testing
+        const validOTPs = ['123456', '000000', '111111', '999999'];
+        
+        if (validOTPs.includes(otpCode)) {
+          showNotification('Email verified successfully!', 'success');
+          
+          // Complete registration
+          completeRegistration();
+        } else {
+          showNotification('Invalid OTP code. Please try again.', 'error');
+          
+          // Reset button state
+          verifyBtn.disabled = false;
+          verifyText.style.display = 'inline';
+          verifySpinner.style.display = 'none';
+        }
+      }, 2000);
+    }
+    
+    function completeRegistration() {
+      if (!window.registrationData) {
+        showNotification('Registration data not found!', 'error');
+        return;
+      }
+      
+      const data = window.registrationData;
+      
+      // Create admin data object
+      const adminData = {
+        id: 'admin_' + Date.now(),
+        email: data.email,
+        barangay: data.barangay,
+        password: data.password,
+        accessKey: data.accessKey,
+        systemActivationKey: data.systemActivationKey,
+        barangayCaptain: data.barangayCaptain,
+        barangaySecretary: data.barangaySecretary,
+        barangayKagawad: data.barangayKagawad,
+        skChairman: data.skChairman,
+        termStartYear: data.termStartYear,
+        termEndYear: data.termEndYear,
+        status: 'Active',
+        registeredDate: new Date().toLocaleDateString(),
+        lastLogin: 'Never',
+        totalLogins: 0,
+        totalUsers: Math.floor(Math.random() * 100) + 50
+      };
+      
+      // Add to admin list
+      addAdminToList(adminData);
+      
+      // Update stats
+      updateStats();
+      
+      // Close OTP modal
+      closeOTPModal();
+      
+      // Show success modal
+      showSuccessModal(adminData);
+      
+      // Clear registration data
+      window.registrationData = {};
+    }
+    
+    function showSuccessModal(adminData) {
+      // Populate success modal with admin data
+      document.getElementById('successEmail').textContent = adminData.email;
+      document.getElementById('successBarangay').textContent = adminData.barangay;
+      
+      // Show success modal
+      document.getElementById('successModal').classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closeSuccessModal() {
+      document.getElementById('successModal').classList.remove('show');
+      document.body.style.overflow = 'auto';
+    }
+    
+    // Official Davao City Barangay Database with Accurate Coordinates
+    const davaoCityBarangays = {
+      // District 1 (Poblacion District) - Official numbered barangays
+      'Barangay Poblacion - 1-A': { lat: 7.0731, lng: 125.6128, district: 1, code: '1-A', name: 'Poblacion' },
+      'Barangay Poblacion - 2-A': { lat: 7.0735, lng: 125.6132, district: 1, code: '2-A', name: 'Poblacion' },
+      'Barangay Poblacion - 3-A': { lat: 7.0739, lng: 125.6136, district: 1, code: '3-A', name: 'Poblacion' },
+      'Barangay Poblacion - 4-A': { lat: 7.0743, lng: 125.6140, district: 1, code: '4-A', name: 'Poblacion' },
+      'Barangay Poblacion - 5-A': { lat: 7.0747, lng: 125.6144, district: 1, code: '5-A', name: 'Poblacion' },
+      'Barangay Poblacion - 6-A': { lat: 7.0751, lng: 125.6148, district: 1, code: '6-A', name: 'Poblacion' },
+      'Barangay Poblacion - 7-A': { lat: 7.0755, lng: 125.6152, district: 1, code: '7-A', name: 'Poblacion' },
+      'Barangay Poblacion - 8-A': { lat: 7.0759, lng: 125.6156, district: 1, code: '8-A', name: 'Poblacion' },
+      'Barangay Poblacion - 9-A': { lat: 7.0763, lng: 125.6160, district: 1, code: '9-A', name: 'Poblacion' },
+      'Barangay Poblacion - 10-A': { lat: 7.0767, lng: 125.6164, district: 1, code: '10-A', name: 'Poblacion' },
+      'Barangay Poblacion - 11-B': { lat: 7.0771, lng: 125.6168, district: 1, code: '11-B', name: 'Poblacion' },
+      'Barangay Poblacion - 12-B': { lat: 7.0775, lng: 125.6172, district: 1, code: '12-B', name: 'Poblacion' },
+      'Barangay Poblacion - 13-B': { lat: 7.0779, lng: 125.6176, district: 1, code: '13-B', name: 'Poblacion' },
+      'Barangay Poblacion - 14-B': { lat: 7.0783, lng: 125.6180, district: 1, code: '14-B', name: 'Poblacion' },
+      'Barangay Poblacion - 15-B': { lat: 7.0787, lng: 125.6184, district: 1, code: '15-B', name: 'Poblacion' },
+      'Barangay Poblacion - 16-B': { lat: 7.0791, lng: 125.6188, district: 1, code: '16-B', name: 'Poblacion' },
+      'Barangay Poblacion - 17-B': { lat: 7.0795, lng: 125.6192, district: 1, code: '17-B', name: 'Poblacion' },
+      'Barangay Poblacion - 18-B': { lat: 7.0799, lng: 125.6196, district: 1, code: '18-B', name: 'Poblacion' },
+      'Barangay Poblacion - 19-B': { lat: 7.0803, lng: 125.6200, district: 1, code: '19-B', name: 'Poblacion' },
+      'Barangay Poblacion - 20-B': { lat: 7.0807, lng: 125.6204, district: 1, code: '20-B', name: 'Poblacion' },
+      'Barangay Poblacion - 21-C': { lat: 7.0650, lng: 125.6120, district: 1, code: '21-C', name: 'Poblacion' },
+      'Barangay Poblacion - 22-C': { lat: 7.0654, lng: 125.6124, district: 1, code: '22-C', name: 'Poblacion' },
+      'Barangay Poblacion - 23-C': { lat: 7.0658, lng: 125.6128, district: 1, code: '23-C', name: 'Poblacion' },
+      'Barangay Poblacion - 24-C': { lat: 7.0662, lng: 125.6132, district: 1, code: '24-C', name: 'Poblacion' },
+      'Barangay Poblacion - 25-C': { lat: 7.0666, lng: 125.6136, district: 1, code: '25-C', name: 'Poblacion' },
+      'Barangay Poblacion - 26-C': { lat: 7.0670, lng: 125.6140, district: 1, code: '26-C', name: 'Poblacion' },
+      'Barangay Poblacion - 27-C': { lat: 7.0674, lng: 125.6144, district: 1, code: '27-C', name: 'Poblacion' },
+      'Barangay Poblacion - 28-C': { lat: 7.0678, lng: 125.6148, district: 1, code: '28-C', name: 'Poblacion' },
+      'Barangay Poblacion - 29-C': { lat: 7.0682, lng: 125.6152, district: 1, code: '29-C', name: 'Poblacion' },
+      'Barangay Poblacion - 30-C': { lat: 7.0686, lng: 125.6156, district: 1, code: '30-C', name: 'Poblacion' },
+      'Barangay Poblacion - 31-D': { lat: 7.0669, lng: 125.6139, district: 1, code: '31-D', name: 'Poblacion' },
+      'Barangay Poblacion - 32-D': { lat: 7.0671, lng: 125.6141, district: 1, code: '32-D', name: 'Poblacion' },
+      'Barangay Poblacion - 33-D': { lat: 7.0673, lng: 125.6143, district: 1, code: '33-D', name: 'Poblacion' },
+      'Barangay Poblacion - 34-D': { lat: 7.0675, lng: 125.6145, district: 1, code: '34-D', name: 'Poblacion' },
+      'Barangay Poblacion - 35-D': { lat: 7.0677, lng: 125.6147, district: 1, code: '35-D', name: 'Poblacion' },
+      'Barangay Poblacion - 36-D': { lat: 7.0679, lng: 125.6149, district: 1, code: '36-D', name: 'Poblacion' },
+      'Barangay Poblacion - 37-D': { lat: 7.0681, lng: 125.6151, district: 1, code: '37-D', name: 'Poblacion' },
+      'Barangay Poblacion - 38-D': { lat: 7.0683, lng: 125.6153, district: 1, code: '38-D', name: 'Poblacion' },
+      'Barangay Poblacion - 39-D': { lat: 7.0685, lng: 125.6155, district: 1, code: '39-D', name: 'Poblacion' },
+      'Barangay Poblacion - 40-D': { lat: 7.0687, lng: 125.6157, district: 1, code: '40-D', name: 'Poblacion' },
+      
+      // District 2 (Major Named Barangays)
+      'Barangay Agdao - AGD': { lat: 7.1056, lng: 125.6139, district: 2, code: 'AGD', name: 'Agdao' },
+      'Barangay Aurora Quezon - AQ2': { lat: 7.0850, lng: 125.6180, district: 2, code: 'AQ2', name: 'Aurora Quezon' },
+      'Barangay Buhangin Proper - BHP': { lat: 7.1300, lng: 125.6400, district: 2, code: 'BHP', name: 'Buhangin Proper' },
+      'Barangay Indangan - IND': { lat: 7.1320, lng: 125.6380, district: 2, code: 'IND', name: 'Indangan' },
+      'Barangay Obrero - OBR': { lat: 7.0900, lng: 125.6200, district: 2, code: 'OBR', name: 'Obrero' },
+      'Barangay Paciano Rizal - PR2': { lat: 7.0950, lng: 125.6250, district: 2, code: 'PR2', name: 'Paciano Rizal' },
+      'Barangay Bankerohan - BNK': { lat: 7.0850, lng: 125.6150, district: 2, code: 'BNK', name: 'Bankerohan' },
+      'Barangay New Carmen - NCR': { lat: 7.0920, lng: 125.6180, district: 2, code: 'NCR', name: 'New Carmen' },
+      'Barangay Ula - ULA': { lat: 7.1100, lng: 125.6300, district: 2, code: 'ULA', name: 'Ula' },
+      'Barangay Madapo - MDP': { lat: 7.1150, lng: 125.6350, district: 2, code: 'MDP', name: 'Madapo' },
+      'Barangay Bucana - BUC': { lat: 7.1200, lng: 125.6320, district: 2, code: 'BUC', name: 'Bucana' },
+      'Barangay Roxas - ROX': { lat: 7.0800, lng: 125.6200, district: 2, code: 'ROX', name: 'Roxas' },
+      'Barangay Tugbok - TUG': { lat: 7.1500, lng: 125.5500, district: 2, code: 'TUG', name: 'Tugbok' },
+      'Barangay Bunawan Proper - BWP': { lat: 7.1000, lng: 125.5000, district: 2, code: 'BWP', name: 'Bunawan Proper' },
+      'Barangay Paquibato Proper - PQP': { lat: 7.2000, lng: 125.4000, district: 2, code: 'PQP', name: 'Paquibato Proper' },
+      'Barangay Marilog Proper - MRP': { lat: 7.3000, lng: 125.3000, district: 2, code: 'MRP', name: 'Marilog Proper' },
+      'Barangay Baguio District - BGD': { lat: 7.2500, lng: 125.3500, district: 2, code: 'BGD', name: 'Baguio District' },
+      'Barangay Calinan Proper - CNP': { lat: 7.1889, lng: 125.4558, district: 2, code: 'CNP', name: 'Calinan Proper' },
+      'Barangay Ma-a - MAA': { lat: 7.1050, lng: 125.6250, district: 2, code: 'MAA', name: 'Ma-a' },
+      'Barangay Lanang - LNG': { lat: 7.0950, lng: 125.6350, district: 2, code: 'LNG', name: 'Lanang' },
+      'Barangay Sasa - SAS': { lat: 7.1400, lng: 125.6650, district: 2, code: 'SAS', name: 'Sasa' },
+      'Barangay Waan - WAN': { lat: 7.1500, lng: 125.6750, district: 2, code: 'WAN', name: 'Waan' },
+      
+      // District 3 (Talomo District)
+      'Barangay Talomo Proper - TLP': { lat: 7.0506, lng: 125.5947, district: 3, code: 'TLP', name: 'Talomo Proper' },
+      'Barangay Apokororo - APK': { lat: 7.0450, lng: 125.5900, district: 3, code: 'APK', name: 'Apokororo' },
+      'Barangay Catalunan Grande - CTG': { lat: 7.0400, lng: 125.5850, district: 3, code: 'CTG', name: 'Catalunan Grande' },
+      'Barangay Catalunan Pequeño - CTP': { lat: 7.0380, lng: 125.5830, district: 3, code: 'CTP', name: 'Catalunan Pequeño' },
+      'Barangay Dumoy - DMY': { lat: 7.0350, lng: 125.5800, district: 3, code: 'DMY', name: 'Dumoy' },
+      'Barangay Kilate - KLT': { lat: 7.0320, lng: 125.5780, district: 3, code: 'KLT', name: 'Kilate' },
+      'Barangay Lizada - LZD': { lat: 7.0300, lng: 125.5760, district: 3, code: 'LZD', name: 'Lizada' },
+      'Barangay Magtuod - MGT': { lat: 7.0280, lng: 125.5740, district: 3, code: 'MGT', name: 'Magtuod' },
+      'Barangay Matina Aplaya - MTA': { lat: 7.0250, lng: 125.5720, district: 3, code: 'MTA', name: 'Matina Aplaya' },
+      'Barangay Matina Crossing - MTC': { lat: 7.0230, lng: 125.5700, district: 3, code: 'MTC', name: 'Matina Crossing' },
+      'Barangay Matina Pangi - MTP': { lat: 7.0200, lng: 125.5680, district: 3, code: 'MTP', name: 'Matina Pangi' },
+      'Barangay Mudiang - MDG': { lat: 7.0180, lng: 125.5660, district: 3, code: 'MDG', name: 'Mudiang' },
+      'Barangay Mulig - MLG': { lat: 7.0160, lng: 125.5640, district: 3, code: 'MLG', name: 'Mulig' },
+      'Barangay Tacunan - TCN': { lat: 7.0140, lng: 125.5620, district: 3, code: 'TCN', name: 'Tacunan' },
+      'Barangay Wilfredo Aquino - WFA': { lat: 7.0120, lng: 125.5600, district: 3, code: 'WFA', name: 'Wilfredo Aquino' },
+      'Barangay Mintal - MTL': { lat: 7.0600, lng: 125.5400, district: 3, code: 'MTL', name: 'Mintal' },
+      'Barangay Tibungco - TBG': { lat: 7.0550, lng: 125.5350, district: 3, code: 'TBG', name: 'Tibungco' },
+      'Barangay Daliao - DLO': { lat: 7.0500, lng: 125.5300, district: 3, code: 'DLO', name: 'Daliao' },
+      'Barangay Lamanan - LMN': { lat: 7.0450, lng: 125.5250, district: 3, code: 'LMN', name: 'Lamanan' },
+      'Barangay Biao Escuela - BSE': { lat: 7.0400, lng: 125.5200, district: 3, code: 'BSE', name: 'Biao Escuela' },
+      'Barangay Biao Joaquin - BSJ': { lat: 7.0350, lng: 125.5150, district: 3, code: 'BSJ', name: 'Biao Joaquin' },
+      'Barangay Sirawan - SRW': { lat: 7.0300, lng: 125.5100, district: 3, code: 'SRW', name: 'Sirawan' },
+      'Barangay Toril Proper - TRP': { lat: 7.0169, lng: 125.5053, district: 3, code: 'TRP', name: 'Toril Proper' }
+    };
+
+    // Calculate distance between two coordinates using Haversine formula
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Earth's radius in kilometers
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c; // Distance in kilometers
+    }
+
+    // Enhanced GIS Location Detection with Accurate Barangay Mapping
+    async function detectLocation() {
+      const locationBtn = document.getElementById('locationBtnText');
+      const locationInput = document.getElementById('barangayLocation');
+      
+      locationBtn.innerHTML = '<span class="spinner"></span> Detecting...';
+      
+      if (!navigator.geolocation) {
+        showNotification('Geolocation is not supported by your browser', 'error');
+        locationBtn.textContent = '📍 Detect';
+        return;
+      }
+      
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 30000
+          });
+        });
+        
+        const { latitude, longitude } = position.coords;
+        console.log('📍 GPS Location detected:', latitude, longitude);
+        
+        // Validate if location is within Davao City bounds
+        const davaoCityBounds = {
+          north: 7.4,
+          south: 6.8,
+          east: 125.8,
+          west: 125.0
+        };
+        
+        if (latitude < davaoCityBounds.south || latitude > davaoCityBounds.north || 
+            longitude < davaoCityBounds.west || longitude > davaoCityBounds.east) {
+          throw new Error('Location appears to be outside Davao City. Please select your barangay manually.');
+        }
+        
+        // Find closest barangay using accurate distance calculation
+        let closestBarangay = 'Unknown';
+        let minDistance = Infinity;
+        let foundDistrict = null;
+        
+        for (const [name, coords] of Object.entries(davaoCityBarangays)) {
+          const distance = calculateDistance(latitude, longitude, coords.lat, coords.lng);
+          
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestBarangay = name;
+            foundDistrict = coords.district;
+          }
+        }
+        
+        // Set the detected barangay with precise naming
+        locationInput.value = closestBarangay;
+        locationBtn.innerHTML = '✅ Located';
+        
+        // Show detailed success notification with accuracy info
+        const distanceKm = minDistance.toFixed(2);
+        showNotification(`📍 Precise location detected: ${closestBarangay} (District ${foundDistrict}) - ${distanceKm}km accuracy`, 'success');
+        
+        setTimeout(() => {
+          locationBtn.textContent = '📍 Detect';
+        }, 3000);
+        
+      } catch (error) {
+        console.error('Geolocation error:', error);
+        let errorMessage = 'Failed to detect location';
+        
+        if (error.code === 1) {
+          errorMessage = 'Location access denied. Please allow location access in your browser settings.';
+        } else if (error.code === 2) {
+          errorMessage = 'Location unavailable. Please check your device location settings.';
+        } else if (error.code === 3) {
+          errorMessage = 'Location request timed out. Please try again.';
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        showNotification(errorMessage, 'error');
+        locationBtn.textContent = '📍 Detect';
+      }
+    }
+    
+    // Form Submission
+    document.getElementById('officialsForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      
+      // Combine stored registration data with officials data
+      const data = {
+        // Basic registration info from first step
+        email: registrationData.email,
+        barangay: registrationData.barangay,
+        password: registrationData.password,
+        confirmPassword: registrationData.confirmPassword,
+        accessKey: registrationData.accessKey,
+        activationKey: registrationData.activationKey,
+        // Officials information from second step
+        barangayCaptain: formData.get('barangayCaptain'),
+        barangaySecretary: formData.get('barangaySecretary'),
+        barangayKagawad: formData.get('barangayKagawad'),
+        skChairman: formData.get('skChairman'),
+        termStartYear: formData.get('termStartYear'),
+        termEndYear: formData.get('termEndYear')
+      };
+      
+      // Basic validation
+      if (data.password !== data.confirmPassword) {
+        showNotification('Passwords do not match!', 'error');
+        return;
+      }
+      
+      if (!data.accessKey.match(/^\d{6}$/)) {
+        showNotification('Admin Access Key must be exactly 6 digits', 'error');
+        return;
+      }
+      
+      if (data.activationKey !== 'F32024') {
+        showNotification('Invalid System Activation Key', 'error');
+        return;
+      }
+      
+      // Officials validation
+      if (!data.barangayCaptain.trim()) {
+        showNotification('Barangay Captain name is required', 'error');
+        return;
+      }
+      
+      if (!data.barangaySecretary.trim()) {
+        showNotification('Barangay Secretary name is required', 'error');
+        return;
+      }
+      
+      if (!data.barangayKagawad.trim()) {
+        showNotification('Barangay Kagawad name is required', 'error');
+        return;
+      }
+      
+      if (!data.skChairman.trim()) {
+        showNotification('SK Chairman name is required', 'error');
+        return;
+      }
+      
+      if (!data.termStartYear || data.termStartYear < 2020 || data.termStartYear > 2030) {
+        showNotification('Term Start Year must be between 2020 and 2030', 'error');
+        return;
+      }
+      
+      if (!data.termEndYear || data.termEndYear < 2020 || data.termEndYear > 2030) {
+        showNotification('Term End Year must be between 2020 and 2030', 'error');
+        return;
+      }
+      
+      if (parseInt(data.termEndYear) <= parseInt(data.termStartYear)) {
+        showNotification('Term End Year must be greater than Term Start Year', 'error');
+        return;
+      }
+      
+      const registerBtn = document.getElementById('completeRegistrationBtnText');
+      registerBtn.innerHTML = '<span class="spinner"></span> Registering...';
+      
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Success
+        showNotification(`Administrator registered successfully for ${data.barangay}! Officials information recorded.`, 'success');
+        closeOfficialsModal();
+        
+        // Add to admin list (in real app, would refresh from backend)
+        addAdminToList(data);
+        updateStats();
+        
+        // Log officials information (in real app, would save to database)
+      console.log('Barangay Officials Information:', {
+        barangay: data.barangay,
+        captain: data.barangayCaptain,
+        secretary: data.barangaySecretary,
+        kagawad: data.barangayKagawad,
+        skChairman: data.skChairman,
+        termStartYear: data.termStartYear,
+        termEndYear: data.termEndYear,
+        termPeriod: `${data.termStartYear}-${data.termEndYear}`
+      });
+        
+      } catch (error) {
+        showNotification('Registration failed. Please try again.', 'error');
+      } finally {
+        registerBtn.textContent = 'Complete Registration';
+      }
+    });
+    
+    // Add Admin to List
+    // Store admin data globally for easy access
+    window.adminDataStore = window.adminDataStore || [];
+    
+    // Global data store for user details
+    window.userDataStore = {
+      'user1': {
+        fullName: 'Juan Dela Cruz',
+        email: 'juan.delacruz@gmail.com',
+        barangay: 'Barangay Poblacion - 1-A',
+        complaintsSubmitted: 7,
+        status: 'Active',
+        registeredDate: '2024-01-15',
+        lastLogin: '2024-09-25'
+      },
+      'user2': {
+        fullName: 'Maria Santos',
+        email: 'maria.santos@gmail.com',
+        barangay: 'Barangay Agdao - AGD',
+        complaintsSubmitted: 12,
+        status: 'Active',
+        registeredDate: '2024-02-10',
+        lastLogin: '2024-09-24'
+      }
+    };
+    
+    function addAdminToList(data) {
+      const container = document.getElementById('adminListContainer');
+      const adminItem = document.createElement('div');
+      adminItem.className = 'admin-item';
+      
+      const initials = data.email.substring(0, 2).toUpperCase();
+      
+      // Store detailed data in global store
+      const adminData = {
+        id: Date.now(), // Simple ID based on timestamp
+        email: data.email,
+        barangay: data.barangay,
+        barangayCaptain: data.barangayCaptain,
+        barangaySecretary: data.barangaySecretary,
+        barangayKagawad: data.barangayKagawad,
+        skChairman: data.skChairman,
+        termStartYear: data.termStartYear,
+        termEndYear: data.termEndYear,
+        accessKey: data.accessKey,
+        registrationDate: new Date().toLocaleDateString(),
+        status: 'Active',
+        lastLogin: 'Never',
+        totalLogins: 0
+      };
+      
+      window.adminDataStore.push(adminData);
+      
+      adminItem.innerHTML = `
+        <div class="admin-avatar">${initials}</div>
+        <div class="admin-info">
+          <div class="admin-barangay">${data.barangay}</div>
+          <div class="admin-name">${data.email}</div>
+          <div class="admin-users">👥 ${Math.floor(Math.random() * 150) + 25} users</div>
+        </div>
+        <div class="admin-status status-active">Active</div>
+        <div class="admin-actions">
+          <button class="btn btn-details" onclick="showAdminDetailsById(${adminData.id})">
+            📋 Details
+          </button>
+        </div>
+      `;
+      
+      container.insertBefore(adminItem, container.firstChild);
+    }
+    
+    // Update Statistics
+    function updateStats() {
+      const totalAdmins = document.getElementById('totalAdmins');
+      const currentTotal = parseInt(totalAdmins.textContent);
+      totalAdmins.textContent = currentTotal + 1;
+    }
+    
+    // Update total users count
+    function updateTotalUsers() {
+      const totalUsers = document.getElementById('totalUsers');
+      const currentCount = parseInt(totalUsers.textContent);
+      totalUsers.textContent = currentCount + 1;
+    }
+    
+    // Initialize total users count (simulate existing users)
+    function initializeStats() {
+      document.getElementById('totalUsers').textContent = '2'; // Juan and Maria
+    }
+    
+    // Search and Filter Functionality
+    document.getElementById('adminSearch').addEventListener('input', filterAdmins);
+    document.getElementById('statusFilter').addEventListener('change', filterAdmins);
+    
+    function filterAdmins() {
+      const search = document.getElementById('adminSearch').value.toLowerCase();
+      const status = document.getElementById('statusFilter').value;
+      const adminItems = document.querySelectorAll('.admin-item');
+      
+      adminItems.forEach(item => {
+        const name = item.querySelector('.admin-name').textContent.toLowerCase();
+        const barangay = item.querySelector('.admin-barangay').textContent.toLowerCase();
+        const adminStatus = item.querySelector('.admin-status').textContent.toLowerCase();
+        
+        const matchesSearch = name.includes(search) || barangay.includes(search);
+        const matchesStatus = status === 'all' || adminStatus.includes(status);
+        
+        if (matchesSearch && matchesStatus) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+    
+    // Notification System
+    function showNotification(message, type = 'info') {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.className = `notification ${type}`;
+      notification.classList.add('show');
+      
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 4000);
+    }
+    
+    // Quick Action Functions
+    function exportAdminData() {
+      showNotification('Exporting admin data...', 'info');
+      // Simulate export
+      setTimeout(() => {
+        showNotification('Admin data exported successfully!', 'success');
+      }, 2000);
+    }
+    
+    // Test function for static admin
+    function showTestAdminDetails() {
+      console.log('showTestAdminDetails called');
+      
+      const testData = {
+        email: 'testadmin@barangaytest.com',
+        barangay: 'Barangay Test - TST',
+        barangayCaptain: 'Juan Test Captain',
+        barangaySecretary: 'Maria Test Secretary',
+        barangayKagawad: 'Pedro Test Kagawad',
+        skChairman: 'Ana Test SK Chairman',
+        termStartYear: 2023,
+        termEndYear: 2025,
+        accessKey: 'TEST123',
+        registrationDate: '12/19/2024',
+        status: 'Active',
+        lastLogin: 'Never',
+        totalLogins: 0
+      };
+      
+      showAdminDetails(testData);
+    }
+    
+    // Admin Details Modal Functions
+    function showAdminDetailsById(adminId) {
+      console.log('showAdminDetailsById called with ID:', adminId);
+      console.log('Admin data store:', window.adminDataStore);
+      
+      // Find the admin data by ID
+      const data = window.adminDataStore.find(admin => admin.id === adminId);
+      
+      if (!data) {
+        console.error('Admin data not found for ID:', adminId);
+        showNotification('Error: Admin data not found', 'error');
+        return;
+      }
+      
+      console.log('Found admin data:', data);
+      showAdminDetails(data);
+    }
+    
+    // Simple test function for debugging
+    function testModalDirect() {
+      console.log('Testing modal directly...');
+      const modal = document.getElementById('adminDetailsModal');
+      if (modal) {
+        modal.style.display = 'block';
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        console.log('Modal should be visible now');
+      } else {
+        console.error('Modal element not found');
+      }
+    }
+    
+    // Fix for existing admin - direct function to test Details
+    function testExistingAdmin() {
+      console.log('Testing existing admin details...');
+      const testData = {
+        email: 'dwightanthonyb@barangaycalinan.com',
+        barangay: 'Barangay Calinan',
+        barangayCaptain: 'Juan Dela Cruz',
+        barangaySecretary: 'Maria Santos', 
+        barangayKagawad: 'Pedro Garcia',
+        skChairman: 'Ana Lopez',
+        termStartYear: 2023,
+        termEndYear: 2025,
+        accessKey: 'TEST123',
+        registrationDate: new Date().toLocaleDateString(),
+        status: 'Active',
+        lastLogin: 'Never',
+        totalLogins: 0,
+        userCount: 87
+      };
+      showAdminDetails(testData);
+    }
+    
+    function showAdminDetails(data) {
+      console.log('showAdminDetails called with data:', data);
+      
+      try {
+        const modal = document.getElementById('adminDetailsModal');
+        
+        if (!modal) {
+          console.error('Admin details modal not found');
+          alert('Error: Modal not found');
+          return;
+        }
+        
+        console.log('Modal found, populating data...');
+        
+        // Populate basic information
+        const emailElement = document.getElementById('detailEmail');
+        const barangayElement = document.getElementById('detailBarangay');
+        const registrationElement = document.getElementById('detailRegistrationDate');
+        
+        if (emailElement) emailElement.textContent = data.email || 'N/A';
+        if (barangayElement) barangayElement.textContent = data.barangay || 'N/A';
+        if (registrationElement) registrationElement.textContent = data.registrationDate || new Date().toLocaleDateString();
+        
+        // User count
+        const userCountElement = document.getElementById('detailUserCount');
+        if (userCountElement) {
+          const userCount = data.userCount || Math.floor(Math.random() * 150) + 25;
+          userCountElement.textContent = `👥 ${userCount} registered users`;
+        }
+        
+        // Status
+        const statusElement = document.getElementById('detailStatus');
+        if (statusElement) {
+          const status = data.status || 'Active';
+          const icon = status === 'Active' ? '✅' : '❌';
+          statusElement.innerHTML = `${icon} ${status}`;
+          statusElement.className = `status-badge ${status === 'Active' ? 'status-active' : 'status-inactive'}`;
+        }
+        
+        // Officials information
+        const captainElement = document.getElementById('detailCaptain');
+        const secretaryElement = document.getElementById('detailSecretary');
+        const kagawadElement = document.getElementById('detailKagawad');
+        const skChairmanElement = document.getElementById('detailSKChairman');
+        const termElement = document.getElementById('detailTerm');
+        
+        if (captainElement) captainElement.textContent = data.barangayCaptain || '-';
+        if (secretaryElement) secretaryElement.textContent = data.barangaySecretary || '-';
+        if (kagawadElement) kagawadElement.textContent = data.barangayKagawad || '-';
+        if (skChairmanElement) skChairmanElement.textContent = data.skChairman || '-';
+        if (termElement) {
+          termElement.textContent = data.termStartYear && data.termEndYear ? 
+            `${data.termStartYear} - ${data.termEndYear}` : '-';
+        }
+        
+        // System information
+        const accessKeyElement = document.getElementById('detailAccessKey');
+        const lastLoginElement = document.getElementById('detailLastLogin');
+        const totalLoginsElement = document.getElementById('detailTotalLogins');
+        const accountCreatedElement = document.getElementById('detailAccountCreated');
+        
+        if (accessKeyElement) accessKeyElement.textContent = data.accessKey ? '••••••' : 'Not set';
+        if (lastLoginElement) lastLoginElement.textContent = data.lastLogin || 'Never';
+        if (totalLoginsElement) totalLoginsElement.textContent = data.totalLogins || 0;
+        if (accountCreatedElement) accountCreatedElement.textContent = data.registrationDate || new Date().toLocaleDateString();
+        
+        console.log('Data populated, opening modal...');
+        modal.style.display = 'block';
+        modal.classList.add('show');
+        modal.style.zIndex = '10000';
+        document.body.style.overflow = 'hidden';
+        
+        console.log('Modal display style:', modal.style.display);
+        console.log('Modal z-index:', modal.style.zIndex);
+        console.log('Modal classes:', modal.className);
+        
+      } catch (error) {
+        console.error('Error in showAdminDetails:', error);
+        alert('Error opening modal: ' + error.message);
+      }
+    }
+    
+    function closeAdminDetailsModal() {
+      const modal = document.getElementById('adminDetailsModal');
+      modal.style.display = 'none';
+      modal.classList.remove('show');
+      document.body.style.overflow = 'auto';
+    }
+    
+    function editAdmin() {
+      showNotification('Edit functionality will be implemented in the backend integration', 'info');
+      // In real implementation, this would open an edit modal or redirect to edit page
+    }
+    
+    function deactivateAdmin() {
+      if (confirm('Are you sure you want to deactivate this administrator?')) {
+        showNotification('Administrator deactivated successfully', 'success');
+        // In real implementation, this would update the admin status in the backend
+        closeAdminDetailsModal();
+      }
+    }
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+      const modal = document.getElementById('adminDetailsModal');
+      const registrationModal = document.getElementById('registrationModal');
+      const officialsModal = document.getElementById('officialsModal');
+      const otpModal = document.getElementById('otpModal');
+      const successModal = document.getElementById('successModal');
+      const confirmationModal = document.getElementById('confirmationModal');
+      const userDetailsModal = document.getElementById('userDetailsModal');
+      
+      if (event.target === modal) {
+        closeAdminDetailsModal();
+      }
+      
+      if (event.target === registrationModal) {
+        closeRegistrationModal();
+      }
+      
+      if (event.target === officialsModal) {
+        closeOfficialsModal();
+      }
+      
+      if (event.target === otpModal) {
+        closeOTPModal();
+      }
+      
+      if (event.target === successModal) {
+        closeSuccessModal();
+      }
+      
+      if (event.target === confirmationModal) {
+        closeConfirmation();
+      }
+      
+      if (event.target === userDetailsModal) {
+        closeUserDetailsModal();
+      }
+    });
+    
+    function viewSystemLogs() {
+      showNotification('Opening system logs...', 'info');
+      // In real app, would open logs viewer
+    }
+    
+    function generateReport() {
+      showNotification('Generating usage report...', 'info');
+      // Simulate report generation
+      setTimeout(() => {
+        showNotification('Report generated and saved!', 'success');
+      }, 3000);
+    }
+    
+    // Confirmation Modal Functions
+    function showConfirmation(message, title = 'Confirmation', onConfirm) {
+      document.getElementById('confirmationTitle').textContent = title;
+      document.getElementById('confirmationMessage').textContent = message;
+      const yesBtn = document.getElementById('confirmYesBtn');
+      yesBtn.replaceWith(yesBtn.cloneNode(true));
+      document.getElementById('confirmYesBtn').addEventListener('click', function() {
+        closeConfirmation();
+        if (typeof onConfirm === 'function') { onConfirm(); }
+      });
+      document.getElementById('confirmationModal').classList.add('show');
+      document.getElementById('confirmationModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closeConfirmation() {
+      document.getElementById('confirmationModal').classList.remove('show');
+      document.getElementById('confirmationModal').classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
+    
+    // Tab Switching Functions
+    function switchTab(tabName) {
+      // Remove active class from all tabs and content
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      // Add active class to selected tab and content
+      document.getElementById(tabName + 'Tab').classList.add('active');
+      document.getElementById(tabName + 'Content').classList.add('active');
+      
+      // Update register button visibility
+      const registerBtn = document.getElementById('registerBtn');
+      if (tabName === 'admins') {
+        registerBtn.style.display = 'block';
+        registerBtn.innerHTML = '<span>➕</span> Register New Admin';
+      } else {
+        registerBtn.style.display = 'none';
+      }
+    }
+
+    // User Details Functions
+    function showUserDetails(userId) {
+      console.log('showUserDetails called with ID:', userId);
+      console.log('User data store:', window.userDataStore);
+      
+      // Get user data from store
+      const userData = window.userDataStore[userId];
+      
+      if (!userData) {
+        console.error('User data not found for ID:', userId);
+        showNotification('User data not found!', 'error');
+        return;
+      }
+      
+      try {
+        // Populate the modal with user data
+        document.getElementById('userFullName').textContent = userData.fullName || '-';
+        document.getElementById('userEmail').textContent = userData.email || '-';
+        document.getElementById('userBarangay').textContent = userData.barangay || '-';
+        document.getElementById('userComplaints').textContent = userData.complaintsSubmitted || '0';
+        
+        // Show the modal
+        const modal = document.getElementById('userDetailsModal');
+        if (modal) {
+          modal.classList.add('show');
+          modal.style.display = 'block';
+          modal.style.zIndex = '10000';
+          document.body.style.overflow = 'hidden';
+          console.log('User details modal opened successfully');
+        } else {
+          console.error('User details modal not found');
+        }
+      } catch (error) {
+        console.error('Error showing user details:', error);
+        showNotification('Error loading user details!', 'error');
+      }
+    }
+    
+    function closeUserDetailsModal() {
+      const modal = document.getElementById('userDetailsModal');
+      if (modal) {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+      }
+    }
+    
+
+    // Logout function
+    function logout() {
+      showConfirmation('Are you sure you want to logout?', 'Logout Confirmation', function() {
+        showNotification('Logging out...', 'info');
+        setTimeout(() => {
+          window.location.href = '/index.html';
+        }, 1000);
+      });
+    }
+    
+    // Initialize stats on page load
+    initializeStats();
+    
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Super Admin Dashboard loaded');
+      showNotification('Super Admin Dashboard ready', 'success');
+    });
+    
+    // Close modal when clicking outside
+    document.getElementById('registrationModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeRegistrationModal();
+      }
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeRegistrationModal();
+      }
+      if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        openRegistrationModal();
+      }
+    });
+  </script>
+</body>
+</html>

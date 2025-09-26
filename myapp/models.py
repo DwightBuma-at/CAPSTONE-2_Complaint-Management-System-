@@ -33,6 +33,7 @@ class Complaint(models.Model):
         max_length=30, choices=Status.choices, default=Status.PENDING
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-created_at"]

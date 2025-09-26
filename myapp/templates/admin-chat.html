@@ -403,7 +403,7 @@
     <aside class="sidebar">
       <a class="brand" href="admin-dashboard.html" aria-label="Admin Home">
         <div class="shield" aria-hidden="true"></div>
-        <span>Admin</span>
+        <span id="adminBrandName">Admin</span>
       </a>
       <div class="badge" id="adminBarangayBadge">Barangay: Loading...</div>
       <nav class="nav">
@@ -1098,9 +1098,78 @@
        }
      });
 
+    // Load admin info (name and barangay)
+    async function loadAdminInfo() {
+      try {
+        // Clear any cached data to force fresh fetch
+        localStorage.removeItem('adminName');
+        localStorage.removeItem('adminBarangay');
+        
+        console.log('🔄 Loading fresh admin info from server...');
+        console.log('🔍 Current adminBrandName element:', document.getElementById('adminBrandName'));
+
+        // Use the updated admin/me endpoint with cache-busting
+        const response = await fetch('/api/admin/me/?t=' + Date.now(), {
+          method: 'GET',
+          credentials: 'same-origin',
+          cache: 'no-cache'
+        });
+        
+        console.log('🔍 API response status:', response.status);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('🔍 API response data:', data);
+          
+          if (data.authenticated) {
+            const adminName = data.full_name || 'Admin';
+            const adminBarangay = data.barangay || 'Unknown';
+            
+            console.log('🔍 Setting admin name to:', adminName);
+            console.log('🔍 Setting barangay to:', adminBarangay);
+            
+            const nameElement = document.getElementById('adminBrandName');
+            const badgeElement = document.getElementById('adminBarangayBadge');
+            
+            if (nameElement) {
+              nameElement.textContent = adminName;
+              console.log('✅ Admin name updated to:', nameElement.textContent);
+            } else {
+              console.error('❌ adminBrandName element not found');
+            }
+            
+            if (badgeElement) {
+              // Clean up barangay display - remove "Barangay" prefix if present
+              const cleanBarangay = adminBarangay.replace(/^Barangay\s+/i, '');
+              badgeElement.textContent = `Barangay: ${cleanBarangay}`;
+              console.log('✅ Barangay updated to:', badgeElement.textContent);
+            } else {
+              console.error('❌ adminBarangayBadge element not found');
+            }
+            
+            // Cache the data
+            localStorage.setItem('adminName', adminName);
+            localStorage.setItem('adminBarangay', adminBarangay);
+          } else {
+            console.log('❌ User not authenticated');
+            document.getElementById('adminBrandName').textContent = 'Admin';
+            document.getElementById('adminBarangayBadge').textContent = 'Barangay: Unknown';
+          }
+        } else {
+          console.error('❌ API response not OK:', response.status);
+          document.getElementById('adminBrandName').textContent = 'Admin';
+          document.getElementById('adminBarangayBadge').textContent = 'Barangay: Error loading';
+        }
+      } catch (error) {
+        console.error('❌ Error loading admin info:', error);
+        document.getElementById('adminBrandName').textContent = 'Admin';
+        document.getElementById('adminBarangayBadge').textContent = 'Barangay: Error loading';
+      }
+    }
+
     // Initialize the page
     function init(){
-      loadAdminBarangay();
+      loadAdminInfo();
       // Check if user is authenticated
       checkAdminAuth();
        // Load chat data

@@ -965,10 +965,10 @@ def list_complaints(request):
             # Filter complaints by user_id for regular users, show all for admins
             # Exclude resolved complaints from the main view (they go to transaction history)
             if user.is_staff or user.is_superuser:
-                response = supabase.table('complaints').select('*').neq('status', 'Resolved').neq('status', 'Declined/Spam').order('created_at', desc=True).execute()
+                response = supabase.table('complaints').select('*').neq('status', 'Resolved').neq('status', 'Resolved by Agency').neq('status', 'Declined/Spam').order('created_at', desc=True).execute()
             else:
                 # For regular users, show all complaints they submitted except resolved and declined ones
-                response = supabase.table('complaints').select('*').eq('user_id', user.id).neq('status', 'Resolved').neq('status', 'Declined/Spam').order('created_at', desc=True).execute()
+                response = supabase.table('complaints').select('*').eq('user_id', user.id).neq('status', 'Resolved').neq('status', 'Resolved by Agency').neq('status', 'Declined/Spam').order('created_at', desc=True).execute()
             
             complaints = response.data
             data = []
@@ -997,10 +997,10 @@ def list_complaints(request):
     # Fallback to Django ORM
     if user.is_staff or user.is_superuser:
         # Exclude resolved and declined complaints from the main view (they go to transaction history)
-        complaints = Complaint.objects.exclude(status__in=['Resolved', 'Declined/Spam'])
+        complaints = Complaint.objects.exclude(status__in=['Resolved', 'Resolved by Agency', 'Declined/Spam'])
     else:
         # For regular users, show all complaints they submitted except resolved and declined ones
-        complaints = Complaint.objects.filter(user=user).exclude(status__in=['Resolved', 'Declined/Spam'])
+        complaints = Complaint.objects.filter(user=user).exclude(status__in=['Resolved', 'Resolved by Agency', 'Declined/Spam'])
     
     print(f"Found {complaints.count()} complaints in Django database")  # Debug logging
     data = [
@@ -1049,12 +1049,12 @@ def list_complaints_history(request):
             # Filter resolved and declined complaints by user_id for regular users, by barangay for admins
             if user.is_staff or user.is_superuser:
                 if admin_barangay:
-                    response = supabase.table('complaints').select('*').in_('status', ['Resolved', 'Declined/Spam']).eq('barangay', admin_barangay).order('created_at', desc=True).execute()
+                    response = supabase.table('complaints').select('*').in_('status', ['Resolved', 'Resolved by Agency', 'Declined/Spam']).eq('barangay', admin_barangay).order('updated_at', desc=True).execute()
                 else:
-                    response = supabase.table('complaints').select('*').in_('status', ['Resolved', 'Declined/Spam']).order('created_at', desc=True).execute()
+                    response = supabase.table('complaints').select('*').in_('status', ['Resolved', 'Resolved by Agency', 'Declined/Spam']).order('updated_at', desc=True).execute()
             else:
                 # For regular users, show only their resolved and declined complaints
-                response = supabase.table('complaints').select('*').eq('user_id', user.id).in_('status', ['Resolved', 'Declined/Spam']).order('created_at', desc=True).execute()
+                response = supabase.table('complaints').select('*').eq('user_id', user.id).in_('status', ['Resolved', 'Resolved by Agency', 'Declined/Spam']).order('updated_at', desc=True).execute()
             
             complaints = response.data
             data = []
@@ -1075,7 +1075,8 @@ def list_complaints_history(request):
                     "image": c.get('image_base64'),
                     "resolution_image": c.get('resolution_image'),
                     "admin_update": c.get('admin_update'),
-                    "resolved_date": formatted_date,  # For now, use created_at as resolved_date
+                    "forwarded_to_agency": c.get('forwarded_to_agency'),
+                    "resolved_date": format_ph_datetime(c.get('updated_at')),  # Use updated_at as resolved_date
                 })
             print(f"Found {len(data)} resolved complaints in Supabase")  # Debug logging
             return JsonResponse({"results": data})
@@ -1085,12 +1086,12 @@ def list_complaints_history(request):
     # Fallback to Django ORM
     if user.is_staff or user.is_superuser:
         if admin_barangay:
-            complaints = Complaint.objects.filter(status__in=['Resolved', 'Declined/Spam'], barangay=admin_barangay)
+            complaints = Complaint.objects.filter(status__in=['Resolved', 'Resolved by Agency', 'Declined/Spam'], barangay=admin_barangay).order_by('-updated_at')
         else:
-            complaints = Complaint.objects.filter(status__in=['Resolved', 'Declined/Spam'])
+            complaints = Complaint.objects.filter(status__in=['Resolved', 'Resolved by Agency', 'Declined/Spam']).order_by('-updated_at')
     else:
         # For regular users, show only their resolved and declined complaints
-        complaints = Complaint.objects.filter(user=user, status__in=['Resolved', 'Declined/Spam'])
+        complaints = Complaint.objects.filter(user=user, status__in=['Resolved', 'Resolved by Agency', 'Declined/Spam']).order_by('-updated_at')
     
     print(f"Found {complaints.count()} resolved complaints in Django database")  # Debug logging
     data = [
@@ -1107,7 +1108,8 @@ def list_complaints_history(request):
             "image": c.image_base64 or None,
             "resolution_image": c.resolution_image or None,
             "admin_update": c.admin_update or None,
-            "resolved_date": format_ph_datetime(c.created_at),  # For now, use created_at as resolved_date
+            "forwarded_to_agency": c.forwarded_to_agency or None,
+            "resolved_date": format_ph_datetime(c.updated_at),  # Use updated_at as resolved_date
         }
         for c in complaints
     ]
@@ -1300,7 +1302,7 @@ def list_transactions(request):
                 response = supabase.table('complaints').select('*').eq('barangay', admin_barangay).order('created_at', desc=True).execute()
             else:
                 # Exclude resolved and declined complaints (for active complaints view)
-                response = supabase.table('complaints').select('*').eq('barangay', admin_barangay).neq('status', 'Resolved').neq('status', 'Declined/Spam').order('created_at', desc=True).execute()
+                response = supabase.table('complaints').select('*').eq('barangay', admin_barangay).neq('status', 'Resolved').neq('status', 'Resolved by Agency').neq('status', 'Declined/Spam').order('created_at', desc=True).execute()
             complaints = response.data
             data = []
             for c in complaints:
@@ -1338,7 +1340,7 @@ def list_transactions(request):
         print(f"Found {complaints.count()} complaints in Django database for barangay {admin_barangay} (including resolved and declined)")  # Debug logging
     else:
         # Exclude resolved and declined complaints (for active complaints view)
-        complaints = Complaint.objects.filter(barangay=admin_barangay).exclude(status__in=['Resolved', 'Declined/Spam'])
+        complaints = Complaint.objects.filter(barangay=admin_barangay).exclude(status__in=['Resolved', 'Resolved by Agency', 'Declined/Spam'])
         print(f"Found {complaints.count()} complaints in Django database for barangay {admin_barangay} (excluding resolved and declined)")  # Debug logging
     data = [
         {

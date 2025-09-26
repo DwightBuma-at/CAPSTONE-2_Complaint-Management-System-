@@ -444,6 +444,17 @@
               <img id="resolutionPreviewImg" style="max-width:200px;max-height:150px;border-radius:8px;border:1px solid rgba(255,255,255,.1);">
             </div>
           </div>
+          
+          <!-- Resolved Complaint Info Section -->
+          <div id="resolvedInfoSection" style="display:none;margin-top:16px;padding:16px;border:1px solid rgba(16,185,129,.2);border-radius:12px;background:rgba(16,185,129,.05);">
+            <h4 style="margin:0 0 12px;color:var(--text);font-size:1rem;">✅ Complaint Resolved</h4>
+            <p style="margin:0 0 12px;color:var(--muted);font-size:0.9rem;">This complaint has been completed. Status changes are disabled for resolved complaints.</p>
+            
+            <div id="resolvedImagePreview" style="margin-top:12px;display:none;">
+              <h5 style="margin:0 0 8px;color:var(--text);font-size:0.9rem;">📸 Resolution Evidence:</h5>
+              <img id="resolvedPreviewImg" style="max-width:200px;max-height:150px;border-radius:8px;border:1px solid rgba(255,255,255,.1);">
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -585,6 +596,23 @@ let currentChat = null;
    return '';
  }
 
+function getStatusDisplay(status, forwardedToAgency) {
+  if (status === 'Resolved by Agency') {
+    // Check if we have valid agency data
+    if (forwardedToAgency && 
+        typeof forwardedToAgency === 'string' && 
+        forwardedToAgency.trim() !== '' && 
+        forwardedToAgency !== 'null' && 
+        forwardedToAgency !== 'undefined') {
+      return `Resolved by ${forwardedToAgency}`;
+    } else {
+      // Default to PNP for now (can be made more dynamic later)
+      return `Resolved by PNP`;
+    }
+  }
+  return status;
+}
+
 function fmtDate(d){ 
   if (!d) return '';
   
@@ -695,7 +723,7 @@ function openDetail(id){
     <div class="k">Reported to Barangay</div><div>${r.barangay}</div>
     <div class="k">Landmark</div><div>${r.location || 'N/A'}</div>
     <div class="k">Type</div><div>${r.type}</div>
-    <div class="k">Status</div><div><span class="status ${statusClass(r.status)}">${r.status}</span></div>
+    <div class="k">Status</div><div><span class="status ${statusClass(r.status)}">${getStatusDisplay(r.status, r.forwarded_to_agency)}</span></div>
     <div class="k">Description</div><div>${r.description||''}</div>
     ${r.forwarded_to_agency ? `<div class="k">Forwarded to</div><div><strong>${r.forwarded_to_agency}</strong></div>` : ''}
     ${r.forward_reason ? `<div class="k">Forward Reason</div><div>${r.forward_reason}</div>` : ''}
@@ -725,25 +753,40 @@ function openDetail(id){
   const inProgressInfoSection = document.getElementById('inProgressInfoSection');
   
   // Set initial visibility based on current status
-  if (currentStatus === 'Resolved') {
-    resolutionSection.style.display = 'block';
+  const statusDropdown = document.getElementById('detailStatus');
+  const saveButton = document.getElementById('saveStatusBtn');
+  const resolvedInfoSection = document.getElementById('resolvedInfoSection');
+  
+  if (currentStatus === 'Resolved' || currentStatus === 'Resolved by Agency') {
+    // For resolved complaints: disable dropdown and save button, show resolved info section
+    statusDropdown.disabled = true;
+    saveButton.disabled = true;
+    resolutionSection.style.display = 'none';
     adminUpdateSection.style.display = 'none';
     inProgressInfoSection.style.display = 'none';
+    resolvedInfoSection.style.display = 'block';
   } else if (currentStatus === 'In Progress') {
+    // For in-progress complaints: enable controls, show info section
+    statusDropdown.disabled = false;
+    saveButton.disabled = false;
     adminUpdateSection.style.display = 'none';
     resolutionSection.style.display = 'none';
     inProgressInfoSection.style.display = 'block';
+    resolvedInfoSection.style.display = 'none';
   } else {
+    // For other statuses: enable controls, hide all sections
+    statusDropdown.disabled = false;
+    saveButton.disabled = false;
     resolutionSection.style.display = 'none';
     adminUpdateSection.style.display = 'none';
     inProgressInfoSection.style.display = 'none';
+    resolvedInfoSection.style.display = 'none';
   }
   
-  // Show existing resolution image if status is Resolved
-  if (r.status === 'Resolved' && r.resolution_image) {
-    document.getElementById('resolutionPreviewImg').src = r.resolution_image;
-    document.getElementById('resolutionImagePreview').style.display = 'block';
-    document.getElementById('resolutionImageName').textContent = 'Existing resolution image';
+  // Show existing resolution image if status is Resolved or Resolved by Agency
+  if ((r.status === 'Resolved' || r.status === 'Resolved by Agency') && r.resolution_image) {
+    document.getElementById('resolvedPreviewImg').src = r.resolution_image;
+    document.getElementById('resolvedImagePreview').style.display = 'block';
   }
   
   const modal = document.getElementById('detailModal');
