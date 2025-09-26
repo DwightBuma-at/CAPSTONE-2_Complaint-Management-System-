@@ -41,6 +41,8 @@
     .shield{width:38px;height:38px;border-radius:12px;background:conic-gradient(from 210deg,var(--brand),var(--brand-2),var(--brand));box-shadow:0 8px 20px rgba(34,211,238,.28)}
     .brand span{font-weight:800;letter-spacing:.2px}
     .badge{display:inline-block;background:rgba(34,211,238,.10);border:1px solid rgba(34,211,238,.18);padding:6px 12px;border-radius:999px;font-weight:700;color:#b7f9ff;margin:6px 0 18px}
+    .clickable-badge{cursor:pointer;transition:all 0.2s ease}
+    .clickable-badge:hover{background:rgba(34,211,238,.20);transform:scale(1.02);box-shadow:0 4px 12px rgba(34,211,238,.3)}
     .nav a{
       display:flex;align-items:center;gap:12px;color:var(--muted);text-decoration:none;padding:12px 12px;border-radius:12px;margin:4px 0;font-weight:600;transition:.18s;
     }
@@ -144,7 +146,7 @@
         <div class="shield" aria-hidden="true"></div>
         <span id="adminBrandName">Admin</span>
       </a>
-      <div class="badge" id="adminBarangayBadge">Barangay: Loading...</div>
+      <div class="badge clickable-badge" id="adminBarangayBadge" onclick="showBarangayOfficialsModal(event)">Barangay: Loading...</div>
       <nav class="nav">
         <a href="/admin-dashboard.html">🏠 <span>Dashboard</span></a>
         <a href="/admin-complaints.html">🧾 <span>Complaints</span></a>
@@ -509,6 +511,80 @@ function openModal(modalId){
       window.location.href = '/index.html';
     });
   }
+
+// Barangay Officials Modal Functions
+async function showBarangayOfficialsModal(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  
+  // Add modal HTML if it doesn't exist
+  if (!document.getElementById('officialsModal')) {
+    const modalHTML = `
+      <div id="officialsModal" class="officials-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;backdrop-filter:blur(8px);align-items:center;justify-content:center">
+        <div style="background:var(--card);border-radius:var(--radius);width:90%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow);border:var(--border)">
+          <div style="padding:24px 24px 12px;border-bottom:var(--border);display:flex;align-items:center;justify-content:space-between">
+                <h3 style="margin:0;color:var(--text);font-size:1.5rem;font-weight:700">Barangay Officials</h3>
+            <button onclick="closeOfficialsModal()" style="background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center">&times;</button>
+          </div>
+          <div style="padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;text-align:center">
+                  <div style="font-size:2rem;margin-bottom:8px"></div>
+              <div style="font-size:0.9rem;color:var(--muted);font-weight:600;margin-bottom:4px">BARANGAY CAPTAIN</div>
+              <div style="font-size:1.1rem;color:var(--text);font-weight:600" id="officialCaptain">Loading...</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;text-align:center">
+                  <div style="font-size:2rem;margin-bottom:8px"></div>
+              <div style="font-size:0.9rem;color:var(--muted);font-weight:600;margin-bottom:4px">BARANGAY SECRETARY</div>
+              <div style="font-size:1.1rem;color:var(--text);font-weight:600" id="officialSecretary">Loading...</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;text-align:center">
+                  <div style="font-size:2rem;margin-bottom:8px"></div>
+              <div style="font-size:0.9rem;color:var(--muted);font-weight:600;margin-bottom:4px">BARANGAY KAGAWAD</div>
+              <div style="font-size:1.1rem;color:var(--text);font-weight:600" id="officialKagawad">Loading...</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;text-align:center">
+                  <div style="font-size:2rem;margin-bottom:8px"></div>
+              <div style="font-size:0.9rem;color:var(--muted);font-weight:600;margin-bottom:4px">SK CHAIRMAN</div>
+              <div style="font-size:1.1rem;color:var(--text);font-weight:600" id="officialSKChairman">Loading...</div>
+            </div>
+            <div style="grid-column:1 / -1;background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(34,211,238,0.1));border:1px solid rgba(59,130,246,0.2);border-radius:12px;padding:16px;text-align:center">
+                  <div style="font-size:1.5rem;margin-bottom:8px"></div>
+              <div style="font-size:0.9rem;color:var(--muted);font-weight:600;margin-bottom:4px">TERM OF SERVICE</div>
+              <div style="font-size:1.1rem;color:var(--text);font-weight:600" id="officialTerm">Loading...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+  }
+  
+  try {
+    document.getElementById('officialsModal').style.display = 'flex';
+    const response = await fetch('/api/admin/me/', { method: 'GET', credentials: 'same-origin' });
+    if (response.ok) {
+      const adminData = await response.json();
+      if (adminData.authenticated) {
+        document.getElementById('officialCaptain').textContent = adminData.barangayCaptain || 'Not Available';
+        document.getElementById('officialSecretary').textContent = adminData.barangaySecretary || 'Not Available';
+        document.getElementById('officialKagawad').textContent = adminData.barangayKagawad || 'Not Available';
+        document.getElementById('officialSKChairman').textContent = adminData.skChairman || 'Not Available';
+        const termStart = adminData.termStartYear || 'N/A';
+        const termEnd = adminData.termEndYear || 'N/A';
+        document.getElementById('officialTerm').textContent = `${termStart} - ${termEnd}`;
+      }
+    }
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+function closeOfficialsModal() {
+  const modal = document.getElementById('officialsModal');
+  if (modal) modal.style.display = 'none';
+}
 
 // Initialize the page
 init();

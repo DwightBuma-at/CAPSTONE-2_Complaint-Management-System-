@@ -551,15 +551,8 @@
 <div id="signupModal" class="modal hidden">
   <div class="modal-content">
     <div class="modal-header">
-      <h2>Sign Up</h2>
+      <h2>Sign Up as User</h2>
       <button class="modal-close" onclick="closeModal('signupModal')">&times;</button>
-    </div>
-    <!-- Role Toggle -->
-    <div class="role-toggle">
-      <div class="toggle-container">
-        <button class="toggle-btn active" data-role="user" onclick="toggleRole('user', 'signup')">User</button>
-        <button class="toggle-btn" data-role="admin" onclick="toggleRole('admin', 'signup')">Admin</button>
-      </div>
     </div>
     <!-- Step 1: Initial Signup Form -->
     <form class="modal-form" id="signupForm">
@@ -964,24 +957,15 @@
       const terms = formData.get('terms');
       const systemActivationKey = formData.get('systemActivationKey');
       const adminAccessKey = formData.get('adminAccessKey');
-      const role = window.currentSignupRole || 'user';
+      const role = 'user'; // Always user for signup in index.html
       
       // Debug logging
-      console.log('Form data collected:', { name, email, barangay, password: password ? '***' : 'empty', confirmPassword: confirmPassword ? '***' : 'empty', role, systemActivationKey: systemActivationKey ? '***' : 'empty', adminAccessKey: adminAccessKey ? '***' : 'empty' });
+      console.log('Form data collected:', { name, email, barangay, password: password ? '***' : 'empty', confirmPassword: confirmPassword ? '***' : 'empty', role });
       
-      // Validate required fields based on role
-      if (role === 'admin') {
-        // For admin, name field is hidden, so don't validate it
-        if (!email || !barangay || !password || !confirmPassword) {
-          showNotification('Please fill in all required fields', 'error');
-          return;
-        }
-      } else {
-        // For user, validate all fields including name
-        if (!name || !email || !barangay || !password || !confirmPassword) {
-          showNotification('Please fill in all required fields', 'error');
-          return;
-        }
+      // Validate required fields for user
+      if (!name || !email || !barangay || !password || !confirmPassword) {
+        showNotification('Please fill in all required fields', 'error');
+        return;
       }
       
       // Validate passwords match
@@ -989,121 +973,50 @@
         showNotification('Passwords do not match!', 'error');
         return;
       }
+      console.log('Proceeding with user registration for role:', role);
+      console.log('Sending data to API:', { full_name: name, email, barangay, password: password ? '***' : 'empty', confirm_password: confirmPassword ? '***' : 'empty' });
       
-      // Additional validation for admin signup
-      if (role === 'admin') {
-        if (!systemActivationKey) {
-          showNotification('Please enter the system activation key for admin signup.', 'error');
-          return;
-        }
-        if (!adminAccessKey) {
-          showNotification('Please enter the 6-digit admin access key.', 'error');
-          return;
-        }
-        if (!adminAccessKey.match(/^\d{6}$/)) {
-          showNotification('Admin access key must be exactly 6 digits.', 'error');
-          return;
-        }
-        // In a real app, you would validate the system activation key against a database
-        console.log('System activation key:', systemActivationKey);
-        console.log('Admin access key:', adminAccessKey);
-      }
-      
-      // Only proceed with user registration (not admin)
-      if (role === 'user') {
-        console.log('Proceeding with user registration for role:', role);
-        console.log('Sending data to API:', { full_name: name, email, barangay, password: password ? '***' : 'empty', confirm_password: confirmPassword ? '***' : 'empty' });
+      try {
+        const response = await fetch('/api/user/send-verification/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            full_name: name,
+            email: email,
+            barangay: barangay,
+            password: password,
+            confirm_password: confirmPassword
+          })
+        });
         
-        try {
-          const response = await fetch('/api/user/send-verification/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              full_name: name,
-              email: email,
-              barangay: barangay,
-              password: password,
-              confirm_password: confirmPassword
-            })
-          });
-          
-          const data = await response.json();
-          
-          if (response.ok) {
-      // Store signup data for later use
-            window.signupData = { name, email, barangay, password, terms, role };
-      // Show OTP form
-      document.getElementById('signupForm').classList.add('hidden');
-      document.getElementById('otpForm').classList.remove('hidden');
-      document.getElementById('otpEmailDisplay').textContent = email;
-      // Hide role toggle during OTP verification
-      document.querySelector('#signupModal .role-toggle').style.display = 'none';
-      // Start OTP timer
-      startOTPTimer();
-            showNotification(data.message, 'success');
-          } else {
-            console.log('API Error Response:', data);
-            showNotification(data.error || 'Failed to send verification code', 'error');
-          }
-        } catch (error) {
-          console.error('Error sending verification code:', error);
-          showNotification('Network error. Please try again.', 'error');
-        }
-      } else {
-        // For admin, use the new API flow
-        console.log('Proceeding with admin registration for role:', role);
-        console.log('Sending data to API:', { email, barangay, password: password ? '***' : 'empty', confirm_password: confirmPassword ? '***' : 'empty', activation_key: systemActivationKey, admin_access_key: adminAccessKey });
+        const data = await response.json();
         
-        try {
-          const response = await fetch('/api/admin/send-verification/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email: email,
-              barangay: barangay,
-              password: password,
-              confirm_password: confirmPassword,
-              activation_key: systemActivationKey,
-              admin_access_key: adminAccessKey
-            })
-          });
-          
-          const data = await response.json();
-          
-          if (response.ok) {
-            // Store signup data for later use
-            window.signupData = { email, barangay, password, terms, role, systemActivationKey, adminAccessKey };
-            // Show OTP form
-            document.getElementById('signupForm').classList.add('hidden');
-            document.getElementById('otpForm').classList.remove('hidden');
-            document.getElementById('otpEmailDisplay').textContent = email;
-            // Hide role toggle during OTP verification
-            document.querySelector('#signupModal .role-toggle').style.display = 'none';
-            // Start OTP timer
-            startOTPTimer();
-            showNotification(data.message, 'success');
-          } else {
-            console.log('API Error Response:', data);
-            showNotification(data.error || 'Failed to send verification code', 'error');
-          }
-        } catch (error) {
-          console.error('Error sending verification code:', error);
-          showNotification('Network error. Please try again.', 'error');
+        if (response.ok) {
+          // Store signup data for later use
+          window.signupData = { name, email, barangay, password, terms, role };
+          // Show OTP form
+          document.getElementById('signupForm').classList.add('hidden');
+          document.getElementById('otpForm').classList.remove('hidden');
+          document.getElementById('otpEmailDisplay').textContent = email;
+          // Start OTP timer
+          startOTPTimer();
+          showNotification(data.message, 'success');
+        } else {
+          console.log('API Error Response:', data);
+          showNotification(data.error || 'Failed to send verification code', 'error');
         }
+      } catch (error) {
+        console.error('Error sending verification code:', error);
+        showNotification('Network error. Please try again.', 'error');
       }
     });
     // OTP form submission
     document.getElementById('otpForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const otpCode = document.getElementById('otpCode').value;
-      const role = window.currentSignupRole || 'user';
-      
-      // Only proceed with user verification (not admin)
-      if (role === 'user') {
+      const role = 'user'; // Always user for signup in index.html
         try {
           const submitBtn = e.target.querySelector('button[type="submit"]');
           const originalText = submitBtn.textContent;
@@ -1179,83 +1092,6 @@
           submitBtn.disabled = false;
           showNotification('Network error. Please try again.', 'error');
         }
-      } else {
-        // For admin, use the new API flow
-        try {
-          const submitBtn = e.target.querySelector('button[type="submit"]');
-          const originalText = submitBtn.textContent;
-          submitBtn.textContent = 'Verifying...';
-          submitBtn.disabled = true;
-          
-          const response = await fetch('/api/admin/verify-email/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email: window.signupData.email,
-              full_name: window.signupData.name,
-              barangay: window.signupData.barangay,
-              password: window.signupData.password,
-              activation_key: window.signupData.systemActivationKey,
-              admin_access_key: window.signupData.adminAccessKey,
-              otp_code: otpCode
-            })
-          });
-          
-          const data = await response.json();
-          
-          if (response.ok) {
-            submitBtn.textContent = 'Account Created!';
-            setTimeout(() => {
-              // Reset forms and close modal
-              document.getElementById('signupForm').reset();
-              document.getElementById('otpForm').reset();
-              // Reset form field visibility after form reset
-              const signupForm = document.getElementById('signupForm');
-              const nameField = signupForm.querySelector('#signupName').closest('.form-group');
-              const systemActivationKeyField = signupForm.querySelector('#systemActivationKey')?.closest('.form-group');
-              const adminAccessKeyField = signupForm.querySelector('#adminAccessKey')?.closest('.form-group');
-              const adminMessage = signupForm.querySelector('#adminMessage');
-              // Reset to user form by default
-              nameField.style.display = 'block';
-              if (systemActivationKeyField) {
-                systemActivationKeyField.style.display = 'none';
-              }
-              if (adminAccessKeyField) {
-                adminAccessKeyField.style.display = 'none';
-              }
-              if (adminMessage) {
-                adminMessage.style.display = 'none';
-              }
-              document.getElementById('signupForm').classList.remove('hidden');
-              document.getElementById('otpForm').classList.add('hidden');
-              // Show role toggle again
-              document.querySelector('#signupModal .role-toggle').style.display = 'block';
-              closeModal('signupModal');
-              submitBtn.textContent = originalText;
-              submitBtn.disabled = false;
-              // Clear stored data
-              delete window.signupData;
-              console.log('Admin account created successfully');
-              showNotification(data.message, 'success');
-            }, 1000);
-          } else {
-            console.log('API Error Response:', data);
-            showNotification(data.error || 'Failed to verify email', 'error');
-            submitBtn.textContent = originalText;
-            submitBtn.disabled = false;
-            document.getElementById('otpCode').value = '';
-            document.getElementById('otpCode').focus();
-          }
-        } catch (error) {
-          console.error('Error verifying OTP:', error);
-          const submitBtn = e.target.querySelector('button[type="submit"]');
-          submitBtn.textContent = 'Verify & Create Account';
-          submitBtn.disabled = false;
-          showNotification('Network error. Please try again.', 'error');
-        }
-      }
     });
     // Login OTP form submission
     document.getElementById('loginOtpForm').addEventListener('submit', async (e) => {
@@ -1616,6 +1452,11 @@
             signupForm.insertBefore(newSystemActivationKeyField, confirmPasswordField.nextSibling);
           } else {
             systemActivationKeyField.style.display = 'block';
+            const systemActivationInput = systemActivationKeyField.querySelector('#systemActivationKey');
+            if (systemActivationInput) { 
+              systemActivationInput.disabled = false; 
+              systemActivationInput.setAttribute('required', ''); 
+            }
           }
           // Show admin message if it exists, or create it (must appear directly above System Activation Key)
           if (!adminMessage) {
@@ -1661,11 +1502,21 @@
           // Hide activation key fields and admin message for user
           if (systemActivationKeyField) {
             systemActivationKeyField.style.display = 'none';
+            const systemActivationInput = systemActivationKeyField.querySelector('#systemActivationKey');
+            if (systemActivationInput) { 
+              systemActivationInput.disabled = true; 
+              systemActivationInput.removeAttribute('required'); 
+              systemActivationInput.value = ''; // Clear value
+            }
           }
           if (adminAccessKeyField) {
             adminAccessKeyField.style.display = 'none';
             const adminAccessInput = adminAccessKeyField.querySelector('#adminAccessKey');
-            if (adminAccessInput) { adminAccessInput.disabled = true; adminAccessInput.removeAttribute('required'); }
+            if (adminAccessInput) { 
+              adminAccessInput.disabled = true; 
+              adminAccessInput.removeAttribute('required'); 
+              adminAccessInput.value = ''; // Clear value
+            }
           }
           if (adminMessage) {
             adminMessage.style.display = 'none';
@@ -1682,47 +1533,47 @@
     
     // Official Davao City Barangay Database (182 barangays) with accurate coordinates
     const davaoCityBarangays = {
-      // District 1 (Poblacion District) - Official numbered barangays
-      'Barangay 1-A': { lat: 7.0731, lng: 125.6128, district: 1, code: '1-A' },
-      'Barangay 2-A': { lat: 7.0735, lng: 125.6132, district: 1, code: '2-A' },
-      'Barangay 3-A': { lat: 7.0739, lng: 125.6136, district: 1, code: '3-A' },
-      'Barangay 4-A': { lat: 7.0743, lng: 125.6140, district: 1, code: '4-A' },
-      'Barangay 5-A': { lat: 7.0747, lng: 125.6144, district: 1, code: '5-A' },
-      'Barangay 6-A': { lat: 7.0751, lng: 125.6148, district: 1, code: '6-A' },
-      'Barangay 7-A': { lat: 7.0755, lng: 125.6152, district: 1, code: '7-A' },
-      'Barangay 8-A': { lat: 7.0759, lng: 125.6156, district: 1, code: '8-A' },
-      'Barangay 9-A': { lat: 7.0763, lng: 125.6160, district: 1, code: '9-A' },
-      'Barangay 10-A': { lat: 7.0767, lng: 125.6164, district: 1, code: '10-A' },
-      'Barangay 11-B': { lat: 7.0771, lng: 125.6168, district: 1, code: '11-B' },
-      'Barangay 12-B': { lat: 7.0775, lng: 125.6172, district: 1, code: '12-B' },
-      'Barangay 13-B': { lat: 7.0779, lng: 125.6176, district: 1, code: '13-B' },
-      'Barangay 14-B': { lat: 7.0783, lng: 125.6180, district: 1, code: '14-B' },
-      'Barangay 15-B': { lat: 7.0787, lng: 125.6184, district: 1, code: '15-B' },
-      'Barangay 16-B': { lat: 7.0791, lng: 125.6188, district: 1, code: '16-B' },
-      'Barangay 17-B': { lat: 7.0795, lng: 125.6192, district: 1, code: '17-B' },
-      'Barangay 18-B': { lat: 7.0799, lng: 125.6196, district: 1, code: '18-B' },
-      'Barangay 19-B': { lat: 7.0803, lng: 125.6200, district: 1, code: '19-B' },
-      'Barangay 20-B': { lat: 7.0807, lng: 125.6204, district: 1, code: '20-B' },
-      'Barangay 21-C': { lat: 7.0650, lng: 125.6120, district: 1, code: '21-C' },
-      'Barangay 22-C': { lat: 7.0654, lng: 125.6124, district: 1, code: '22-C' },
-      'Barangay 23-C': { lat: 7.0658, lng: 125.6128, district: 1, code: '23-C' },
-      'Barangay 24-C': { lat: 7.0662, lng: 125.6132, district: 1, code: '24-C' },
-      'Barangay 25-C': { lat: 7.0666, lng: 125.6136, district: 1, code: '25-C' },
-      'Barangay 26-C': { lat: 7.0670, lng: 125.6140, district: 1, code: '26-C' },
-      'Barangay 27-C': { lat: 7.0674, lng: 125.6144, district: 1, code: '27-C' },
-      'Barangay 28-C': { lat: 7.0678, lng: 125.6148, district: 1, code: '28-C' },
-      'Barangay 29-C': { lat: 7.0682, lng: 125.6152, district: 1, code: '29-C' },
-      'Barangay 30-C': { lat: 7.0686, lng: 125.6156, district: 1, code: '30-C' },
-      'Barangay 31-D': { lat: 7.0669, lng: 125.6139, district: 1, code: '31-D' },
-      'Barangay 32-D': { lat: 7.0671, lng: 125.6141, district: 1, code: '32-D' },
-      'Barangay 33-D': { lat: 7.0673, lng: 125.6143, district: 1, code: '33-D' },
-      'Barangay 34-D': { lat: 7.0675, lng: 125.6145, district: 1, code: '34-D' },
-      'Barangay 35-D': { lat: 7.0677, lng: 125.6147, district: 1, code: '35-D' },
-      'Barangay 36-D': { lat: 7.0679, lng: 125.6149, district: 1, code: '36-D' },
-      'Barangay 37-D': { lat: 7.0681, lng: 125.6151, district: 1, code: '37-D' },
-      'Barangay 38-D': { lat: 7.0683, lng: 125.6153, district: 1, code: '38-D' },
-      'Barangay 39-D': { lat: 7.0685, lng: 125.6155, district: 1, code: '39-D' },
-      'Barangay 40-D': { lat: 7.0687, lng: 125.6157, district: 1, code: '40-D' },
+      // 🟢 1st DISTRICT (54 Barangays) - POBLACION (40 barangays)
+      'Poblacion 1-A': { lat: 7.0731, lng: 125.6128, district: 1, code: '1-A', name: 'Poblacion' },
+      'Poblacion 2-A': { lat: 7.0735, lng: 125.6132, district: 1, code: '2-A', name: 'Poblacion' },
+      'Poblacion 3-A': { lat: 7.0739, lng: 125.6136, district: 1, code: '3-A', name: 'Poblacion' },
+      'Poblacion 4-A': { lat: 7.0743, lng: 125.6140, district: 1, code: '4-A', name: 'Poblacion' },
+      'Poblacion 5-A': { lat: 7.0747, lng: 125.6144, district: 1, code: '5-A', name: 'Poblacion' },
+      'Poblacion 6-A': { lat: 7.0751, lng: 125.6148, district: 1, code: '6-A', name: 'Poblacion' },
+      'Poblacion 7-A': { lat: 7.0755, lng: 125.6152, district: 1, code: '7-A', name: 'Poblacion' },
+      'Poblacion 8-A': { lat: 7.0759, lng: 125.6156, district: 1, code: '8-A', name: 'Poblacion' },
+      'Poblacion 9-A': { lat: 7.0763, lng: 125.6160, district: 1, code: '9-A', name: 'Poblacion' },
+      'Poblacion 10-A': { lat: 7.0767, lng: 125.6164, district: 1, code: '10-A', name: 'Poblacion' },
+      'Poblacion 11-B': { lat: 7.0771, lng: 125.6168, district: 1, code: '11-B', name: 'Poblacion' },
+      'Poblacion 12-B': { lat: 7.0775, lng: 125.6172, district: 1, code: '12-B', name: 'Poblacion' },
+      'Poblacion 13-B': { lat: 7.0779, lng: 125.6176, district: 1, code: '13-B', name: 'Poblacion' },
+      'Poblacion 14-B': { lat: 7.0783, lng: 125.6180, district: 1, code: '14-B', name: 'Poblacion' },
+      'Poblacion 15-B': { lat: 7.0787, lng: 125.6184, district: 1, code: '15-B', name: 'Poblacion' },
+      'Poblacion 16-B': { lat: 7.0791, lng: 125.6188, district: 1, code: '16-B', name: 'Poblacion' },
+      'Poblacion 17-B': { lat: 7.0795, lng: 125.6192, district: 1, code: '17-B', name: 'Poblacion' },
+      'Poblacion 18-B': { lat: 7.0799, lng: 125.6196, district: 1, code: '18-B', name: 'Poblacion' },
+      'Poblacion 19-B': { lat: 7.0803, lng: 125.6200, district: 1, code: '19-B', name: 'Poblacion' },
+      'Poblacion 20-B': { lat: 7.0807, lng: 125.6204, district: 1, code: '20-B', name: 'Poblacion' },
+      'Poblacion 21-C': { lat: 7.0650, lng: 125.6120, district: 1, code: '21-C', name: 'Poblacion' },
+      'Poblacion 22-C': { lat: 7.0654, lng: 125.6124, district: 1, code: '22-C', name: 'Poblacion' },
+      'Poblacion 23-C': { lat: 7.0658, lng: 125.6128, district: 1, code: '23-C', name: 'Poblacion' },
+      'Poblacion 24-C': { lat: 7.0662, lng: 125.6132, district: 1, code: '24-C', name: 'Poblacion' },
+      'Poblacion 25-C': { lat: 7.0666, lng: 125.6136, district: 1, code: '25-C', name: 'Poblacion' },
+      'Poblacion 26-C': { lat: 7.0670, lng: 125.6140, district: 1, code: '26-C', name: 'Poblacion' },
+      'Poblacion 27-C': { lat: 7.0674, lng: 125.6144, district: 1, code: '27-C', name: 'Poblacion' },
+      'Poblacion 28-C': { lat: 7.0678, lng: 125.6148, district: 1, code: '28-C', name: 'Poblacion' },
+      'Poblacion 29-C': { lat: 7.0682, lng: 125.6152, district: 1, code: '29-C', name: 'Poblacion' },
+      'Poblacion 30-C': { lat: 7.0686, lng: 125.6156, district: 1, code: '30-C', name: 'Poblacion' },
+      'Poblacion 31-D': { lat: 7.0669, lng: 125.6139, district: 1, code: '31-D', name: 'Poblacion' },
+      'Poblacion 32-D': { lat: 7.0671, lng: 125.6141, district: 1, code: '32-D', name: 'Poblacion' },
+      'Poblacion 33-D': { lat: 7.0673, lng: 125.6143, district: 1, code: '33-D', name: 'Poblacion' },
+      'Poblacion 34-D': { lat: 7.0675, lng: 125.6145, district: 1, code: '34-D', name: 'Poblacion' },
+      'Poblacion 35-D': { lat: 7.0677, lng: 125.6147, district: 1, code: '35-D', name: 'Poblacion' },
+      'Poblacion 36-D': { lat: 7.0679, lng: 125.6149, district: 1, code: '36-D', name: 'Poblacion' },
+      'Poblacion 37-D': { lat: 7.0681, lng: 125.6151, district: 1, code: '37-D', name: 'Poblacion' },
+      'Poblacion 38-D': { lat: 7.0683, lng: 125.6153, district: 1, code: '38-D', name: 'Poblacion' },
+      'Poblacion 39-D': { lat: 7.0685, lng: 125.6155, district: 1, code: '39-D', name: 'Poblacion' },
+      'Poblacion 40-D': { lat: 7.0687, lng: 125.6157, district: 1, code: '40-D', name: 'Poblacion' },
       
       // District 2 (Major Named Barangays)
       'Agdao': { lat: 7.1056, lng: 125.6139, district: 2, code: 'AGDAO' },
@@ -1943,16 +1794,9 @@
         const barangayData = davaoCityBarangays[closestBarangay];
         let formattedName = closestBarangay;
         
-        // Format based on barangay type
-        if (barangayData && barangayData.code) {
-          // For numbered barangays like "Barangay 33-D"
-          if (closestBarangay.startsWith('Barangay ')) {
-            formattedName = closestBarangay; // Already in correct format
-          } else {
-            // For named barangays like "Aurora Quezon"
-            formattedName = `${closestBarangay} Barangay ${barangayData.code}`;
-          }
-        }
+        // The barangay names are now already in the correct format
+        // No additional formatting needed since database uses "Poblacion 36-D" format
+        formattedName = closestBarangay;
         
         // Set the detected barangay
         barangayInput.value = formattedName;
@@ -1997,13 +1841,9 @@
       window.currentSignupRole = 'user';
       
       // Ensure signup form starts with correct field visibility
-      const signupForm = document.getElementById('signupForm');
-      if (signupForm) {
-        const nameField = signupForm.querySelector('#signupName')?.closest('.form-group');
-        if (nameField) {
-          nameField.style.display = 'block'; // Show for user by default
-        }
-      }
+      setTimeout(() => {
+        toggleRole('user', 'signup');
+      }, 100);
       
       const urlParams = new URLSearchParams(window.location.search);
       const showLogin = urlParams.get('show_login');

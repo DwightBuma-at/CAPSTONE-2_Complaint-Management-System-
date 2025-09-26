@@ -41,6 +41,110 @@
     .shield{width:38px;height:38px;border-radius:12px;background:conic-gradient(from 210deg,var(--brand),var(--brand-2),var(--brand));box-shadow:0 8px 20px rgba(34,211,238,.28)}
     .brand span{font-weight:800;letter-spacing:.2px}
     .badge{display:inline-block;background:rgba(34,211,238,.10);border:1px solid rgba(34,211,238,.18);padding:6px 12px;border-radius:999px;font-weight:700;color:#b7f9ff;margin:6px 0 18px}
+    .clickable-badge{cursor:pointer;transition:all 0.2s ease}
+    .clickable-badge:hover{background:rgba(34,211,238,.20);transform:scale(1.02);box-shadow:0 4px 12px rgba(34,211,238,.3)}
+    
+    /* Barangay Officials Modal */
+    .officials-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;backdrop-filter:blur(8px)}
+    .officials-modal.show{display:flex;align-items:center;justify-content:center}
+    .officials-modal-content{
+      background:var(--card);
+      border-radius:var(--radius);
+      width:90%;
+      max-width:600px;
+      max-height:90vh;
+      overflow-y:auto;
+      box-shadow:var(--shadow);
+      border:var(--border);
+      animation:modalAppear 0.3s ease;
+    }
+    @keyframes modalAppear{
+      from{opacity:0;transform:scale(0.9) translateY(20px)}
+      to{opacity:1;transform:scale(1) translateY(0)}
+    }
+    .officials-modal-header{
+      padding:24px 24px 12px;
+      border-bottom:var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .officials-modal-header h3{
+      margin:0;
+      color:var(--text);
+      font-size:1.5rem;
+      font-weight:700;
+    }
+    .officials-modal-close{
+      background:none;
+      border:none;
+      color:var(--muted);
+      font-size:1.5rem;
+      cursor:pointer;
+      width:36px;
+      height:36px;
+      border-radius:8px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition:all 0.2s;
+    }
+    .officials-modal-close:hover{
+      background:rgba(255,255,255,0.1);
+      color:var(--text);
+    }
+    .officials-modal-body{
+      padding:24px;
+    }
+    .officials-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+      margin-bottom:20px;
+    }
+    .official-card{
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:12px;
+      padding:16px;
+      text-align:center;
+      transition:all 0.2s ease;
+    }
+    .official-card:hover{
+      background:rgba(255,255,255,0.05);
+      transform:translateY(-2px);
+      box-shadow:0 8px 25px rgba(0,0,0,0.2);
+    }
+    .official-role{
+      font-size:2rem;
+      margin-bottom:8px;
+    }
+    .official-title{
+      font-size:0.9rem;
+      color:var(--muted);
+      font-weight:600;
+      text-transform:uppercase;
+      letter-spacing:0.5px;
+      margin-bottom:4px;
+    }
+    .official-name{
+      font-size:1.1rem;
+      color:var(--text);
+      font-weight:600;
+    }
+    .term-card{
+      grid-column:1 / -1;
+      background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(34,211,238,0.1));
+      border:1px solid rgba(59,130,246,0.2);
+    }
+    .term-card .official-role{
+      font-size:1.5rem;
+    }
+    @media (max-width:600px){
+      .officials-grid{
+        grid-template-columns:1fr;
+      }
+    }
     .nav a{
       display:flex;align-items:center;gap:12px;color:var(--muted);text-decoration:none;padding:12px 12px;border-radius:12px;margin:4px 0;font-weight:600;transition:.18s;
     }
@@ -238,7 +342,7 @@
           <div class="shield"></div>
           <span id="adminBrandName">Admin</span>
         </a>
-      <div class="badge" id="adminBarangayBadge">Barangay: Loading...</div>
+      <div class="badge clickable-badge" id="adminBarangayBadge" onclick="showBarangayOfficialsModal(event)">Barangay: Loading...</div>
       <nav class="nav">
         <a href="/admin-dashboard.html">🏠 <span>Dashboard</span></a>
         <a href="/admin-complaints.html">🧾 <span>Complaints</span></a>
@@ -342,6 +446,54 @@
 
   <!-- TOAST -->
   <div id="toast" class="toast"></div>
+
+  <!-- Barangay Officials Modal -->
+  <div id="officialsModal" class="officials-modal">
+    <div class="officials-modal-content">
+      <div class="officials-modal-header">
+        <h3>Barangay Officials</h3>
+        <button class="officials-modal-close" onclick="closeOfficialsModal()">&times;</button>
+      </div>
+      <div class="officials-modal-body">
+        <div class="officials-grid">
+          <!-- Barangay Captain -->
+          <div class="official-card">
+            <div class="official-role"></div>
+            <div class="official-title">Barangay Captain</div>
+            <div class="official-name" id="officialCaptain">Loading...</div>
+          </div>
+          
+          <!-- Barangay Secretary -->
+          <div class="official-card">
+            <div class="official-role"></div>
+            <div class="official-title">Barangay Secretary</div>
+            <div class="official-name" id="officialSecretary">Loading...</div>
+          </div>
+          
+          <!-- Barangay Kagawad -->
+          <div class="official-card">
+            <div class="official-role"></div>
+            <div class="official-title">Barangay Kagawad</div>
+            <div class="official-name" id="officialKagawad">Loading...</div>
+          </div>
+          
+          <!-- SK Chairman -->
+          <div class="official-card">
+            <div class="official-role"></div>
+            <div class="official-title">SK Chairman</div>
+            <div class="official-name" id="officialSKChairman">Loading...</div>
+          </div>
+          
+          <!-- Term of Service -->
+          <div class="official-card term-card">
+            <div class="official-role"></div>
+            <div class="official-title">Term of Service</div>
+            <div class="official-name" id="officialTerm">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Confirmation Modal -->
   <div id="confirmationModal" class="modal hidden">
@@ -801,6 +953,70 @@ function getStatusDisplay(status, forwardedToAgency) {
          document.getElementById('adminBarangayBadge').textContent = 'Barangay: Error';
        }
      }
+
+    // Barangay Officials Modal Functions
+    async function showBarangayOfficialsModal(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      
+      try {
+        // Show loading modal first
+        document.getElementById('officialsModal').classList.add('show');
+        
+        // Fetch admin data from server
+        const response = await fetch('/api/admin/me/', {
+          method: 'GET',
+          credentials: 'same-origin'
+        });
+        
+        if (response.ok) {
+          const adminData = await response.json();
+          if (adminData.authenticated) {
+            // Show real officials data from database
+            document.getElementById('officialCaptain').textContent = adminData.barangayCaptain || 'Not Available';
+            document.getElementById('officialSecretary').textContent = adminData.barangaySecretary || 'Not Available';
+            document.getElementById('officialKagawad').textContent = adminData.barangayKagawad || 'Not Available';
+            document.getElementById('officialSKChairman').textContent = adminData.skChairman || 'Not Available';
+            
+            const termStart = adminData.termStartYear || 'N/A';
+            const termEnd = adminData.termEndYear || 'N/A';
+            document.getElementById('officialTerm').textContent = `${termStart} - ${termEnd}`;
+          } else {
+            // Show placeholder if not authenticated
+            showPlaceholderOfficials();
+          }
+        } else {
+          // Show placeholder data for demo
+          showPlaceholderOfficials();
+        }
+      } catch (error) {
+        console.error('Error loading officials data:', error);
+        showPlaceholderOfficials();
+      }
+    }
+    
+    function showPlaceholderOfficials() {
+      // Show demo/placeholder data
+      document.getElementById('officialCaptain').textContent = 'Hon. Juan Dela Cruz';
+      document.getElementById('officialSecretary').textContent = 'Maria Santos';
+      document.getElementById('officialKagawad').textContent = 'Pedro Garcia';
+      document.getElementById('officialSKChairman').textContent = 'Anna Reyes';
+      document.getElementById('officialTerm').textContent = '2023 - 2026';
+    }
+    
+    function closeOfficialsModal() {
+      document.getElementById('officialsModal').classList.remove('show');
+    }
+    
+    // Close modal when clicking outside
+    document.addEventListener('click', function(e) {
+      const modal = document.getElementById('officialsModal');
+      if (e.target === modal) {
+        closeOfficialsModal();
+      }
+    });
 
     // Modal Functions
     function openModal(modalId){

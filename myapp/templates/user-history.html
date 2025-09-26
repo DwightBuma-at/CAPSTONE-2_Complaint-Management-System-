@@ -736,35 +736,53 @@
             });
           });
         } else {
-          // Fallback to static entries if no activity log
-          if (txn.status.toLowerCase() !== 'pending') {
+          // Fallback to static entries if no activity log - show step-by-step progression
+          const currentStatus = txn.status.toLowerCase();
+          
+          // Step 1: REPORTED (always happens after PENDING)
+          if (currentStatus !== 'pending') {
             entries.push({
               date: addDays(txn.date, 1),
               status: 'reported',
               label: 'REPORTED',
               color: 'reported',
-              details: 'Your report has been successfully accepted and is now in review for processing.'
+              details: txn.admin_update || 'Your report has been successfully accepted and is now in review for processing.'
             });
           }
           
-          if (txn.status.toLowerCase() === 'in progress' || txn.status.toLowerCase() === 'resolved') {
-            const inProgressDetails = txn.admin_update || "Your complaint is currently being handled by barangay staff.";
+          // Step 2: IN-PROGRESS (happens for most complaints)
+          if (currentStatus === 'in progress' || currentStatus === 'forwarded to agency' || 
+              currentStatus === 'resolved' || currentStatus === 'resolved by agency') {
             entries.push({
               date: addDays(txn.date, 2),
               status: 'inprogress',
               label: 'IN-PROGRESS',
               color: 'inprogress',
-              details: inProgressDetails
+              details: txn.admin_update || 'Your complaint is currently being handled by barangay staff.'
             });
           }
           
-          if (txn.status.toLowerCase() === 'resolved') {
+          // Step 3: FORWARDED (only if forwarded or resolved by agency)
+          if (currentStatus === 'forwarded to agency' || currentStatus === 'resolved by agency') {
+            entries.push({
+              date: addDays(txn.date, 3),
+              status: 'forwarded',
+              label: 'FORWARDED',
+              color: 'forwarded',
+              details: txn.admin_update || 'Your complaint has been forwarded to the appropriate government agency for further action.'
+            });
+          }
+          
+          // Step 4: RESOLVED (final step)
+          if (currentStatus === 'resolved' || currentStatus === 'resolved by agency') {
+            const resolvedLabel = currentStatus === 'resolved by agency' ? 'RESOLVED BY AGENCY' : 'RESOLVED';
+            const resolvedColor = currentStatus === 'resolved by agency' ? 'resolvedbyagency' : 'resolved';
             entries.push({
               date: txn.resolved_date || addDays(txn.date, 5),
               status: 'resolved',
-              label: 'RESOLVED',
-              color: 'resolved',
-              details: 'The barangay has marked this complaint as resolved. Thank you for reporting.'
+              label: resolvedLabel,
+              color: resolvedColor,
+              details: txn.admin_update || 'Your complaint has been successfully resolved. Thank you for reporting this issue.'
             });
           }
         }

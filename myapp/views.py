@@ -173,6 +173,7 @@ def send_verification_code(request):
         print(f"❌ Unexpected error in send_verification_code: {e}")
         return JsonResponse({"error": f"Server error: {str(e)}"}, status=500)
 
+    full_name = (payload.get("full_name") or "").strip()
     email = (payload.get("email") or "").strip().lower()
     barangay = (payload.get("barangay") or "").strip()
     password = (payload.get("password") or "").strip()
@@ -600,9 +601,17 @@ def admin_verify_access_key(request):
     request.session['admin_name'] = display_name
     request.session['admin_barangay'] = admin_barangay
     
+    # Check if this is the superadmin email and redirect accordingly
+    if email == 'complaintmanagementsystem5@gmail.com':
+        redirect_url = "/superadmin.html/"
+        success_message = "Superadmin login successful"
+    else:
+        redirect_url = "/admin-dashboard.html"
+        success_message = "Admin login successful"
+    
     return JsonResponse({
         "success": True,
-        "message": "Admin login successful",
+        "message": success_message,
         "user": {
             "id": user.id,
             "email": user.email,
@@ -610,7 +619,7 @@ def admin_verify_access_key(request):
             "full_name": display_name,
             "barangay": admin_barangay
         },
-        "redirect": "/admin-dashboard.html"
+        "redirect": redirect_url
     })
 
 
@@ -641,20 +650,28 @@ def admin_me(request):
         full_name = request.session.get('admin_name', 'Admin')
         barangay = request.session.get('admin_barangay', None)
         
-        # If no barangay in session, get from profile
-        if not barangay:
-            try:
-                admin_profile = user.admin_profile
+        # Get full admin profile data including officials
+        admin_profile = None
+        try:
+            admin_profile = user.admin_profile
+            if not barangay:
                 barangay = admin_profile.barangay
-            except:
-                barangay = None
+        except:
+            barangay = None
             
         return JsonResponse({
             "authenticated": True, 
             "username": user.get_username(),
             "email": user.email,
             "full_name": full_name,
-            "barangay": barangay
+            "barangay": barangay,
+            # Include officials data if available
+            "barangayCaptain": admin_profile.barangay_captain if admin_profile else None,
+            "barangaySecretary": admin_profile.barangay_secretary if admin_profile else None,
+            "barangayKagawad": admin_profile.barangay_kagawad if admin_profile else None,
+            "skChairman": admin_profile.sk_chairman if admin_profile else None,
+            "termStartYear": admin_profile.term_start_year if admin_profile else None,
+            "termEndYear": admin_profile.term_end_year if admin_profile else None
         })
     return JsonResponse({"authenticated": False})
 
@@ -785,6 +802,14 @@ def admin_verify_email_and_register(request):
     activation_key = (payload.get("activation_key") or "").strip()
     admin_access_key = (payload.get("admin_access_key") or "").strip()
     otp_code = (payload.get("otp_code") or "").strip()
+    
+    # Barangay officials data (from superadmin registration)
+    barangay_captain = (payload.get("barangay_captain") or "").strip()
+    barangay_secretary = (payload.get("barangay_secretary") or "").strip()
+    barangay_kagawad = (payload.get("barangay_kagawad") or "").strip()
+    sk_chairman = (payload.get("sk_chairman") or "").strip()
+    term_start_year = payload.get("term_start_year")
+    term_end_year = payload.get("term_end_year")
 
     if not all([email, barangay, password, activation_key, admin_access_key, otp_code]):
         return JsonResponse({"error": "All fields are required"}, status=400)
@@ -817,11 +842,17 @@ def admin_verify_email_and_register(request):
         user.is_staff = True
         user.save()
 
-        # Create AdminProfile in Django
+        # Create AdminProfile in Django with officials data
         admin_profile = AdminProfile.objects.create(
             user=user,
             barangay=barangay,
-            access_key_hash=make_password(admin_access_key)
+            access_key_hash=make_password(admin_access_key),
+            barangay_captain=barangay_captain,
+            barangay_secretary=barangay_secretary,
+            barangay_kagawad=barangay_kagawad,
+            sk_chairman=sk_chairman,
+            term_start_year=int(term_start_year) if term_start_year else None,
+            term_end_year=int(term_end_year) if term_end_year else None
         )
 
         # Also store in Supabase for tracking
@@ -1432,6 +1463,10 @@ def update_transaction_status(request, tracking_id: str):
     # Get admin update if provided
     admin_update = payload.get("admin_update", "").strip()
     
+    # Get admin information for personalized messages
+    admin_name = request.session.get('admin_name', 'Admin')
+    admin_barangay_name = admin_profile.barangay
+    
     # Get forwarding details if provided
     forwarded_to_agency = payload.get("forwarded_to_agency", "").strip()
     forward_reason = payload.get("forward_reason", "").strip()
@@ -1439,6 +1474,12 @@ def update_transaction_status(request, tracking_id: str):
     # If status is being set to "In Progress", require admin update
     if new_status == "In Progress" and not admin_update:
         return JsonResponse({"error": "Admin update is required when setting status to In Progress"}, status=400)
+    
+    # Format admin update with admin name and barangay
+    if admin_update:
+        formatted_admin_update = f"Hello, this is {admin_name} from Barangay {admin_barangay_name}. {admin_update}"
+    else:
+        formatted_admin_update = f"Hello, this is {admin_name} from Barangay {admin_barangay_name}. Your complaint status has been updated."
 
     # If status is being set to "Forwarded to Agency", require agency and reason
     if new_status == "Forwarded to Agency":
@@ -1468,7 +1509,7 @@ def update_transaction_status(request, tracking_id: str):
             # Update complaint in Supabase
             update_data = {'status': new_status}
             if admin_update:
-                update_data['admin_update'] = admin_update
+                update_data['admin_update'] = formatted_admin_update
             if resolution_image:
                 update_data['resolution_image'] = resolution_image
             if forwarded_to_agency:
@@ -1513,7 +1554,7 @@ def update_transaction_status(request, tracking_id: str):
         
         # Save admin update if provided
         if admin_update:
-            complaint.admin_update = admin_update
+            complaint.admin_update = formatted_admin_update
         
         # Save resolution image if provided
         if resolution_image:
@@ -2036,6 +2077,21 @@ def get_registered_barangays(request):
 def admin_chat(request):
     """Render admin chat page"""
     return render(request, 'admin-chat.html')
+
+def superadmin_dashboard(request):
+    """Render superadmin dashboard page - only accessible for the specific superadmin email"""
+    # Check if user is authenticated and is the specific superadmin
+    if not request.session.get('admin_authenticated', False):
+        # Redirect to login if not authenticated
+        return redirect('/?show_login=true')
+    
+    # Check if this is the superadmin email
+    admin_email = request.session.get('admin_email', '')
+    if admin_email != 'complaintmanagementsystem5@gmail.com':
+        # Regular admins shouldn't access superadmin page, redirect to admin dashboard
+        return redirect('/admin-dashboard.html/')
+    
+    return render(request, 'superadmin.html')
 
 
 # ==========================
@@ -2657,3 +2713,208 @@ def get_user_complaint_activity(request, tracking_id):
     except Exception as e:
         print(f"Error getting user complaint activity: {e}")
         return JsonResponse({"error": "Failed to get complaint activity"}, status=500)
+
+
+# ================================
+# SUPERADMIN API ENDPOINTS
+# ================================
+
+@csrf_exempt
+def superadmin_list_admins(request):
+    """API endpoint to list all registered admins for superadmin dashboard"""
+    if request.method != 'GET':
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+        
+    # Check if user is authenticated as superadmin
+    if not request.session.get('admin_authenticated', False):
+        return JsonResponse({"error": "Authentication required"}, status=401)
+    
+    admin_email = request.session.get('admin_email', '')
+    if admin_email != 'complaintmanagementsystem5@gmail.com':
+        return JsonResponse({"error": "Superadmin access required"}, status=403)
+
+    try:
+        # Get all admin profiles except superadmin
+        admin_profiles = AdminProfile.objects.exclude(
+            user__email='complaintmanagementsystem5@gmail.com'
+        ).select_related('user')
+        
+        admins_data = []
+        for admin_profile in admin_profiles:
+            user = admin_profile.user
+            
+            # Count users in this barangay (exact match)
+            user_count = UserProfile.objects.filter(barangay=admin_profile.barangay).count()
+            print(f"👥 Admin {user.email} ({admin_profile.barangay}) has {user_count} users")
+            
+            admin_data = {
+                "id": admin_profile.id,
+                "email": user.email,
+                "barangay": admin_profile.barangay,
+                "userCount": user_count,
+                "isActive": user.is_active,
+                "registrationDate": admin_profile.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "officials": {
+                    "barangayCaptain": admin_profile.barangay_captain or "",
+                    "barangaySecretary": admin_profile.barangay_secretary or "",
+                    "barangayKagawad": admin_profile.barangay_kagawad or "",
+                    "skChairman": admin_profile.sk_chairman or "",
+                    "termStartYear": admin_profile.term_start_year,
+                    "termEndYear": admin_profile.term_end_year
+                }
+            }
+            admins_data.append(admin_data)
+        
+        return JsonResponse({
+            "admins": admins_data,
+            "totalCount": len(admins_data)
+        })
+
+    except Exception as e:
+        print(f"Error listing admins: {e}")
+        return JsonResponse({"error": "Failed to retrieve admins"}, status=500)
+
+
+@csrf_exempt
+def superadmin_list_users(request):
+    """API endpoint to list all registered users for superadmin dashboard"""
+    if request.method != 'GET':
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+        
+    # Check if user is authenticated as superadmin
+    if not request.session.get('admin_authenticated', False):
+        return JsonResponse({"error": "Authentication required"}, status=401)
+    
+    admin_email = request.session.get('admin_email', '')
+    if admin_email != 'complaintmanagementsystem5@gmail.com':
+        return JsonResponse({"error": "Superadmin access required"}, status=403)
+
+    try:
+        # Get all user profiles
+        user_profiles = UserProfile.objects.all()
+        
+        users_data = []
+        for user_profile in user_profiles:
+            # Count complaints submitted by this user
+            complaint_count = Complaint.objects.filter(user=user_profile.user).count()
+            
+            user_data = {
+                "id": user_profile.id,
+                "email": user_profile.email,
+                "fullName": user_profile.full_name,
+                "barangay": user_profile.barangay,
+                "complaintsSubmitted": complaint_count,
+                "isEmailVerified": user_profile.email_verified,
+                "registrationDate": user_profile.created_at.strftime("%Y-%m-%d %H:%M:%S")
+            }
+            users_data.append(user_data)
+        
+        return JsonResponse({
+            "users": users_data,
+            "totalCount": len(users_data)
+        })
+
+    except Exception as e:
+        print(f"Error listing users: {e}")
+        return JsonResponse({"error": "Failed to retrieve users"}, status=500)
+
+
+@csrf_exempt
+def superadmin_stats(request):
+    """API endpoint to get stats for superadmin dashboard"""
+    if request.method != 'GET':
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+        
+    # Check if user is authenticated as superadmin
+    if not request.session.get('admin_authenticated', False):
+        return JsonResponse({"error": "Authentication required"}, status=401)
+    
+    admin_email = request.session.get('admin_email', '')
+    if admin_email != 'complaintmanagementsystem5@gmail.com':
+        return JsonResponse({"error": "Superadmin access required"}, status=403)
+
+    try:
+        # Count admins (excluding superadmin)
+        total_admins = AdminProfile.objects.exclude(
+            user__email='complaintmanagementsystem5@gmail.com'
+        ).count()
+        
+        # Count users
+        total_users = UserProfile.objects.count()
+        
+        return JsonResponse({
+            "totalBarangayAdmins": total_admins,
+            "totalRegisteredUsers": total_users
+        })
+
+    except Exception as e:
+        print(f"Error getting stats: {e}")
+        return JsonResponse({"error": "Failed to retrieve stats"}, status=500)
+
+
+@csrf_exempt
+def superadmin_admin_details(request, admin_id):
+    """Get detailed information for a specific admin"""
+    try:
+        # Check if user is authenticated as superadmin
+        if not request.session.get('admin_authenticated') or request.session.get('admin_email') != 'complaintmanagementsystem5@gmail.com':
+            return JsonResponse({'error': 'Authentication required'}, status=401)
+        
+        # Get admin profile
+        try:
+            admin_profile = AdminProfile.objects.get(id=admin_id)
+        except AdminProfile.DoesNotExist:
+            return JsonResponse({'error': 'Admin not found'}, status=404)
+        
+        user = admin_profile.user
+        
+        # Count users in the same barangay
+        user_count_same_barangay = UserProfile.objects.filter(barangay=admin_profile.barangay).count()
+        
+        # Get last login info
+        last_login = user.last_login.strftime('%Y-%m-%d %H:%M:%S') if user.last_login else None
+        
+        # Calculate total logins (this is a simplified approach)
+        total_logins = 1 if user.last_login else 0
+        
+        # Account created date
+        account_created = user.date_joined.strftime('%Y-%m-%d')
+        
+        # Account age in days
+        from datetime import datetime
+        account_age = (datetime.now().date() - user.date_joined.date()).days
+        
+        admin_data = {
+            'id': admin_profile.id,
+            'email': user.email,
+            'barangay': admin_profile.barangay,
+            'userCount': user_count_same_barangay,
+            'lastLogin': last_login,
+            'totalLogins': total_logins,
+            'accountCreated': account_created,
+            'accountAge': account_age,
+            'systemInfo': {
+                'accessKey': 'Set (Hidden)' if admin_profile.access_key else 'Not set',
+                'accountCreated': account_created,
+                'accountAge': f"{account_age} days"
+            },
+            'officials': {
+                'barangay_captain': admin_profile.barangay_captain or 'Not set',
+                'barangay_secretary': admin_profile.barangay_secretary or 'Not set',
+                'barangay_kagawad': admin_profile.barangay_kagawad or 'Not set',
+                'sk_chairman': admin_profile.sk_chairman or 'Not set',
+                'term_start_year': admin_profile.term_start_year or 'Not set',
+                'term_end_year': admin_profile.term_end_year or 'Not set'
+            }
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'admin': admin_data
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

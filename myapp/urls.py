@@ -40,6 +40,15 @@ urlpatterns = [
 
     # Admin dashboard
     path('admin-dashboard.html/', views.admin_dashboard, name='admin_dashboard'),
+    
+    # Superadmin dashboard
+    path('superadmin.html/', views.superadmin_dashboard, name='superadmin_dashboard'),
+    
+    # Superadmin API endpoints
+    path('api/superadmin/admins/', views.superadmin_list_admins, name='superadmin_list_admins'),
+    path('api/superadmin/users/', views.superadmin_list_users, name='superadmin_list_users'),
+    path('api/superadmin/stats/', views.superadmin_stats, name='superadmin_stats'),
+    path('api/superadmin/admin/<int:admin_id>/', views.superadmin_admin_details, name='superadmin_admin_details'),
 
     # Admin complaints and users management
     path('admin-complaints.html/', views.admin_complaints, name='admin_complaints'),

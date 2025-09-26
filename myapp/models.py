@@ -47,6 +47,14 @@ class AdminProfile(models.Model):
     barangay = models.CharField(max_length=120)
     access_key_hash = models.CharField(max_length=128)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Barangay Officials Information (added for superadmin registration)
+    barangay_captain = models.CharField(max_length=255, blank=True, null=True)
+    barangay_secretary = models.CharField(max_length=255, blank=True, null=True)
+    barangay_kagawad = models.CharField(max_length=255, blank=True, null=True)
+    sk_chairman = models.CharField(max_length=255, blank=True, null=True)
+    term_start_year = models.IntegerField(blank=True, null=True)
+    term_end_year = models.IntegerField(blank=True, null=True)
 
     def __str__(self) -> str:
         return f"AdminProfile({self.user.get_username()} — {self.barangay})"
