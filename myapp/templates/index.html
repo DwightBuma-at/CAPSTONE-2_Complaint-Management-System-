@@ -83,12 +83,30 @@
     .btn--small{height:36px;padding:0 14px;font-size:0.9rem}
     .hamburger{display:none;background:none;border:none;color:#fff;font-size:28px}
     /* Hero */
-    .hero{padding:72px 0 48px}
-    .hero__grid{display:flex;flex-direction:column;align-items:center;text-align:center;max-width:800px;margin:0 auto}
-    .kicker{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(34,211,238,.15);color:#b7f9ff;font-weight:700;font-size:.85rem}
-    h1{font-size:clamp(2rem,5vw,3.5rem);line-height:1.12;margin:.6rem 0}
-    .lead{color:#c6d0ea;max-width:60ch}
-    .hero__cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+    .hero{padding:72px 0 48px;position:relative;overflow:hidden}
+    .hero__grid{display:flex;flex-direction:column;align-items:center;text-align:center;max-width:800px;margin:0 auto;position:relative;z-index:2}
+    .kicker{display:inline-block;padding:8px 16px;border-radius:999px;background:linear-gradient(135deg,rgba(34,211,238,.2),rgba(59,130,246,.2));color:#b7f9ff;font-weight:700;font-size:.85rem;border:1px solid rgba(34,211,238,.3);backdrop-filter:blur(10px);animation:float 3s ease-in-out infinite}
+    h1{font-size:clamp(2rem,5vw,3.5rem);line-height:1.12;margin:.6rem 0;background:linear-gradient(135deg,#fff,#b7f9ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:glow 2s ease-in-out infinite alternate}
+    .lead{color:#c6d0ea;max-width:60ch;font-size:1.1rem;line-height:1.6}
+    .hero__cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:32px}
+    
+    /* Animated background elements */
+    .hero::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at 20% 20%,rgba(59,130,246,.1) 0%,transparent 50%),radial-gradient(circle at 80% 80%,rgba(34,211,238,.1) 0%,transparent 50%);animation:backgroundShift 8s ease-in-out infinite}
+    .hero::after{content:'';position:absolute;top:50%;left:50%;width:300px;height:300px;background:radial-gradient(circle,rgba(59,130,246,.05) 0%,transparent 70%);border-radius:50%;transform:translate(-50%,-50%);animation:pulse 4s ease-in-out infinite}
+    
+    /* Feature cards */
+    .features{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:24px;margin:48px 0;max-width:1000px;margin-left:auto;margin-right:auto}
+    .feature-card{background:linear-gradient(135deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:24px;text-align:center;transition:all 0.3s ease;backdrop-filter:blur(10px)}
+    .feature-card:hover{transform:translateY(-4px);border-color:rgba(59,130,246,.3);box-shadow:0 8px 32px rgba(59,130,246,.1)}
+    .feature-icon{font-size:2.5rem;margin-bottom:16px;display:block}
+    .feature-title{font-size:1.2rem;font-weight:700;margin-bottom:8px;color:#fff}
+    .feature-desc{color:#9aa4bf;font-size:.9rem;line-height:1.5}
+    
+    /* Animations */
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+    @keyframes glow{0%{text-shadow:0 0 20px rgba(59,130,246,.3)}100%{text-shadow:0 0 30px rgba(59,130,246,.5),0 0 40px rgba(34,211,238,.3)}}
+    @keyframes backgroundShift{0%,100%{opacity:1}50%{opacity:0.8}}
+    @keyframes pulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.5}50%{transform:translate(-50%,-50%) scale(1.1);opacity:0.3}}
     .card{
       background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
       border:1px solid rgba(255,255,255,.08); border-radius: var(--radius);
@@ -109,8 +127,13 @@
     @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
     .muted{color:var(--muted)}
     .footer{
-      padding:36px 0; color:var(--muted); font-size:.95rem;border-top:1px solid rgba(255,255,255,.06)
+      padding:48px 0; color:var(--muted); font-size:.95rem;border-top:1px solid rgba(255,255,255,.06);background:linear-gradient(180deg,transparent,rgba(11,16,32,.3))
     }
+    .footer-content{display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;text-align:center}
+    .footer-links{display:flex;gap:24px;align-items:center;flex-wrap:wrap}
+    .footer-links a{color:var(--muted);text-decoration:none;transition:color 0.2s ease}
+    .footer-links a:hover{color:#fff}
+    .footer-divider{width:1px;height:16px;background:rgba(255,255,255,.2)}
     /* Utilities */
     .hidden{display:none}
     /* Responsive */
@@ -121,6 +144,12 @@
       .mobile{position:absolute;left:0;right:0;top:72px;background:#0b1226;padding:14px;border-bottom:1px solid rgba(255,255,255,.08)}
       .mobile a{display:block;padding:10px 0;color:#d8e1ff;text-decoration:none;border-bottom:1px dashed rgba(255,255,255,.08)}
       .mobile .btn{width:100%;margin-top:10px}
+      .features{grid-template-columns:1fr;gap:16px;margin:32px 0}
+      .feature-card{padding:20px}
+      .hero__cta{flex-direction:column;align-items:center;gap:12px}
+      .hero__cta .btn{width:100%;max-width:280px}
+      .footer-content{flex-direction:column;gap:16px}
+      .footer-links{justify-content:center}
     }
     /* Modal Styles */
     .modal {
@@ -471,7 +500,6 @@
   <div class="wrap nav__inner">
     <a class="brand" href="#top" aria-label="CMS Home"><div class="logo" aria-hidden="true"></div><span>CMS</span></a>
          <nav class="nav__links" aria-label="Main">
-       <button class="btn btn--ghost" onclick="scrollToId('contact')">Contact</button>
      </nav>
     <div class="nav__auth">
       <button class="btn btn--ghost btn--small" onclick="openModal('loginModal')" style="background:transparent;border:1px solid rgba(255,255,255,.15);color:#fff;">Login</button>
@@ -480,7 +508,7 @@
     <button class="hamburger" aria-label="Menu" id="menuBtn">☰</button>
   </div>
      <div class="mobile hidden" id="mobileMenu">
-     <button class="btn btn--ghost" onclick="scrollToId('contact');toggleMenu(false)">Contact</button><button class="btn btn--ghost" onclick="openModal('loginModal');toggleMenu(false)" style="background:transparent;border:1px solid rgba(255,255,255,.15);color:#fff;">Login</button><button class="btn" onclick="openModal('signupModal');toggleMenu(false)" style="background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#031026;">Sign Up</button>
+     <button class="btn btn--ghost" onclick="openModal('loginModal');toggleMenu(false)" style="background:transparent;border:1px solid rgba(255,255,255,.15);color:#fff;">Login</button><button class="btn" onclick="openModal('signupModal');toggleMenu(false)" style="background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#031026;">Sign Up</button>
    </div>
 </header>
 <!-- Modals -->
@@ -637,33 +665,59 @@
       <p class="lead">
         The Complaint Management System helps residents submit reports in seconds, while giving local offices a crystal‑clear view of every case from intake to resolution.
       </p>
+      <div class="hero__cta">
+        <button class="btn" onclick="openModal('signupModal')">Get Started</button>
+        <button class="btn btn--ghost" onclick="openModal('loginModal')">Sign In</button>
+      </div>
     </div>
 </main>
 
-<!-- Contact -->
-<section id="contact" class="wrap section">
-  <div style="display:flex;justify-content:center;">
-    <form id="contactForm" class="card" style="padding:24px;max-width:500px;width:100%;">
-      <h3 style="margin:0 0 8px;text-align:center;">Contact us</h3>
-      <p class="muted" style="margin-top:0;text-align:center;">We'll respond within 24 hours.</p>
-      <div style="display:grid;gap:10px;margin-top:16px">
-      <input name="name" placeholder="Full name" required aria-label="Full name"
-             style="height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0b1226;color:#fff;padding:0 12px;outline:none;box-shadow:none">
-      <input name="email" type="email" placeholder="Email address" required aria-label="Email"
-             style="height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0b1226;color:#fff;padding:0 12px">
-      <textarea name="msg" rows="4" placeholder="How can we help?" required aria-label="Message"
-             style="border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0b1226;color:#fff;padding:10px 12px;resize:vertical"></textarea>
-      <button class="btn" type="submit">Send message</button>
-      <div id="contactNote" class="muted" role="status" aria-live="polite"></div>
+<!-- Features Section -->
+<section class="wrap" style="padding:48px 0;">
+  <div class="features">
+    <div class="feature-card">
+      <span class="feature-icon">📱</span>
+      <h3 class="feature-title">Easy Reporting</h3>
+      <p class="feature-desc">Submit complaints in seconds with our intuitive mobile-friendly interface. Upload photos and provide detailed descriptions.</p>
     </div>
-  </form>
+    <div class="feature-card">
+      <span class="feature-icon">📊</span>
+      <h3 class="feature-title">Real-time Tracking</h3>
+      <p class="feature-desc">Track your complaint status in real-time. Get instant notifications when your case is updated or resolved.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🔒</span>
+      <h3 class="feature-title">Secure & Private</h3>
+      <p class="feature-desc">Your data is protected with enterprise-grade security. All communications are encrypted and confidential.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">⚡</span>
+      <h3 class="feature-title">Fast Resolution</h3>
+      <p class="feature-desc">Streamlined workflow ensures faster response times. Barangay officials can prioritize and resolve issues efficiently.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">💬</span>
+      <h3 class="feature-title">Direct Communication</h3>
+      <p class="feature-desc">Chat directly with barangay officials. Ask questions, provide updates, and get immediate responses.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🏛️</span>
+      <h3 class="feature-title">Barangay Management</h3>
+      <p class="feature-desc">Dedicated admin dashboard for barangay officials to manage complaints, track progress, and communicate with residents effectively.</p>
+    </div>
   </div>
 </section>
+
 <!-- Footer -->
 <footer class="wrap footer">
-     <div style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap">
-     <div>© <span id="year"></span> CMS. All rights reserved.</div>
-   </div>
+  <div class="footer-content">
+    <div>© <span id="year"></span> CMS. All rights reserved.</div>
+    <div class="footer-divider"></div>
+    <div class="footer-links">
+      <a href="#" onclick="openModal('loginModal')">Login</a>
+      <a href="#" onclick="openModal('signupModal')">Sign Up</a>
+    </div>
+  </div>
 </footer>
 <!-- Place your script here, just before </body> -->
 <script>
@@ -684,68 +738,6 @@
       menuBtn.setAttribute('aria-expanded', String(next));
     }
     menuBtn.addEventListener('click', () => toggleMenu());
-    // Contact form - functional with backend API
-    document.querySelector('#contactForm').addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      
-      const formData = new FormData(e.target);
-      const name = formData.get('name');
-      const email = formData.get('email');
-      const msg = formData.get('msg');
-      
-      const note = document.getElementById('contactNote');
-      const submitBtn = e.target.querySelector('button[type="submit"]');
-      const originalText = submitBtn.textContent;
-      
-      // Show loading state
-      note.textContent = 'Sending...';
-      submitBtn.textContent = 'Sending...';
-      submitBtn.disabled = true;
-      
-      try {
-        const response = await fetch('/api/contact/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: name,
-            email: email,
-            msg: msg
-          })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok && data.success) {
-          // Success
-          e.target.reset();
-          note.textContent = data.message;
-          note.style.color = 'var(--ok)';
-          
-          // Show success notification
-          showNotification(data.message, 'success');
-        } else {
-          // Error
-          note.textContent = data.error || 'Failed to send message. Please try again.';
-          note.style.color = 'var(--danger)';
-          
-          // Show error notification
-          showNotification(data.error || 'Failed to send message. Please try again.', 'error');
-        }
-      } catch (error) {
-        console.error('Contact form error:', error);
-        note.textContent = 'Network error. Please try again.';
-        note.style.color = 'var(--danger)';
-        
-        // Show error notification
-        showNotification('Network error. Please try again.', 'error');
-      } finally {
-        // Reset button state
-        submitBtn.textContent = originalText;
-        submitBtn.disabled = false;
-      }
-    });
     // Year
     document.getElementById('year').textContent = new Date().getFullYear();
     // Subtle link focus rings
