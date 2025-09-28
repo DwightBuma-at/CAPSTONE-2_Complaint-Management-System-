@@ -2798,6 +2798,9 @@ def superadmin_list_users(request):
             # Count complaints submitted by this user
             complaint_count = Complaint.objects.filter(user=user_profile.user).count()
             
+            # Debug profile picture data
+            print(f"User {user_profile.email} profile picture: {user_profile.profile_picture[:50] if user_profile.profile_picture else 'None'}...")
+            
             user_data = {
                 "id": user_profile.id,
                 "email": user_profile.email,
@@ -2805,7 +2808,8 @@ def superadmin_list_users(request):
                 "barangay": user_profile.barangay,
                 "complaintsSubmitted": complaint_count,
                 "isEmailVerified": user_profile.email_verified,
-                "registrationDate": user_profile.created_at.strftime("%Y-%m-%d %H:%M:%S")
+                "registrationDate": user_profile.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "profilePicture": user_profile.profile_picture
             }
             users_data.append(user_data)
         
@@ -2817,6 +2821,74 @@ def superadmin_list_users(request):
     except Exception as e:
         print(f"Error listing users: {e}")
         return JsonResponse({"error": "Failed to retrieve users"}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def update_admin_officials(request):
+    """API endpoint to update admin officials information"""
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest("Invalid JSON body")
+    
+    # Check if user is authenticated as superadmin
+    if not request.session.get('admin_authenticated', False):
+        return JsonResponse({"error": "Authentication required"}, status=401)
+    
+    admin_email = request.session.get('admin_email', '')
+    if admin_email != 'complaintmanagementsystem5@gmail.com':
+        return JsonResponse({"error": "Superadmin access required"}, status=403)
+
+    admin_id = payload.get("admin_id")
+    barangay_captain = payload.get("barangayCaptain", "").strip()
+    barangay_secretary = payload.get("barangaySecretary", "").strip()
+    barangay_kagawad = payload.get("barangayKagawad", "").strip()
+    sk_chairman = payload.get("skChairman", "").strip()
+    term_start_year = payload.get("termStartYear")
+    term_end_year = payload.get("termEndYear")
+
+    print(f"Received update request for admin_id: {admin_id}")
+    print(f"Payload: {payload}")
+
+    if not admin_id:
+        print("Error: No admin_id provided")
+        return JsonResponse({"error": "Admin ID is required"}, status=400)
+
+    try:
+        # Debug: List all available admin IDs
+        all_admins = AdminProfile.objects.all()
+        print(f"Available admin IDs in database: {[admin.id for admin in all_admins]}")
+        print(f"Looking for admin_id: {admin_id} (type: {type(admin_id)})")
+        
+        # Find the admin profile
+        admin_profile = AdminProfile.objects.get(id=admin_id)
+        print(f"Updating officials for admin {admin_id}: {admin_profile.barangay}")
+        
+        # Update officials information
+        admin_profile.barangay_captain = barangay_captain
+        admin_profile.barangay_secretary = barangay_secretary
+        admin_profile.barangay_kagawad = barangay_kagawad
+        admin_profile.sk_chairman = sk_chairman
+        
+        if term_start_year:
+            admin_profile.term_start_year = int(term_start_year)
+        if term_end_year:
+            admin_profile.term_end_year = int(term_end_year)
+        
+        admin_profile.save()
+        print(f"Officials updated successfully for {admin_profile.barangay}")
+        
+        return JsonResponse({
+            "success": True,
+            "message": "Officials information updated successfully"
+        })
+        
+    except AdminProfile.DoesNotExist:
+        return JsonResponse({"error": "Admin not found"}, status=404)
+    except Exception as e:
+        print(f"Error updating officials: {e}")
+        return JsonResponse({"error": "Failed to update officials"}, status=500)
 
 
 @csrf_exempt

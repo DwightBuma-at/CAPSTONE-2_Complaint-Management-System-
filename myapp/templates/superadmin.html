@@ -777,7 +777,12 @@
 
         <!-- Officials Information -->
         <div class="details-section">
-          <h3>👥 Barangay Officials</h3>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3>👥 Barangay Officials</h3>
+            <button class="btn btn-ghost btn-sm" onclick="openEditOfficialsModal()" style="font-size: 0.85rem; padding: 6px 12px;">
+              ✏️ Edit Officials
+            </button>
+          </div>
           <div class="officials-grid">
             <div class="official-item">
               <div class="official-role">👑 Barangay Captain</div>
@@ -852,6 +857,10 @@
           <div class="details-header">
             <h4>👤 Basic Information</h4>
           </div>
+          <!-- Profile Picture Display -->
+          <div style="text-align: center; margin-bottom: 24px;">
+            <div id="userProfilePicture" style="width: 80px; height: 80px; border-radius: 16px; background: linear-gradient(135deg, var(--brand), var(--brand-2)); display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; color: #031026; font-weight: 800; margin: 0 auto;"></div>
+          </div>
           <div class="details-grid">
             <div class="detail-item">
               <span class="detail-label">FULL NAME</span>
@@ -871,6 +880,73 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Officials Modal -->
+  <div id="editOfficialsModal" class="modal">
+    <div class="modal-content" style="max-width: 600px; margin: 0 auto; position: relative; top: 50%; transform: translateY(-50%);">
+      <div class="modal-header">
+        <h3>✏️ Edit Barangay Officials</h3>
+        <button class="modal-close" onclick="closeEditOfficialsModal()">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <p style="margin:0 0 24px;color:var(--muted);font-size:.9rem;line-height:1.5">
+          Update the barangay officials information. Changes will be reflected immediately.
+        </p>
+        
+        <form id="editOfficialsForm">
+          <div class="form-grid">
+            <!-- Barangay Captain -->
+            <div class="form-group">
+              <label for="editBarangayCaptain">👑 Barangay Captain</label>
+              <input type="text" id="editBarangayCaptain" name="barangayCaptain" placeholder="Full Name" required>
+              <small class="form-help">Chief executive of the barangay</small>
+            </div>
+            
+            <!-- Barangay Secretary -->
+            <div class="form-group">
+              <label for="editBarangaySecretary">📝 Barangay Secretary</label>
+              <input type="text" id="editBarangaySecretary" name="barangaySecretary" placeholder="Full Name" required>
+              <small class="form-help">Administrative officer of the barangay</small>
+            </div>
+            
+            <!-- Barangay Kagawad -->
+            <div class="form-group">
+              <label for="editBarangayKagawad">⚖️ Barangay Kagawad</label>
+              <input type="text" id="editBarangayKagawad" name="barangayKagawad" placeholder="Full Name" required>
+              <small class="form-help">Barangay council member</small>
+            </div>
+            
+            <!-- SK Chairman -->
+            <div class="form-group">
+              <label for="editSKChairman">🎯 SK Chairman</label>
+              <input type="text" id="editSKChairman" name="skChairman" placeholder="Full Name" required>
+              <small class="form-help">Sangguniang Kabataan chairman</small>
+            </div>
+            
+            <!-- Term Start Year -->
+            <div class="form-group">
+              <label for="editTermStartYear">📅 Term Start Year</label>
+              <input type="number" id="editTermStartYear" name="termStartYear" placeholder="2023" min="2020" max="2030" required>
+              <small class="form-help">Year when the term started</small>
+            </div>
+            
+            <!-- Term End Year -->
+            <div class="form-group">
+              <label for="editTermEndYear">📅 Term End Year</label>
+              <input type="number" id="editTermEndYear" name="termEndYear" placeholder="2026" min="2020" max="2030" required>
+              <small class="form-help">Year when the term ends</small>
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
+            <button type="button" class="btn btn-ghost" onclick="closeEditOfficialsModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -1644,7 +1720,7 @@
       
       // Store detailed data in global store
       const adminData = {
-        id: Date.now(), // Simple ID based on timestamp
+        id: data.id || Date.now(), // Use provided ID or generate one
         email: data.email,
         barangay: data.barangay,
         barangayCaptain: data.barangayCaptain,
@@ -1659,6 +1735,9 @@
         lastLogin: 'Never',
         totalLogins: 0
       };
+      
+      // Set the data-admin-id attribute
+      adminItem.setAttribute('data-admin-id', adminData.id);
       
       window.adminDataStore.push(adminData);
       
@@ -1913,6 +1992,9 @@
         if (totalLoginsElement) totalLoginsElement.textContent = data.totalLogins || 0;
         if (accountCreatedElement) accountCreatedElement.textContent = data.registrationDate || new Date().toLocaleDateString();
         
+        // Store current admin data for editing officials
+        window.currentAdminData = data;
+        
         console.log('Data populated, opening modal...');
         modal.style.display = 'block';
         modal.classList.add('show');
@@ -1958,6 +2040,7 @@
       const successModal = document.getElementById('successModal');
       const confirmationModal = document.getElementById('confirmationModal');
       const userDetailsModal = document.getElementById('userDetailsModal');
+      const editOfficialsModal = document.getElementById('editOfficialsModal');
       
       if (event.target === modal) {
         closeAdminDetailsModal();
@@ -1985,6 +2068,10 @@
       
       if (event.target === userDetailsModal) {
         closeUserDetailsModal();
+      }
+      
+      if (event.target === editOfficialsModal) {
+        closeEditOfficialsModal();
       }
     });
     
@@ -2067,6 +2154,16 @@
         document.getElementById('userBarangay').textContent = userData.barangay || '-';
         document.getElementById('userComplaints').textContent = userData.complaintsSubmitted || '0';
         
+        // Display profile picture
+        const profilePictureElement = document.getElementById('userProfilePicture');
+        if (userData.profilePicture) {
+          profilePictureElement.innerHTML = `<img src="${userData.profilePicture}" alt="User Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;">`;
+        } else {
+          // Show initials as fallback
+          const initials = (userData.fullName || 'U').split(' ').map(name => name.charAt(0)).join('').toUpperCase();
+          profilePictureElement.innerHTML = initials;
+        }
+        
         // Show the modal
         const modal = document.getElementById('userDetailsModal');
         if (modal) {
@@ -2091,6 +2188,188 @@
         modal.style.display = 'none';
         document.body.style.overflow = 'auto';
       }
+    }
+
+    // Edit Officials Functions
+    function openEditOfficialsModal() {
+      // Check if admin details modal is open and has data
+      const adminDetailsModal = document.getElementById('adminDetailsModal');
+      if (!adminDetailsModal || !adminDetailsModal.classList.contains('show')) {
+        showNotification('Please select an admin first by clicking "Details" on an admin.', 'error');
+        return;
+      }
+
+      // Get current values from the displayed admin details
+      const captainElement = document.getElementById('detailCaptain');
+      const secretaryElement = document.getElementById('detailSecretary');
+      const kagawadElement = document.getElementById('detailKagawad');
+      const skChairmanElement = document.getElementById('detailSKChairman');
+      const termElement = document.getElementById('detailTerm');
+
+      // Check if elements exist
+      if (!captainElement || !secretaryElement || !kagawadElement || !skChairmanElement || !termElement) {
+        showNotification('Admin details not loaded properly. Please close and reopen the admin details.', 'error');
+        return;
+      }
+
+      // Extract current values (remove dashes if no data)
+      const currentCaptain = captainElement.textContent.replace('-', '').trim();
+      const currentSecretary = secretaryElement.textContent.replace('-', '').trim();
+      const currentKagawad = kagawadElement.textContent.replace('-', '').trim();
+      const currentSKChairman = skChairmanElement.textContent.replace('-', '').trim();
+      
+      // Parse term years from the term display
+      let currentTermStart = '';
+      let currentTermEnd = '';
+      if (termElement.textContent !== '-') {
+        const termText = termElement.textContent;
+        const termParts = termText.split(' - ');
+        if (termParts.length === 2) {
+          currentTermStart = termParts[0].trim();
+          currentTermEnd = termParts[1].trim();
+        }
+      }
+
+      // Populate the edit form with current data
+      document.getElementById('editBarangayCaptain').value = currentCaptain;
+      document.getElementById('editBarangaySecretary').value = currentSecretary;
+      document.getElementById('editBarangayKagawad').value = currentKagawad;
+      document.getElementById('editSKChairman').value = currentSKChairman;
+      document.getElementById('editTermStartYear').value = currentTermStart;
+      document.getElementById('editTermEndYear').value = currentTermEnd;
+
+      // Show the modal
+      const modal = document.getElementById('editOfficialsModal');
+      if (modal) {
+        modal.classList.add('show');
+        modal.style.display = 'block';
+        modal.style.zIndex = '10000';
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function closeEditOfficialsModal() {
+      const modal = document.getElementById('editOfficialsModal');
+      if (modal) {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+      }
+    }
+
+    // Handle edit officials form submission
+    document.getElementById('editOfficialsForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      const officialsData = {
+        barangayCaptain: formData.get('barangayCaptain'),
+        barangaySecretary: formData.get('barangaySecretary'),
+        barangayKagawad: formData.get('barangayKagawad'),
+        skChairman: formData.get('skChairman'),
+        termStartYear: formData.get('termStartYear'),
+        termEndYear: formData.get('termEndYear')
+      };
+
+      try {
+        // Get the current admin ID from the stored data or try to find it from the admin list
+        let currentAdminData = window.currentAdminData;
+        let adminId = null;
+        
+        console.log('Current admin data:', currentAdminData);
+        
+        if (currentAdminData && currentAdminData.id) {
+          adminId = currentAdminData.id;
+          console.log('Using admin ID from currentAdminData:', adminId);
+        } else {
+          // Try to find the admin ID from the currently displayed admin details
+          // This is a fallback method
+          const adminItems = document.querySelectorAll('.admin-item');
+          console.log('Found admin items:', adminItems.length);
+          for (let item of adminItems) {
+            const itemAdminId = item.getAttribute('data-admin-id');
+            console.log('Checking admin item with ID:', itemAdminId, 'Display:', item.style.display);
+            if (item.style.display !== 'none' && itemAdminId) {
+              adminId = itemAdminId;
+              console.log('Using admin ID from admin item:', adminId);
+              break;
+            }
+          }
+        }
+        
+        if (!adminId) {
+          console.error('No admin ID found!');
+          console.log('Available admin items:', document.querySelectorAll('.admin-item'));
+          console.log('Current admin data:', currentAdminData);
+          showNotification('Unable to identify admin. Please close and reopen the admin details.', 'error');
+          return;
+        }
+
+        // Debug logging
+        console.log('Updating officials for admin ID:', adminId);
+        console.log('Officials data:', officialsData);
+
+        // Send update to backend API
+        const response = await fetch('/api/superadmin/update-officials/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+          },
+          body: JSON.stringify({
+            admin_id: adminId,
+            ...officialsData
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Officials update successful:', result);
+          
+          // Update the display in the admin details modal
+          document.getElementById('detailCaptain').textContent = officialsData.barangayCaptain;
+          document.getElementById('detailSecretary').textContent = officialsData.barangaySecretary;
+          document.getElementById('detailKagawad').textContent = officialsData.barangayKagawad;
+          document.getElementById('detailSKChairman').textContent = officialsData.skChairman;
+          document.getElementById('detailTerm').textContent = `${officialsData.termStartYear} - ${officialsData.termEndYear}`;
+          
+          // Update the stored admin data if available
+          if (currentAdminData) {
+            Object.assign(currentAdminData, officialsData);
+            // Update the admin list display
+            updateAdminInList(currentAdminData);
+          }
+          
+          showNotification('✅ Barangay officials updated successfully! Changes will be reflected in admin dashboard.', 'success');
+          closeEditOfficialsModal();
+        } else {
+          const errorData = await response.json();
+          console.error('Officials update failed:', errorData);
+          showNotification(`❌ Failed to update officials: ${errorData.error || 'Unknown error'}`, 'error');
+        }
+      } catch (error) {
+        console.error('Error updating officials:', error);
+        showNotification('Network error. Please try again.', 'error');
+      }
+    });
+
+    function updateAdminInList(adminData) {
+      // Find and update the admin in the list
+      const adminItems = document.querySelectorAll('.admin-item');
+      adminItems.forEach(item => {
+        const adminId = item.getAttribute('data-admin-id');
+        if (adminId && adminId == adminData.id) {
+          // Update the officials display in the list if it exists
+          const officialsElement = item.querySelector('.admin-officials');
+          if (officialsElement) {
+            officialsElement.innerHTML = `
+              <div style="font-size: 0.8rem; color: var(--muted); margin-top: 4px;">
+                👑 ${adminData.barangayCaptain} • 📝 ${adminData.barangaySecretary}
+              </div>
+            `;
+          }
+        }
+      });
     }
     
 
@@ -2212,6 +2491,7 @@
         if (response.ok) {
           const data = await response.json();
           console.log('Loaded users from backend:', data);
+          console.log('First user profile picture:', data.users[0]?.profilePicture);
           
           // Clear current user list
           const userListContainer = document.getElementById('userListContainer');
@@ -2227,7 +2507,8 @@
               barangay: user.barangay,
               complaintsSubmitted: user.complaintsSubmitted,
               emailVerified: user.isEmailVerified,
-              registrationDate: new Date(user.registrationDate).toLocaleDateString()
+              registrationDate: new Date(user.registrationDate).toLocaleDateString(),
+              profilePicture: user.profilePicture
             };
             
             window.userDataStore[user.id] = userData;
@@ -2293,11 +2574,20 @@
       const userItem = document.createElement('div');
       userItem.className = 'user-item';
       
-      // Get initials from full name
+      // Debug profile picture data
+      console.log('addUserToList - userData.profilePicture:', userData.profilePicture);
+      console.log('addUserToList - userData:', userData);
+      
+      // Get initials from full name (fallback)
       const initials = userData.fullName.split(' ').map(name => name.charAt(0)).join('').toUpperCase();
       
+      // Check if user has a profile picture
+      const avatarContent = userData.profilePicture ? 
+        `<img src="${userData.profilePicture}" alt="User Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">` : 
+        initials;
+      
       userItem.innerHTML = `
-        <div class="user-avatar">${initials}</div>
+        <div class="user-avatar">${avatarContent}</div>
         <div class="user-info">
           <div class="user-barangay">${userData.barangay}</div>
           <div class="user-name">${userData.fullName}</div>
