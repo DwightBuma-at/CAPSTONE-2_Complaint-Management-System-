@@ -773,15 +773,20 @@ function handleImageUpload(event) {
     const lng = EXIF.getTag(this, 'GPSLongitude');
     const lngRef = EXIF.getTag(this, 'GPSLongitudeRef');
     
+    console.log('📸 EXIF GPS Raw Data:', { lat, latRef, lng, lngRef });
+    
     if (lat && lng && latRef && lngRef) {
       // Convert GPS coordinates to decimal degrees
       const latitude = convertDMSToDD(lat, latRef);
       const longitude = convertDMSToDD(lng, lngRef);
+      console.log('📐 Converted coordinates - Lat:', latitude, 'Lng:', longitude);
       
       console.log('📍 Photo GPS coordinates:', latitude, longitude);
+      console.log('📊 Total barangays in database:', Object.keys(davaoCityBarangays).length);
       
       // Find closest barangay
       const detectedBarangay = findClosestBarangay(latitude, longitude);
+      console.log('🎯 Detected barangay:', detectedBarangay);
       
       if (detectedBarangay) {
         // Auto-populate the barangay dropdown (silently)
@@ -829,15 +834,25 @@ function findClosestBarangay(latitude, longitude) {
   // Find closest barangay
   let closestBarangay = null;
   let minDistance = Infinity;
+  let distances = []; // Store all distances for debugging
   
   for (const [name, coords] of Object.entries(davaoCityBarangays)) {
     const distance = calculateDistance(latitude, longitude, coords.lat, coords.lng);
+    distances.push({ name, distance });
     
     if (distance < minDistance) {
       minDistance = distance;
       closestBarangay = name;
     }
   }
+  
+  // Sort and show top 5 closest barangays for debugging
+  distances.sort((a, b) => a.distance - b.distance);
+  console.log('🔍 Top 5 closest barangays:');
+  distances.slice(0, 5).forEach((d, i) => {
+    console.log(`   ${i+1}. ${d.name}: ${d.distance.toFixed(3)} km`);
+  });
+  console.log(`✅ Selected: ${closestBarangay} (${minDistance.toFixed(3)} km)`);
   
   return closestBarangay;
 }
