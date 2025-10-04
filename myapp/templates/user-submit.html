@@ -674,9 +674,14 @@ function handleImageUpload(event) {
       const detectedBarangay = findClosestBarangay(latitude, longitude);
       
       if (detectedBarangay) {
-        // Auto-populate the barangay dropdown
-        autoSelectBarangay(detectedBarangay);
-        showLocationFeedback(`📍 Photo location detected: ${detectedBarangay}`, 'success');
+        // Auto-populate the barangay dropdown (silently)
+        console.log('📍 Photo location detected:', detectedBarangay);
+        
+        // Wait a bit to ensure barangays are loaded in the dropdown
+        setTimeout(() => {
+          autoSelectBarangay(detectedBarangay);
+        }, 300);
+        // Success feedback is handled in autoSelectBarangay - it removes the message if found
       } else {
         showLocationFeedback('📍 Photo location outside Davao City. Please select barangay manually.', 'warning');
       }
@@ -730,22 +735,52 @@ function findClosestBarangay(latitude, longitude) {
 // Auto-select barangay in dropdown
 function autoSelectBarangay(barangayName) {
   const barangaySelect = document.getElementById('barangay');
-  if (barangaySelect) {
-    // Find the option with matching text
-    let found = false;
+  if (!barangaySelect) return;
+  
+  console.log('🔍 Attempting to select barangay:', barangayName);
+  console.log('📋 Available options:', Array.from(barangaySelect.options).map(o => o.textContent));
+  
+  // Try to find exact match first
+  let found = false;
+  for (let option of barangaySelect.options) {
+    if (option.textContent.trim() === barangayName.trim()) {
+      barangaySelect.value = option.value;
+      barangaySelect.dispatchEvent(new Event('change'));
+      found = true;
+      console.log('✅ Barangay auto-selected:', barangayName);
+      // Remove the feedback message since barangay is now selected
+      const feedbackElement = document.getElementById('locationFeedback');
+      if (feedbackElement) {
+        feedbackElement.remove();
+      }
+      break;
+    }
+  }
+  
+  // If not found, try case-insensitive and partial matching
+  if (!found) {
+    const lowerBarangay = barangayName.toLowerCase();
     for (let option of barangaySelect.options) {
-      if (option.textContent === barangayName) {
+      const optionText = option.textContent.trim().toLowerCase();
+      if (optionText === lowerBarangay || optionText.includes(lowerBarangay) || lowerBarangay.includes(optionText)) {
         barangaySelect.value = option.value;
         barangaySelect.dispatchEvent(new Event('change'));
         found = true;
+        console.log('✅ Barangay auto-selected (fuzzy match):', option.textContent);
+        // Remove the feedback message
+        const feedbackElement = document.getElementById('locationFeedback');
+        if (feedbackElement) {
+          feedbackElement.remove();
+        }
         break;
       }
     }
-    
-    // If barangay not found in registered list, show additional info
-    if (!found) {
-      showLocationFeedback(`📍 Detected: ${barangayName} (not registered yet). Please select a registered barangay.`, 'warning');
-    }
+  }
+  
+  // If still not found, show warning
+  if (!found) {
+    console.warn('❌ Barangay not found in dropdown:', barangayName);
+    showLocationFeedback(`📍 ${barangayName} is not available in registered barangays. Please select manually.`, 'warning');
   }
 }
 
