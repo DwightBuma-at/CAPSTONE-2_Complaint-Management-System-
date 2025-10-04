@@ -758,21 +758,86 @@ function handleImageUpload(event) {
       
       // Try to extract location name from EXIF metadata fields
       let detectedLocationName = null;
+      let bestMatch = null;
+      let bestMatchScore = 0;
       
       // Check various EXIF fields for location name
       const locationSources = [userComment, imageDescription, gpsAreaInfo];
       for (const source of locationSources) {
         if (source && typeof source === 'string') {
+          console.log('🔍 Checking EXIF source:', source);
+          
           // Check if it contains any barangay name from our database
           for (const barangayName of Object.keys(davaoCityBarangays)) {
-            if (source.toLowerCase().includes(barangayName.toLowerCase()) || 
-                barangayName.toLowerCase().includes(source.toLowerCase())) {
-              detectedLocationName = barangayName;
-              console.log('✅ Found barangay name in EXIF metadata:', barangayName, 'from field:', source);
-              break;
+            const sourceLower = source.toLowerCase();
+            const barangayLower = barangayName.toLowerCase();
+            
+            // Calculate match score (higher is better)
+            let matchScore = 0;
+            
+            // Exact match gets highest score
+            if (sourceLower === barangayLower) {
+              matchScore = 100;
+            }
+            // Contains full barangay name gets high score
+            else if (sourceLower.includes(barangayLower)) {
+              matchScore = 80;
+            }
+            // Barangay name contains source gets medium score
+            else if (barangayLower.includes(sourceLower)) {
+              matchScore = 60;
+            }
+            // Partial match gets low score
+            else if (sourceLower.includes(barangayLower.split(' ')[0]) || 
+                     barangayLower.includes(sourceLower.split(' ')[0])) {
+              matchScore = 40;
+            }
+            
+            // Prioritize Poblacion barangays (they have specific numbers)
+            if (barangayName.includes('Poblacion') && barangayName.includes('-')) {
+              matchScore += 20;
+            }
+            
+            // Prioritize longer, more specific names
+            if (barangayName.length > 10) {
+              matchScore += 10;
+            }
+            
+            console.log(`📊 Match score for "${barangayName}": ${matchScore} (source: "${source}")`);
+            
+            if (matchScore > bestMatchScore) {
+              bestMatchScore = matchScore;
+              bestMatch = barangayName;
+              console.log(`🏆 New best match: "${barangayName}" with score ${matchScore}`);
             }
           }
-          if (detectedLocationName) break;
+        }
+      }
+      
+      // Use the best match if score is high enough
+      if (bestMatchScore >= 40) {
+        detectedLocationName = bestMatch;
+        console.log('✅ Selected best match:', detectedLocationName, 'with score:', bestMatchScore);
+      }
+      
+      // Special handling for "Barangay X-Y" format (common in phone galleries)
+      if (!detectedLocationName) {
+        for (const source of locationSources) {
+          if (source && typeof source === 'string') {
+            // Check for "Barangay 36-D" format and map to "Poblacion 36-D"
+            const barangayMatch = source.match(/barangay\s+(\d+)-([A-D])/i);
+            if (barangayMatch) {
+              const number = barangayMatch[1];
+              const letter = barangayMatch[2];
+              const poblacionName = `Poblacion ${number}-${letter}`;
+              
+              if (davaoCityBarangays[poblacionName]) {
+                detectedLocationName = poblacionName;
+                console.log('🎯 Mapped "Barangay" format to Poblacion:', detectedLocationName);
+                break;
+              }
+            }
+          }
         }
       }
       
