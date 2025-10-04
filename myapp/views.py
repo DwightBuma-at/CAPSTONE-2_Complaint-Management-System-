@@ -2037,15 +2037,15 @@ def get_registered_barangays(request):
             response = supabase.table('admin_profiles').select('barangay').execute()
             barangays = []
             
-            # Extract unique barangays
+            # Extract unique barangays, excluding SYSTEM_SUPERADMIN
             seen_barangays = set()
             for admin_data in response.data:
                 barangay = admin_data.get('barangay')
-                if barangay and barangay not in seen_barangays:
+                if barangay and barangay not in seen_barangays and barangay != 'SYSTEM_SUPERADMIN':
                     barangays.append(barangay)
                     seen_barangays.add(barangay)
             
-            print(f"Found {len(barangays)} barangays with admins in Supabase")
+            print(f"Found {len(barangays)} barangays with admins in Supabase (excluding superadmin)")
             
             # If Supabase has data, return it
             if barangays:
@@ -2060,10 +2060,10 @@ def get_registered_barangays(request):
     
     # Fallback to Django ORM
     try:
-        # Get all unique barangays from AdminProfile model
-        barangays = list(AdminProfile.objects.values_list('barangay', flat=True).distinct())
+        # Get all unique barangays from AdminProfile model, excluding SYSTEM_SUPERADMIN
+        barangays = list(AdminProfile.objects.exclude(barangay='SYSTEM_SUPERADMIN').values_list('barangay', flat=True).distinct())
         
-        print(f"Found {len(barangays)} barangays with admins in Django database")
+        print(f"Found {len(barangays)} barangays with admins in Django database (excluding superadmin)")
         return JsonResponse({
             "success": True,
             "barangays": sorted(barangays)  # Sort alphabetically
