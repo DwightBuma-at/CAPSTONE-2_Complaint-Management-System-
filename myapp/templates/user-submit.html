@@ -674,9 +674,8 @@ function handleImageUpload(event) {
       const detectedBarangay = findClosestBarangay(latitude, longitude);
       
       if (detectedBarangay) {
-        // Auto-populate the barangay dropdown
+        // Auto-populate the barangay dropdown (silently)
         autoSelectBarangay(detectedBarangay);
-        showLocationFeedback(`📍 Photo location detected: ${detectedBarangay}`, 'success');
       } else {
         showLocationFeedback('📍 Photo location outside Davao City. Please select barangay manually.', 'warning');
       }
@@ -730,22 +729,42 @@ function findClosestBarangay(latitude, longitude) {
 // Auto-select barangay in dropdown
 function autoSelectBarangay(barangayName) {
   const barangaySelect = document.getElementById('barangay');
-  if (barangaySelect) {
-    // Find the option with matching text
-    let found = false;
+  if (!barangaySelect) return;
+  
+  console.log('🔍 Attempting to select barangay:', barangayName);
+  console.log('📋 Available registered barangays:', Array.from(barangaySelect.options).map(o => o.textContent));
+  
+  // Try to find exact match first
+  let found = false;
+  for (let option of barangaySelect.options) {
+    if (option.textContent.trim() === barangayName.trim()) {
+      barangaySelect.value = option.value;
+      barangaySelect.dispatchEvent(new Event('change'));
+      found = true;
+      console.log('✅ Barangay auto-selected:', barangayName);
+      break;
+    }
+  }
+  
+  // If not found, try case-insensitive and partial matching
+  if (!found) {
+    const lowerBarangay = barangayName.toLowerCase();
     for (let option of barangaySelect.options) {
-      if (option.textContent === barangayName) {
+      const optionText = option.textContent.trim().toLowerCase();
+      if (optionText === lowerBarangay || optionText.includes(lowerBarangay) || lowerBarangay.includes(optionText)) {
         barangaySelect.value = option.value;
         barangaySelect.dispatchEvent(new Event('change'));
         found = true;
+        console.log('✅ Barangay auto-selected (fuzzy match):', option.textContent);
         break;
       }
     }
-    
-    // If barangay not found in registered list, show additional info
-    if (!found) {
-      showLocationFeedback(`📍 Detected: ${barangayName} (not registered yet). Please select a registered barangay.`, 'warning');
-    }
+  }
+  
+  // If still not found, show message that barangay is not registered
+  if (!found) {
+    console.warn('❌ Barangay not found in registered list:', barangayName);
+    showLocationFeedback(`📍 ${barangayName} is not yet registered in the system. Please select a registered barangay.`, 'warning');
   }
 }
 
