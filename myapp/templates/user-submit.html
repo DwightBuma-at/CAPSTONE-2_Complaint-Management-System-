@@ -768,12 +768,50 @@ function handleImageUpload(event) {
   setTimeout(() => {
     // Extract EXIF data
     EXIF.getData(file, function() {
+    // First, try to get location name directly from EXIF metadata
+    const userComment = EXIF.getTag(this, 'UserComment');
+    const imageDescription = EXIF.getTag(this, 'ImageDescription');
+    const gpsAreaInfo = EXIF.getTag(this, 'GPSAreaInformation');
+    
+    console.log('📸 EXIF Location Names:', { userComment, imageDescription, gpsAreaInfo });
+    
+    // Extract all EXIF tags to see what's available
+    const allTags = EXIF.getAllTags(this);
+    console.log('📋 All EXIF Tags:', allTags);
+    
     const lat = EXIF.getTag(this, 'GPSLatitude');
     const latRef = EXIF.getTag(this, 'GPSLatitudeRef');
     const lng = EXIF.getTag(this, 'GPSLongitude');
     const lngRef = EXIF.getTag(this, 'GPSLongitudeRef');
     
     console.log('📸 EXIF GPS Raw Data:', { lat, latRef, lng, lngRef });
+    
+    // Try to extract location name from EXIF metadata fields
+    let detectedLocationName = null;
+    
+    // Check various EXIF fields for location name
+    const locationSources = [userComment, imageDescription, gpsAreaInfo];
+    for (const source of locationSources) {
+      if (source && typeof source === 'string') {
+        // Check if it contains any barangay name from our database
+        for (const barangayName of Object.keys(davaoCityBarangays)) {
+          if (source.toLowerCase().includes(barangayName.toLowerCase()) || 
+              barangayName.toLowerCase().includes(source.toLowerCase())) {
+            detectedLocationName = barangayName;
+            console.log('✅ Found barangay name in EXIF metadata:', barangayName, 'from field:', source);
+            break;
+          }
+        }
+        if (detectedLocationName) break;
+      }
+    }
+    
+    // If we found a location name in EXIF, use it directly
+    if (detectedLocationName) {
+      console.log('🎯 Using EXIF location name:', detectedLocationName);
+      autoSelectBarangay(detectedLocationName);
+      return; // Skip GPS calculation
+    }
     
     if (lat && lng && latRef && lngRef) {
       // Convert GPS coordinates to decimal degrees
