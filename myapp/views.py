@@ -2753,7 +2753,7 @@ def superadmin_list_admins(request):
                 "barangay": admin_profile.barangay,
                 "userCount": user_count,
                 "isActive": user.is_active,
-                "registrationDate": admin_profile.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "registrationDate": admin_profile.created_at.strftime("%m/%#d/%Y"),
                 "officials": {
                     "barangayCaptain": admin_profile.barangay_captain or "",
                     "barangaySecretary": admin_profile.barangay_secretary or "",
@@ -2950,7 +2950,7 @@ def superadmin_admin_details(request, admin_id):
         total_logins = 1 if user.last_login else 0
         
         # Account created date
-        account_created = user.date_joined.strftime('%Y-%m-%d')
+        account_created = user.date_joined.strftime('%m/%#d/%Y')
         
         # Account age in days
         from datetime import datetime
@@ -2966,7 +2966,7 @@ def superadmin_admin_details(request, admin_id):
             'accountCreated': account_created,
             'accountAge': account_age,
             'systemInfo': {
-                'accessKey': 'Set (Hidden)' if admin_profile.access_key else 'Not set',
+                'accessKey': 'Set (Hidden)' if admin_profile.access_key_hash else 'Not set',
                 'accountCreated': account_created,
                 'accountAge': f"{account_age} days"
             },

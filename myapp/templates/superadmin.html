@@ -1845,46 +1845,120 @@
     }
     
     // Admin Details Modal Functions
-    function showAdminDetailsById(adminId) {
+    async function showAdminDetailsById(adminId) {
       console.log('🔍 showAdminDetailsById called with ID:', adminId);
       
-      // Use cached data for now (fallback approach)
-      const adminData = window.adminDataStore.find(admin => admin.id == adminId);
-      
-      if (!adminData) {
-        console.error('❌ Admin data not found for ID:', adminId);
-        showNotification('Admin data not found', 'error');
-        return;
-      }
-      
-      console.log('✅ Using cached admin data:', adminData);
-      
-      // Create a complete admin object with the data we have
-      const completeAdminData = {
-        id: adminData.id,
-        email: adminData.email,
-        barangay: adminData.barangay,
-        userCount: adminData.userCount || 1, // Use cached user count
-        lastLogin: 'Never',
+      // Show loading state
+      const loadingData = {
+        id: adminId,
+        email: 'Loading...',
+        barangay: 'Loading...',
+        userCount: 0,
+        lastLogin: 'Loading...',
         totalLogins: 0,
-        accountCreated: '9/26/2025',
-        accountAge: '0 days',
+        accountCreated: 'Loading...',
+        accountAge: 'Loading...',
         systemInfo: {
-          accessKey: 'Set (Hidden)',
-          accountCreated: '9/26/2025',
-          accountAge: '0 days'
+          accessKey: 'Loading...',
+          accountCreated: 'Loading...',
+          accountAge: 'Loading...'
         },
         officials: {
-          barangay_captain: 'Dwight Anthony C. Buma-at',
-          barangay_secretary: 'Ben Daniel P. Robinos',
-          barangay_kagawad: 'Christian V. Oribias',
-          sk_chairman: 'Justin John F. Navarro',
-          term_start_year: '2022',
-          term_end_year: '2025'
+          barangay_captain: 'Loading...',
+          barangay_secretary: 'Loading...',
+          barangay_kagawad: 'Loading...',
+          sk_chairman: 'Loading...',
+          term_start_year: 'Loading...',
+          term_end_year: 'Loading...'
         }
       };
       
-      showAdminDetails(completeAdminData);
+      // Show modal with loading data first
+      showAdminDetails(loadingData);
+      
+      try {
+        // Fetch real admin data from API
+        const response = await fetch(`/api/superadmin/admin/${adminId}/`);
+        
+        if (response.ok) {
+          const responseData = await response.json();
+          console.log('✅ Real admin data fetched:', responseData);
+          
+          if (responseData.success && responseData.admin) {
+            const adminData = responseData.admin;
+            
+            // Create complete admin object with real data
+            const completeAdminData = {
+              id: adminData.id,
+              email: adminData.email,
+              barangay: adminData.barangay,
+              userCount: adminData.userCount || 0,
+              lastLogin: adminData.lastLogin || 'Never',
+              totalLogins: adminData.totalLogins || 0,
+              accountCreated: adminData.accountCreated || 'Unknown',
+              accountAge: adminData.accountAge || 'Unknown',
+              registrationDate: adminData.accountCreated || 'Unknown', // Add this field for the modal
+              systemInfo: {
+                accessKey: 'Set (Hidden)',
+                accountCreated: adminData.accountCreated || 'Unknown',
+                accountAge: adminData.accountAge || 'Unknown'
+              },
+              officials: {
+                barangay_captain: adminData.officials?.barangay_captain || 'Not set',
+                barangay_secretary: adminData.officials?.barangay_secretary || 'Not set',
+                barangay_kagawad: adminData.officials?.barangay_kagawad || 'Not set',
+                sk_chairman: adminData.officials?.sk_chairman || 'Not set',
+                term_start_year: adminData.officials?.term_start_year || 'Not set',
+                term_end_year: adminData.officials?.term_end_year || 'Not set'
+              }
+            };
+            
+            console.log('✅ Complete admin data created:', completeAdminData);
+            
+            // Update modal with real data
+            showAdminDetails(completeAdminData);
+          } else {
+            console.error('❌ Invalid API response structure:', responseData);
+            showNotification('Invalid admin data received', 'error');
+          }
+        } else {
+          console.error('❌ Failed to fetch admin data:', response.status);
+          
+          // Fallback to cached data
+          const cachedAdminData = window.adminDataStore.find(admin => admin.id == adminId);
+          if (cachedAdminData) {
+            const fallbackData = {
+              id: cachedAdminData.id,
+              email: cachedAdminData.email,
+              barangay: cachedAdminData.barangay,
+              userCount: cachedAdminData.userCount || 0,
+              lastLogin: 'Unknown',
+              totalLogins: 0,
+              accountCreated: 'Unknown',
+              accountAge: 'Unknown',
+              systemInfo: {
+                accessKey: 'Set (Hidden)',
+                accountCreated: 'Unknown',
+                accountAge: 'Unknown'
+              },
+              officials: {
+                barangay_captain: 'Not available',
+                barangay_secretary: 'Not available',
+                barangay_kagawad: 'Not available',
+                sk_chairman: 'Not available',
+                term_start_year: 'Not available',
+                term_end_year: 'Not available'
+              }
+            };
+            showAdminDetails(fallbackData);
+          } else {
+            showNotification('Admin data not found', 'error');
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error fetching admin data:', error);
+        showNotification('Error loading admin details', 'error');
+      }
     }
     
     // Simple test function for debugging
@@ -1949,7 +2023,7 @@
         // User count - real-time from backend
         const userCountElement = document.getElementById('detailUserCount');
         if (userCountElement) {
-          const userCount = data.userCount || 1; // Default to 1 since we know there's at least 1 user
+          const userCount = data.userCount ?? 0; // Use actual count, default to 0 if not provided
           userCountElement.innerHTML = `<strong>${userCount}</strong>`;
           console.log(`✅ Updated user count display: ${userCount} users in ${data.barangay}`);
         }

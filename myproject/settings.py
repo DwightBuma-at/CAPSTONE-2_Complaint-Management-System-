@@ -138,7 +138,7 @@ try:
     HAS_DJ_DATABASE_URL = True
 except ImportError:
     HAS_DJ_DATABASE_URL = False
-    print("⚠️ dj-database-url not available, using manual database configuration")
+    print("WARNING: dj-database-url not available, using manual database configuration")
 
 # Check if Railway has provided database environment variables
 railway_db_configured = (
@@ -148,12 +148,12 @@ railway_db_configured = (
 
 if os.getenv('RAILWAY_ENVIRONMENT') and railway_db_configured:
     # Production: Use Railway PostgreSQL (only if properly configured)
-    print("🚀 Using Railway PostgreSQL database for production.")
+    print("Using Railway PostgreSQL database for production.")
     
     # Try DATABASE_URL first (Railway's preferred method)
     database_url = os.getenv('DATABASE_URL')
     if database_url and HAS_DJ_DATABASE_URL:
-        print(f"🔍 Using DATABASE_URL connection")
+        print(f"Using DATABASE_URL connection")
         DATABASES = {
             'default': dj_database_url.config(
                 default=database_url,
@@ -162,7 +162,7 @@ if os.getenv('RAILWAY_ENVIRONMENT') and railway_db_configured:
             )
         }
     elif database_url and not HAS_DJ_DATABASE_URL:
-        print(f"⚠️ DATABASE_URL found but dj-database-url not available, using manual parsing")
+        print(f"WARNING: DATABASE_URL found but dj-database-url not available, using manual parsing")
         # Manual DATABASE_URL parsing as fallback
         import urllib.parse as urlparse
         url = urlparse.urlparse(database_url)
@@ -200,8 +200,8 @@ if os.getenv('RAILWAY_ENVIRONMENT') and railway_db_configured:
         }
 elif os.getenv('RAILWAY_ENVIRONMENT') and not railway_db_configured:
     # Railway environment but no database configured - force Supabase fallback
-    print("⚠️  Railway detected but no PostgreSQL service configured!")
-    print("🚀 Using Supabase PostgreSQL database as Railway fallback.")
+    print("WARNING: Railway detected but no PostgreSQL service configured!")
+    print("Using Supabase PostgreSQL database as Railway fallback.")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -218,7 +218,7 @@ elif os.getenv('RAILWAY_ENVIRONMENT') and not railway_db_configured:
     }
 else:
     # Development: Use Supabase PostgreSQL database
-    print("🚀 Using Supabase PostgreSQL database for development.")
+    print("Using Supabase PostgreSQL database for development.")
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -233,7 +233,7 @@ else:
             },
         }
     }
-    print("⚠️  FALLBACK: If this is Railway, please add PostgreSQL service in Railway dashboard")
+    print("WARNING: FALLBACK: If this is Railway, please add PostgreSQL service in Railway dashboard")
 
 
 
@@ -352,8 +352,8 @@ TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
 TWILIO_FROM = os.getenv("TWILIO_FROM", "")   # e.g. +15005550006
 
-print("📧 Email mode: SMTP (Gmail) - REAL EMAIL SENDING ENABLED")
-print(f"✅ Gmail configuration is properly set up with: {EMAIL_HOST_USER}")
+print("Email mode: SMTP (Gmail) - REAL EMAIL SENDING ENABLED")
+print(f"Gmail configuration is properly set up with: {EMAIL_HOST_USER}")
 
 # =========================
 # Security Settings for Production

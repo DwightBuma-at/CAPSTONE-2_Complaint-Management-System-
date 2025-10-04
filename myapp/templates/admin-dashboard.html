@@ -825,9 +825,9 @@
         
         if (response.ok) {
           const adminData = await response.json();
+          console.log('Admin data received:', adminData); // Debug log
           if (adminData.authenticated) {
-            // For now, show placeholder data - in future this would come from database
-            // The officials data would be stored when admin registers in superadmin
+            // Display real officials data from database
             document.getElementById('officialCaptain').textContent = adminData.barangayCaptain || 'Not Available';
             document.getElementById('officialSecretary').textContent = adminData.barangaySecretary || 'Not Available';
             document.getElementById('officialKagawad').textContent = adminData.barangayKagawad || 'Not Available';
@@ -836,12 +836,14 @@
             const termStart = adminData.termStartYear || 'N/A';
             const termEnd = adminData.termEndYear || 'N/A';
             document.getElementById('officialTerm').textContent = `${termStart} - ${termEnd}`;
+            
+            console.log('Officials data updated in modal'); // Debug log
           } else {
-            // Show placeholder if not authenticated
+            console.log('Admin not authenticated, showing placeholder'); // Debug log
             showPlaceholderOfficials();
           }
         } else {
-          // Show placeholder data for demo
+          console.log('API call failed, showing placeholder'); // Debug log
           showPlaceholderOfficials();
         }
       } catch (error) {
