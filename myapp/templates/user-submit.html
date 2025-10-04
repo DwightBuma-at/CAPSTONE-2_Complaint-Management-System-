@@ -927,6 +927,7 @@ function autoSelectBarangay(barangayName) {
       barangaySelect.dispatchEvent(new Event('change'));
       found = true;
       console.log('✅ Barangay auto-selected:', barangayName);
+      showLocationFeedback(`📍 Location detected: ${barangayName}`, 'success');
       break;
     }
   }
@@ -941,6 +942,7 @@ function autoSelectBarangay(barangayName) {
         barangaySelect.dispatchEvent(new Event('change'));
         found = true;
         console.log('✅ Barangay auto-selected (fuzzy match):', option.textContent);
+        showLocationFeedback(`📍 Location detected: ${option.textContent}`, 'success');
         break;
       }
     }
