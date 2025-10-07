@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barangay Validation Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        .barangay-error {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            animation: fadeIn 0.3s ease-in;
+        }
+        .barangay-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: slideDown 0.2s ease-out;
+        }
+        .barangay-dropdown div {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+            color: #333;
+        }
+        .barangay-dropdown div:hover {
+            background-color: #f5f5f5;
+        }
+        .barangay-dropdown div:last-child {
+            border-bottom: none;
+        }
+        .form-help {
+            display: block;
+            margin-top: 4px;
+            color: #666;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+        .test-result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        .test-result.valid {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-result.invalid {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🏙️ Davao City Barangay Validation Test</h1>
+        <p>Test the barangay validation functionality with real Davao City barangays.</p>
+        
+        <div class="form-group" style="position: relative;">
+            <label for="testBarangay">Barangay Name</label>
+            <input type="text" id="testBarangay" placeholder="Type a barangay name...">
+            <small class="form-help">Try typing "Agdao", "Talomo", "Poblacion", or any invalid name</small>
+        </div>
+        
+        <div id="testResult" class="test-result" style="display: none;"></div>
+        
+        <h3>Valid Barangay Examples:</h3>
+        <ul>
+            <li>Agdao</li>
+            <li>Talomo Proper</li>
+            <li>Poblacion 1-A</li>
+            <li>Matina Aplaya</li>
+            <li>Buhangin Proper</li>
+            <li>Catalunan Grande</li>
+        </ul>
+        
+        <h3>Invalid Examples (should show error):</h3>
+        <ul>
+            <li>Manila</li>
+            <li>Cebu City</li>
+            <li>Makati</li>
+            <li>Quezon City</li>
+        </ul>
+    </div>
+
+    <script>
+        // Sample Davao City Barangays (subset for testing)
+        const davaoCityBarangays = {
+            'Poblacion 1-A': { lat: 7.0731, lng: 125.6128, district: 1, code: '1-A', name: 'Poblacion' },
+            'Poblacion 2-A': { lat: 7.0735, lng: 125.6132, district: 1, code: '2-A', name: 'Poblacion' },
+            'Agdao': { lat: 7.1056, lng: 125.6139, district: 2, code: 'AGDAO' },
+            'Talomo Proper': { lat: 7.0506, lng: 125.5947, district: 3 },
+            'Matina Aplaya': { lat: 7.0250, lng: 125.5720, district: 3 },
+            'Buhangin Proper': { lat: 7.1300, lng: 125.6400, district: 2, code: 'BUH-P' },
+            'Catalunan Grande': { lat: 7.0400, lng: 125.5850, district: 3 },
+            'Indangan': { lat: 7.1320, lng: 125.6380, district: 2, code: 'IND' },
+            'Obrero': { lat: 7.0900, lng: 125.6200, district: 2, code: 'OBR' },
+            'Bankerohan': { lat: 7.0850, lng: 125.6150, district: 2, code: 'BNK' }
+        };
+
+        // Barangay validation function
+        function isValidDavaoCityBarangay(barangayName) {
+            const normalizedInput = barangayName.trim().toLowerCase();
+            const barangayKeys = Object.keys(davaoCityBarangays);
+            const foundBarangay = barangayKeys.find(key => 
+                key.toLowerCase() === normalizedInput
+            );
+            return foundBarangay || null;
+        }
+
+        // Function to get barangay suggestions
+        function getBarangaySuggestions(input) {
+            if (!input || input.length < 2) return [];
+            const normalizedInput = input.toLowerCase();
+            const suggestions = [];
+            Object.keys(davaoCityBarangays).forEach(barangay => {
+                if (barangay.toLowerCase().includes(normalizedInput)) {
+                    suggestions.push(barangay);
+                }
+            });
+            return suggestions.slice(0, 10);
+        }
+
+        // Function to create dropdown
+        function createBarangayDropdown(inputElement, suggestions) {
+            const existingDropdown = inputElement.parentNode.querySelector('.barangay-dropdown');
+            if (existingDropdown) {
+                existingDropdown.remove();
+            }
+            
+            if (suggestions.length === 0) return;
+            
+            const dropdown = document.createElement('div');
+            dropdown.className = 'barangay-dropdown';
+            
+            suggestions.forEach(barangay => {
+                const suggestionItem = document.createElement('div');
+                suggestionItem.textContent = barangay;
+                suggestionItem.addEventListener('click', () => {
+                    inputElement.value = barangay;
+                    dropdown.remove();
+                    validateBarangayField(inputElement);
+                });
+                dropdown.appendChild(suggestionItem);
+            });
+            
+            inputElement.parentNode.style.position = 'relative';
+            inputElement.parentNode.appendChild(dropdown);
+        }
+
+        // Function to validate barangay field
+        function validateBarangayField(inputElement) {
+            const barangay = inputElement.value.trim();
+            const isValid = isValidDavaoCityBarangay(barangay);
+            
+            const existingError = inputElement.parentNode.querySelector('.barangay-error');
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            const testResult = document.getElementById('testResult');
+            
+            if (barangay && !isValid) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'barangay-error';
+                errorDiv.innerHTML = `⚠️ The barangay "${barangay}" is not part of Davao City. Please select a valid barangay.`;
+                inputElement.parentNode.appendChild(errorDiv);
+                
+                inputElement.style.borderColor = '#e74c3c';
+                inputElement.style.backgroundColor = '#fdf2f2';
+                
+                testResult.className = 'test-result invalid';
+                testResult.textContent = `❌ Invalid: "${barangay}" is not a valid Davao City barangay`;
+                testResult.style.display = 'block';
+                
+                return false;
+            } else if (isValid) {
+                inputElement.style.borderColor = '#27ae60';
+                inputElement.style.backgroundColor = '#f2fdf2';
+                
+                testResult.className = 'test-result valid';
+                testResult.textContent = `✅ Valid: "${barangay}" is a valid Davao City barangay`;
+                testResult.style.display = 'block';
+            } else {
+                inputElement.style.borderColor = '';
+                inputElement.style.backgroundColor = '';
+                testResult.style.display = 'none';
+            }
+            
+            return isValid;
+        }
+
+        // Add event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const barangayInput = document.getElementById('testBarangay');
+            let debounceTimer;
+            
+            barangayInput.addEventListener('input', function() {
+                const value = this.value.trim();
+                
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    const existingDropdown = this.parentNode.querySelector('.barangay-dropdown');
+                    if (existingDropdown && value.length < 2) {
+                        existingDropdown.remove();
+                    }
+                }, 300);
+                
+                if (value.length > 0) {
+                    validateBarangayField(this);
+                    
+                    if (value.length >= 2) {
+                        const suggestions = getBarangaySuggestions(value);
+                        createBarangayDropdown(this, suggestions);
+                    }
+                } else {
+                    this.style.borderColor = '';
+                    this.style.backgroundColor = '';
+                    const existingError = this.parentNode.querySelector('.barangay-error');
+                    if (existingError) {
+                        existingError.remove();
+                    }
+                    document.getElementById('testResult').style.display = 'none';
+                }
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!barangayInput.contains(e.target) && !e.target.closest('.barangay-dropdown')) {
+                    const dropdown = barangayInput.parentNode.querySelector('.barangay-dropdown');
+                    if (dropdown) {
+                        dropdown.remove();
+                    }
+                }
+            });
+            
+            barangayInput.addEventListener('blur', function() {
+                validateBarangayField(this);
+            });
+        });
+    </script>
+</body>
+</html>

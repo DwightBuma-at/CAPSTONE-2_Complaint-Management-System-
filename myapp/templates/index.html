@@ -253,6 +253,67 @@
       border-color: var(--brand);
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     }
+    
+    /* Barangay validation styles */
+    .barangay-error {
+      color: #e74c3c;
+      font-size: 12px;
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      animation: fadeIn 0.3s ease-in;
+    }
+    
+    .barangay-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      animation: slideDown 0.2s ease-out;
+    }
+    
+    .barangay-dropdown div {
+      padding: 12px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background-color 0.2s;
+      color: #333;
+    }
+    
+    .barangay-dropdown div:hover {
+      background-color: #f5f5f5;
+    }
+    
+    .barangay-dropdown div:last-child {
+      border-bottom: none;
+    }
+    
+    .form-help {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     .form-options {
       display: flex;
       align-items: center;
@@ -960,6 +1021,13 @@
         return;
       }
       
+      // Validate barangay is part of Davao City
+      const barangayInput = e.target.querySelector('#signupBarangay');
+      if (!validateBarangayField(barangayInput)) {
+        showNotification('Please enter a valid Davao City barangay', 'error');
+        return;
+      }
+      
       // Validate passwords match
       if (password !== confirmPassword) {
         showNotification('Passwords do not match!', 'error');
@@ -1523,6 +1591,199 @@
     window.currentLoginRole = 'user';
     window.currentSignupRole = 'user';
     
+    // Add event listeners for barangay validation when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      const barangayInput = document.getElementById('signupBarangay');
+      if (barangayInput) {
+        let debounceTimer;
+        
+        // Real-time validation and autocomplete
+        barangayInput.addEventListener('input', function() {
+          const value = this.value.trim();
+          
+          // Clear existing dropdown after a short delay
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            const existingDropdown = this.parentNode.querySelector('.barangay-dropdown');
+            if (existingDropdown && value.length < 2) {
+              existingDropdown.remove();
+            }
+          }, 300);
+          
+          // Validate as user types
+          if (value.length > 0) {
+            validateBarangayField(this);
+            
+            // Show suggestions for partial matches
+            if (value.length >= 2) {
+              const suggestions = getBarangaySuggestions(value);
+              createBarangayDropdown(this, suggestions);
+            }
+          } else {
+            // Reset styling when empty
+            this.style.borderColor = '';
+            this.style.backgroundColor = '';
+            const existingError = this.parentNode.querySelector('.barangay-error');
+            if (existingError) {
+              existingError.remove();
+            }
+          }
+        });
+        
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+          if (!barangayInput.contains(e.target) && !e.target.closest('.barangay-dropdown')) {
+            const dropdown = barangayInput.parentNode.querySelector('.barangay-dropdown');
+            if (dropdown) {
+              dropdown.remove();
+            }
+          }
+        });
+        
+        // Validate on blur (when user leaves the field)
+        barangayInput.addEventListener('blur', function() {
+          validateBarangayField(this);
+        });
+      }
+    });
+    
+    // Barangay validation function
+    function isValidDavaoCityBarangay(barangayName) {
+      // Normalize the input (trim, lowercase for comparison)
+      const normalizedInput = barangayName.trim().toLowerCase();
+      
+      // Check if the barangay exists in our database (case-insensitive)
+      const barangayKeys = Object.keys(davaoCityBarangays);
+      const foundBarangay = barangayKeys.find(key => 
+        key.toLowerCase() === normalizedInput
+      );
+      
+      return foundBarangay || null;
+    }
+    
+    // Function to get barangay suggestions based on input
+    function getBarangaySuggestions(input) {
+      if (!input || input.length < 2) return [];
+      
+      const normalizedInput = input.toLowerCase();
+      const suggestions = [];
+      
+      Object.keys(davaoCityBarangays).forEach(barangay => {
+        if (barangay.toLowerCase().includes(normalizedInput)) {
+          suggestions.push(barangay);
+        }
+      });
+      
+      return suggestions.slice(0, 10); // Limit to 10 suggestions
+    }
+    
+    // Function to create dropdown suggestions
+    function createBarangayDropdown(inputElement, suggestions) {
+      // Remove existing dropdown
+      const existingDropdown = inputElement.parentNode.querySelector('.barangay-dropdown');
+      if (existingDropdown) {
+        existingDropdown.remove();
+      }
+      
+      if (suggestions.length === 0) return;
+      
+      // Create dropdown container
+      const dropdown = document.createElement('div');
+      dropdown.className = 'barangay-dropdown';
+      dropdown.style.cssText = `
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ddd;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      `;
+      
+      // Add suggestions
+      suggestions.forEach(barangay => {
+        const suggestionItem = document.createElement('div');
+        suggestionItem.style.cssText = `
+          padding: 12px 16px;
+          cursor: pointer;
+          border-bottom: 1px solid #f0f0f0;
+          transition: background-color 0.2s;
+        `;
+        suggestionItem.textContent = barangay;
+        
+        suggestionItem.addEventListener('mouseenter', () => {
+          suggestionItem.style.backgroundColor = '#f5f5f5';
+        });
+        
+        suggestionItem.addEventListener('mouseleave', () => {
+          suggestionItem.style.backgroundColor = 'white';
+        });
+        
+        suggestionItem.addEventListener('click', () => {
+          inputElement.value = barangay;
+          dropdown.remove();
+          validateBarangayField(inputElement);
+        });
+        
+        dropdown.appendChild(suggestionItem);
+      });
+      
+      // Insert dropdown after input
+      inputElement.parentNode.style.position = 'relative';
+      inputElement.parentNode.appendChild(dropdown);
+    }
+    
+    // Function to validate barangay field
+    function validateBarangayField(inputElement) {
+      const barangay = inputElement.value.trim();
+      const isValid = isValidDavaoCityBarangay(barangay);
+      
+      // Remove existing validation messages
+      const existingError = inputElement.parentNode.querySelector('.barangay-error');
+      if (existingError) {
+        existingError.remove();
+      }
+      
+      if (barangay && !isValid) {
+        // Show error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'barangay-error';
+        errorDiv.style.cssText = `
+          color: #e74c3c;
+          font-size: 12px;
+          margin-top: 4px;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        `;
+        errorDiv.innerHTML = `
+          ⚠️ The barangay "${barangay}" is not part of Davao City. Please select a valid barangay.
+        `;
+        inputElement.parentNode.appendChild(errorDiv);
+        
+        // Add error styling to input
+        inputElement.style.borderColor = '#e74c3c';
+        inputElement.style.backgroundColor = '#fdf2f2';
+        
+        return false;
+      } else if (isValid) {
+        // Add success styling
+        inputElement.style.borderColor = '#27ae60';
+        inputElement.style.backgroundColor = '#f2fdf2';
+      } else {
+        // Reset styling
+        inputElement.style.borderColor = '';
+        inputElement.style.backgroundColor = '';
+      }
+      
+      return isValid;
+    }
+
     // Official Davao City Barangay Database (182 barangays) with accurate coordinates
     const davaoCityBarangays = {
       // 🟢 1st DISTRICT (54 Barangays) - POBLACION (40 barangays)
