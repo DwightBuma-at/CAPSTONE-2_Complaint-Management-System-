@@ -540,6 +540,25 @@
       flex: 1;
       border-top-right-radius: 0;
       border-bottom-right-radius: 0;
+      color: #000000 !important; /* Black text color */
+      resize: none; /* Prevent resizing */
+      min-width: 0; /* Prevent flex growing */
+      width: 100%; /* Fixed width */
+      max-width: none; /* Allow natural width */
+    }
+    
+    /* Specific styling for barangay input field */
+    #signupBarangay {
+      color: #000000 !important; /* Ensure black text */
+      background: #ffffff !important; /* White background for better contrast */
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      resize: none !important; /* Prevent any resizing */
+      width: 100% !important; /* Fixed width */
+      min-width: 200px; /* Minimum width */
+      max-width: 100%; /* Maximum width */
+      height: 46px !important; /* Fixed height */
+      box-sizing: border-box !important; /* Include padding in width calculation */
+      overflow: hidden !important; /* Prevent content overflow */
     }
     .input-with-button .btn {
       border-top-left-radius: 0;
@@ -553,6 +572,18 @@
       color: var(--muted);
       font-size: 0.8rem;
       line-height: 1.4;
+    }
+    
+    /* Barangay error message styling */
+    .barangay-error {
+      color: #e74c3c;
+      font-size: 12px;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+      clear: both;
     }
   </style>
 </head>
@@ -662,6 +693,10 @@
           </button>
         </div>
         <small class="form-help">Click "Locate" to automatically detect your barangay using GPS</small>
+        <small class="form-help" style="color: #6b7280; margin-top: 4px; display: block;">
+          Only official Davao City barangays (182 total) are accepted. 
+          <button type="button" onclick="showBarangayList()" style="background: none; border: none; color: #3b82f6; text-decoration: underline; cursor: pointer; font-size: inherit;">View all barangays</button>
+        </small>
       </div>
       <div class="form-group">
         <label for="signupPassword">Password</label>
@@ -1023,10 +1058,13 @@
       
       // Validate barangay is part of Davao City
       const barangayInput = e.target.querySelector('#signupBarangay');
+      console.log('Validating barangay:', barangay);
       if (!validateBarangayField(barangayInput)) {
-        showNotification('Please enter a valid Davao City barangay', 'error');
+        console.log('Barangay validation failed for:', barangay);
+        showNotification('Please enter a valid Davao City barangay from the official 182 barangays', 'error');
         return;
       }
+      console.log('Barangay validation passed for:', barangay);
       
       // Validate passwords match
       if (password !== confirmPassword) {
@@ -1652,11 +1690,23 @@
       // Normalize the input (trim, lowercase for comparison)
       const normalizedInput = barangayName.trim().toLowerCase();
       
+      if (!normalizedInput) return null;
+      
       // Check if the barangay exists in our database (case-insensitive)
       const barangayKeys = Object.keys(davaoCityBarangays);
-      const foundBarangay = barangayKeys.find(key => 
+      
+      // First try exact match
+      let foundBarangay = barangayKeys.find(key => 
         key.toLowerCase() === normalizedInput
       );
+      
+      // If no exact match, try partial match (for user convenience)
+      if (!foundBarangay) {
+        foundBarangay = barangayKeys.find(key => 
+          key.toLowerCase().includes(normalizedInput) || 
+          normalizedInput.includes(key.toLowerCase())
+        );
+      }
       
       return foundBarangay || null;
     }
@@ -1738,47 +1788,121 @@
       inputElement.parentNode.appendChild(dropdown);
     }
     
+    // Function to show all valid barangays in a modal
+    function showBarangayList() {
+      const barangayKeys = Object.keys(davaoCityBarangays);
+      const district1 = barangayKeys.filter(key => davaoCityBarangays[key].district === 1);
+      const district2 = barangayKeys.filter(key => davaoCityBarangays[key].district === 2);
+      const district3 = barangayKeys.filter(key => davaoCityBarangays[key].district === 3);
+      
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      `;
+      
+      const content = document.createElement('div');
+      content.style.cssText = `
+        background: var(--card);
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+        border: var(--border);
+        box-shadow: var(--shadow);
+      `;
+      
+      content.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 style="margin: 0; color: var(--text);">Official Davao City Barangays (182 Total)</h3>
+          <button onclick="this.closest('.barangay-modal').remove()" style="background: none; border: none; color: var(--muted); font-size: 24px; cursor: pointer;">&times;</button>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <h4 style="color: var(--brand); margin-bottom: 10px;">District 1 - Poblacion (${district1.length} barangays)</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-bottom: 20px;">
+            ${district1.map(barangay => `<div style="padding: 8px; background: rgba(59, 130, 246, 0.1); border-radius: 6px; font-size: 12px; color: var(--text);">${barangay}</div>`).join('')}
+          </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <h4 style="color: var(--brand); margin-bottom: 10px;">District 2 (${district2.length} barangays)</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-bottom: 20px;">
+            ${district2.map(barangay => `<div style="padding: 8px; background: rgba(34, 211, 238, 0.1); border-radius: 6px; font-size: 12px; color: var(--text);">${barangay}</div>`).join('')}
+          </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <h4 style="color: var(--brand); margin-bottom: 10px;">District 3 - Talomo (${district3.length} barangays)</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
+            ${district3.map(barangay => `<div style="padding: 8px; background: rgba(245, 158, 11, 0.1); border-radius: 6px; font-size: 12px; color: var(--text);">${barangay}</div>`).join('')}
+          </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+          <button onclick="this.closest('.barangay-modal').remove()" style="background: var(--brand); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Close</button>
+        </div>
+      `;
+      
+      modal.className = 'barangay-modal';
+      modal.appendChild(content);
+      document.body.appendChild(modal);
+      
+      // Close modal when clicking outside
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      });
+    }
+
     // Function to validate barangay field
     function validateBarangayField(inputElement) {
       const barangay = inputElement.value.trim();
       const isValid = isValidDavaoCityBarangay(barangay);
       
       // Remove existing validation messages
-      const existingError = inputElement.parentNode.querySelector('.barangay-error');
+      const existingError = inputElement.parentNode.parentNode.querySelector('.barangay-error');
       if (existingError) {
         existingError.remove();
       }
       
       if (barangay && !isValid) {
-        // Show error message
+        // Show error message below the input group
         const errorDiv = document.createElement('div');
         errorDiv.className = 'barangay-error';
-        errorDiv.style.cssText = `
-          color: #e74c3c;
-          font-size: 12px;
-          margin-top: 4px;
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        `;
         errorDiv.innerHTML = `
-          ⚠️ The barangay "${barangay}" is not part of Davao City. Please select a valid barangay.
+          ⚠️ The barangay "${barangay}" is not part of Davao City. Please select from the official 182 barangays of Davao City.
         `;
-        inputElement.parentNode.appendChild(errorDiv);
+        // Append to the form-group container (parent of input-with-button)
+        inputElement.parentNode.parentNode.appendChild(errorDiv);
         
         // Add error styling to input
         inputElement.style.borderColor = '#e74c3c';
         inputElement.style.backgroundColor = '#fdf2f2';
+        inputElement.style.color = '#000000'; /* Keep black text even in error state */
         
         return false;
       } else if (isValid) {
         // Add success styling
         inputElement.style.borderColor = '#27ae60';
         inputElement.style.backgroundColor = '#f2fdf2';
+        inputElement.style.color = '#000000'; /* Keep black text in success state */
       } else {
         // Reset styling
         inputElement.style.borderColor = '';
         inputElement.style.backgroundColor = '';
+        inputElement.style.color = '#000000'; /* Keep black text in normal state */
       }
       
       return isValid;
