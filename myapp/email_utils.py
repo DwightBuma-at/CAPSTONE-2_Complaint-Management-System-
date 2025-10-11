@@ -16,8 +16,8 @@ def send_verification_email(email, otp_code):
     """Send verification email with OTP - Use SendGrid on Railway, SMTP locally"""
     import os
     
-    # Use SendGrid on Railway for reliable delivery
-    if os.getenv('RAILWAY_ENVIRONMENT'):
+    # Use SendGrid on Railway for reliable delivery (temporarily disabled for testing)
+    if os.getenv('RAILWAY_ENVIRONMENT') and False:  # Temporarily disabled
         print(f"🚂 Railway detected - using SendGrid for {email}")
         from .sendgrid_email import send_otp_email_sendgrid
         return send_otp_email_sendgrid(email, otp_code)
