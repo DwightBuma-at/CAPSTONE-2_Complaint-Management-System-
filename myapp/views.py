@@ -2737,11 +2737,14 @@ def superadmin_list_admins(request):
         # Get all admin profiles except superadmin, ordered by latest registration first (newest at top)
         admin_profiles = AdminProfile.objects.exclude(
             user__email='complaintmanagementsystem5@gmail.com'
-        ).select_related('user').order_by('-user__date_joined')
+        ).select_related('user').order_by('-created_at')
         
         admins_data = []
         for admin_profile in admin_profiles:
             user = admin_profile.user
+            
+            # Debug: Print creation dates to understand ordering
+            print(f"🔍 Admin {user.email} ({admin_profile.barangay}) - created_at: {admin_profile.created_at}, user date_joined: {user.date_joined}")
             
             # Count users in this barangay (exact match)
             user_count = UserProfile.objects.filter(barangay=admin_profile.barangay).count()
