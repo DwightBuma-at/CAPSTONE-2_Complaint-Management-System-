@@ -2734,10 +2734,10 @@ def superadmin_list_admins(request):
         return JsonResponse({"error": "Superadmin access required"}, status=403)
 
     try:
-        # Get all admin profiles except superadmin, ordered by latest registration first
+        # Get all admin profiles except superadmin, ordered by latest registration first (newest at top)
         admin_profiles = AdminProfile.objects.exclude(
             user__email='complaintmanagementsystem5@gmail.com'
-        ).select_related('user').order_by('-created_at')
+        ).select_related('user').order_by('-user__date_joined')
         
         admins_data = []
         for admin_profile in admin_profiles:
