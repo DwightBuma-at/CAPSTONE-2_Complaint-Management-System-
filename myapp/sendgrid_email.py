@@ -31,6 +31,8 @@ def send_email_via_sendgrid(to_email, subject, html_content, from_email=None):
         
         if not sendgrid_api_key:
             print("❌ SENDGRID_API_KEY not found in environment variables")
+            print("🔍 Environment variables available:", list(os.environ.keys()))
+            print("🔍 RAILWAY_ENVIRONMENT:", os.getenv('RAILWAY_ENVIRONMENT'))
             return False
         
         # Default sender email - use system email (must be verified in SendGrid)
@@ -54,10 +56,14 @@ def send_email_via_sendgrid(to_email, subject, html_content, from_email=None):
         response = sg.send(message)
         
         print(f"✅ SendGrid: Email sent successfully! Status: {response.status_code}")
+        print(f"🔍 SendGrid Response Headers: {dict(response.headers)}")
         return True
         
     except Exception as e:
         print(f"❌ SendGrid Error: {e}")
+        print(f"🔍 SendGrid Error Type: {type(e).__name__}")
+        import traceback
+        print(f"🔍 SendGrid Traceback: {traceback.format_exc()}")
         return False
 
 
