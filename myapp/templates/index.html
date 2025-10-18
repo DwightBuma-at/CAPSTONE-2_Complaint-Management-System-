@@ -2127,28 +2127,33 @@
       locateBtnText.textContent = '🔍 Detecting...';
       
       try {
-        // Get current position with high accuracy
+        // Get current position with high accuracy and stricter settings
         const position = await new Promise((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 30000
+            timeout: 20000,        // Increased timeout for better accuracy
+            maximumAge: 0          // Force fresh GPS reading, no cache
           });
         });
         
-        const { latitude, longitude } = position.coords;
+        const { latitude, longitude, accuracy } = position.coords;
         console.log('📍 GPS Location detected:', latitude, longitude);
+        console.log('🎯 GPS Accuracy:', accuracy, 'meters');
+        console.log('📍 Your location: Lat', latitude, 'Lng', longitude);
         
-        // Validate if location is within Davao City bounds
+        // Validate if location is within Davao City bounds (more accurate bounds)
         const davaoCityBounds = {
-          north: 7.4,
-          south: 6.8,
-          east: 125.8,
-          west: 125.0
+          north: 7.3,    // More restrictive northern boundary
+          south: 6.9,    // More restrictive southern boundary  
+          east: 125.7,   // More restrictive eastern boundary
+          west: 125.1    // More restrictive western boundary
         };
         
         if (latitude < davaoCityBounds.south || latitude > davaoCityBounds.north || 
             longitude < davaoCityBounds.west || longitude > davaoCityBounds.east) {
+          console.log('❌ Location outside Davao City bounds:');
+          console.log('📍 Your coordinates:', latitude, longitude);
+          console.log('🏙️ Davao City bounds:', davaoCityBounds);
           throw new Error('Location appears to be outside Davao City. Please select your barangay manually.');
         }
         
