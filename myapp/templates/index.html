@@ -254,6 +254,97 @@
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     }
     
+    /* Password toggle styles */
+    .password-input-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    
+    .password-input-container input {
+      padding-right: 50px; /* Make room for the toggle button */
+    }
+    
+    /* Hide browser default password toggle icons */
+    .password-input-container input[type="password"]::-webkit-textfield-decoration-container {
+      display: none !important;
+    }
+    
+    .password-input-container input[type="password"]::-webkit-credentials-auto-fill-button {
+      display: none !important;
+    }
+    
+    .password-input-container input[type="password"]::-webkit-strong-password-auto-fill-button {
+      display: none !important;
+    }
+    
+    .password-input-container input[type="password"]::-webkit-credentials-auto-fill-icon {
+      display: none !important;
+    }
+    
+    /* Hide any default browser eye icons */
+    .password-input-container input[type="password"]::-ms-reveal {
+      display: none !important;
+    }
+    
+    .password-input-container input[type="password"]::-ms-clear {
+      display: none !important;
+    }
+    
+    /* Additional browser-specific hiding */
+    .password-input-container input[type="password"]::-webkit-input-placeholder {
+      color: transparent;
+    }
+    
+    /* Force hide any browser default password icons */
+    .password-input-container input[type="password"] {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+    
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    
+    .password-toggle:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .password-toggle:active {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .eye-icon {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      transition: color 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .password-toggle:hover .eye-icon {
+      color: var(--text);
+    }
+    
+    .password-toggle.active .eye-icon {
+      color: var(--brand);
+    }
+    
     /* Barangay validation styles */
     .barangay-error {
       color: #e74c3c;
@@ -626,7 +717,12 @@
       </div>
       <div class="form-group">
         <label for="loginPassword">Password</label>
-        <input type="password" id="loginPassword" name="password" required>
+        <div class="password-input-container">
+          <input type="password" id="loginPassword" name="password" required>
+          <button type="button" class="password-toggle" onclick="togglePassword('loginPassword')">
+            <span class="eye-icon">Show</span>
+          </button>
+        </div>
       </div>
       
       <!-- Admin Name Field - Only shown for admin login -->
@@ -700,11 +796,21 @@
       </div>
       <div class="form-group">
         <label for="signupPassword">Password</label>
-        <input type="password" id="signupPassword" name="password" required>
+        <div class="password-input-container">
+          <input type="password" id="signupPassword" name="password" required>
+          <button type="button" class="password-toggle" onclick="togglePassword('signupPassword')">
+            <span class="eye-icon">Show</span>
+          </button>
+        </div>
       </div>
       <div class="form-group">
         <label for="signupConfirmPassword">Confirm Password</label>
-        <input type="password" id="signupConfirmPassword" name="confirmPassword" required>
+        <div class="password-input-container">
+          <input type="password" id="signupConfirmPassword" name="confirmPassword" required>
+          <button type="button" class="password-toggle" onclick="togglePassword('signupConfirmPassword')">
+            <span class="eye-icon">Show</span>
+          </button>
+        </div>
       </div>
       <div class="form-options">
         <label class="checkbox-label">
@@ -2239,6 +2345,23 @@
         }, 500);
       }
     });
+    
+    // Password toggle functionality
+    function togglePassword(inputId) {
+      const input = document.getElementById(inputId);
+      const toggle = input.parentElement.querySelector('.password-toggle');
+      const eyeIcon = toggle.querySelector('.eye-icon');
+      
+      if (input.type === 'password') {
+        input.type = 'text';
+        eyeIcon.textContent = 'Hide';
+        toggle.classList.add('active');
+      } else {
+        input.type = 'password';
+        eyeIcon.textContent = 'Show';
+        toggle.classList.remove('active');
+      }
+    }
   </script>
 </body>
 </html>
