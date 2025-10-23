@@ -303,6 +303,34 @@
       appearance: none;
     }
     
+    /* Ensure password dots are visible on mobile */
+    .password-input-container input[type="password"] {
+      -webkit-text-security: disc !important;
+      -moz-text-security: disc !important;
+      text-security: disc !important;
+      font-family: monospace !important;
+      font-size: 16px !important; /* Prevent zoom on iOS */
+    }
+    
+    /* Mobile-specific password field fixes */
+    @media (max-width: 768px) {
+      .password-input-container input[type="password"] {
+        font-size: 16px !important; /* Prevent zoom on iOS */
+        -webkit-text-security: disc !important;
+        font-family: monospace !important;
+        letter-spacing: 2px !important; /* Make dots more visible */
+        min-height: 48px !important; /* Better touch target */
+        padding: 12px 50px 12px 16px !important; /* Better spacing */
+      }
+      
+      .password-toggle {
+        right: 8px !important;
+        padding: 12px !important; /* Larger touch target */
+        min-width: 44px !important; /* iOS minimum touch target */
+        min-height: 44px !important;
+      }
+    }
+    
     .password-toggle {
       position: absolute;
       right: 12px;
