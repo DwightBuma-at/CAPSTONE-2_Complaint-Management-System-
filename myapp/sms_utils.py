@@ -41,7 +41,7 @@ def send_sms_via_philsms(recipient, message):
         payload = {
             'recipient': recipient,
             'sender_id': philsms_sender_id,
-            'type': 'sms',
+            'type': 'plain',  # PhilSMS API expects 'plain' for SMS type
             'message': message
         }
         
@@ -90,14 +90,14 @@ def send_status_change_sms(phone_number, tracking_id, complaint_type, old_status
         bool: True if sent successfully, False otherwise
     """
     try:
-        # Convert phone number to proper format if needed
-        # Handle +63XXXXXXXXXX format or 09XXXXXXXXX format
+        # Convert phone number to proper format for PhilSMS API
+        # PhilSMS API expects +63XXXXXXXXXX format
         if phone_number.startswith('+63'):
-            # Convert +63XXXXXXXXXX to 09XXXXXXXXX
-            formatted_phone = '0' + phone_number[3:]
-        elif phone_number.startswith('09'):
             # Already in correct format
             formatted_phone = phone_number
+        elif phone_number.startswith('09'):
+            # Convert 09XXXXXXXXX to +63XXXXXXXXXX
+            formatted_phone = '+63' + phone_number[1:]
         else:
             print(f"⚠️ Invalid phone number format: {phone_number}")
             return False
