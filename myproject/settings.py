@@ -354,7 +354,7 @@ TWILIO_FROM = os.getenv("TWILIO_FROM", "")   # e.g. +15005550006
 
 # PhilSMS Configuration (For SMS Notifications)
 PHILSMS_API_TOKEN = os.getenv("PHILSMS_API_TOKEN", "")
-PHILSMS_SENDER_ID = os.getenv("PHILSMS_SENDER_ID", "CMS")
+PHILSMS_SENDER_ID = os.getenv("PHILSMS_SENDER_ID", "PHILSMS")
 
 print("Email mode: SMTP (Gmail) - REAL EMAIL SENDING ENABLED")
 print(f"Gmail configuration is properly set up with: {EMAIL_HOST_USER}")

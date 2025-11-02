@@ -11,7 +11,7 @@ The Complaint Management System now supports SMS notifications via PhilSMS. User
 2. Complete the top-up process in your PhilSMS account (currently shows ₱0)
 3. Go to "Developers" section in your PhilSMS dashboard
 4. Copy your **API Token** from the dashboard
-5. Note your **Sender ID** (or use default: "CMS")
+5. Note your **Sender ID** (use "PHILSMS" as default, or request a custom one)
 
 **Your Current API Token:**
 ```
@@ -30,7 +30,7 @@ Add the following to your `.env` file or Railway environment variables:
 ```env
 # PhilSMS Configuration (For SMS Notifications)
 PHILSMS_API_TOKEN=your-philsms-api-token-here
-PHILSMS_SENDER_ID=CMS
+PHILSMS_SENDER_ID=PHILSMS
 ```
 
 ### 3. Install Dependencies
