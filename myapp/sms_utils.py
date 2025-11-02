@@ -104,18 +104,54 @@ def send_status_change_sms(phone_number, tracking_id, complaint_type, old_status
         
         # Create SMS message based on status - matching email notifications format and wording
         status_messages = {
-            'In Progress': f"""Update: Your complaint #{tracking_id} is now being processed. Good news! Your complaint has been received and is now being processed by the {admin_barangay} Barangay Office. Our team is working on your complaint and will update you once it's resolved. Track status in CMS app. -CMS""",
-            'Resolved': f"""Resolved: Your complaint #{tracking_id} has been resolved. Great news! Your complaint has been successfully resolved by the {admin_barangay} Barangay Office. Thank you for using our complaint management system. -CMS""",
-            'Declined/Spam': f"""Update: Your complaint #{tracking_id} status has been updated. We've reviewed your complaint and updated its status to {new_status}. If you believe this decision was made in error, please contact the {admin_barangay} Barangay Office directly. -CMS""",
-            'Forwarded to Agency': f"""Update: Your complaint #{tracking_id} has been forwarded. Your complaint has been forwarded to a higher agency by {admin_barangay}. You'll be notified of updates. Track status in CMS app. -CMS""",
-            'Resolved by Agency': f"""Update: Your complaint #{tracking_id} has been resolved by agency. Your complaint has been successfully resolved by the higher agency. Thank you for reporting this issue. View details in CMS app. -CMS"""
+            'Reported': f"""Hello! Your complaint has been updated:
+Complaint ID: {tracking_id}
+Status: Reported
+Updated by: {admin_barangay} Admin
+You can view your complaint details by logging into the system.
+Best regards, CMS Team - {admin_barangay}""",
+            'In Progress': f"""Hello! Your complaint has been updated:
+Complaint ID: {tracking_id}
+Status: In Progress
+Updated by: {admin_barangay} Admin
+You can view your complaint details by logging into the system.
+Best regards, CMS Team - {admin_barangay}""",
+            'Resolved': f"""Hello! Your complaint has been updated:
+Complaint ID: {tracking_id}
+Status: Resolved
+Updated by: {admin_barangay} Admin
+You can view your complaint details by logging into the system.
+Best regards, CMS Team - {admin_barangay}""",
+            'Declined/Spam': f"""Hello! Your complaint has been updated:
+Complaint ID: {tracking_id}
+Status: Declined/Spam
+Updated by: {admin_barangay} Admin
+You can view your complaint details by logging into the system.
+Best regards, CMS Team - {admin_barangay}""",
+            'Forwarded to Agency': f"""Hello! Your complaint has been updated:
+Complaint ID: {tracking_id}
+Status: Forwarded to Agency
+Updated by: {admin_barangay} Admin
+You can view your complaint details by logging into the system.
+Best regards, CMS Team - {admin_barangay}""",
+            'Resolved by Agency': f"""Hello! Your complaint has been updated:
+Complaint ID: {tracking_id}
+Status: Resolved by Agency
+Updated by: {admin_barangay} Admin
+You can view your complaint details by logging into the system.
+Best regards, CMS Team - {admin_barangay}"""
         }
         
         # Get message for the status or use fallback
         message = status_messages.get(new_status)
         if not message:
             # Fallback message for any other status
-            message = f"""Update: Your complaint {tracking_id} status changed from {old_status} to {new_status} by {admin_barangay}. Check your account for details. -CMS"""
+            message = f"""Hello! Your complaint has been updated:
+Complaint ID: {tracking_id}
+Status: {new_status}
+Updated by: {admin_barangay} Admin
+You can view your complaint details by logging into the system.
+Best regards, CMS Team - {admin_barangay}"""
         
         # Send SMS
         return send_sms_via_philsms(formatted_phone, message)
