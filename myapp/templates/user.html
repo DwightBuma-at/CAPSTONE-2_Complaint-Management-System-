@@ -105,7 +105,7 @@
     }
     .profile-header{
       display:flex;
-      align-items:center;
+      align-items:flex-start;
       gap:20px;
     }
     .profile-avatar-container{
@@ -177,6 +177,7 @@
        align-items:center;
        gap:12px;
        margin-top:8px;
+       flex-wrap:wrap;
      }
      .barangay-badge{
        display:inline-block;
@@ -189,6 +190,33 @@
        font-weight:600;
        text-transform:uppercase;
        letter-spacing:0.5px;
+       white-space:nowrap;
+     }
+     .phone-badge{
+       display:inline-block;
+       padding:6px 12px;
+       background:rgba(245,158,11,.2);
+       color:#fcd34d;
+       border:1px solid rgba(245,158,11,.3);
+       border-radius:20px;
+       font-size:.85rem;
+       font-weight:600;
+       cursor:pointer;
+       transition:all 0.3s ease;
+       white-space:nowrap;
+     }
+     .phone-badge:hover{
+       background:rgba(245,158,11,.3);
+       transform:translateY(-2px);
+       box-shadow:0 4px 12px rgba(245,158,11,.2);
+     }
+     .phone-badge.has-phone{
+       background:rgba(16,185,129,.2);
+       color:#6ee7b7;
+       border:1px solid rgba(16,185,129,.3);
+     }
+     .phone-badge.has-phone:hover{
+       background:rgba(16,185,129,.3);
      }
 
     /* Profile Picture Upload Modal */
@@ -851,6 +879,7 @@
                   <p id="userEmail">user@email.com</p>
                   <div class="profile-badges">
                     <span class="barangay-badge" id="userBarangay">Barangay</span>
+                    <span class="phone-badge" id="phoneBadge" onclick="openPhoneModal()">Add Phone Number</span>
                   </div>
                 </div>
              </div>
@@ -1042,6 +1071,29 @@
        <div class="profile-upload-actions">
          <button class="btn btn--ghost" onclick="closeProfileUploadModal()">Cancel</button>
          <button class="btn" id="uploadProfileBtn">Upload</button>
+       </div>
+     </div>
+   </div>
+
+   <!-- Phone Number Modal -->
+   <div id="phoneModal" class="modal hidden">
+     <div class="modal-content profile-upload-content">
+       <div class="profile-upload-header">
+         <div class="profile-upload-icon">📱</div>
+         <h3>Add Phone Number</h3>
+         <button class="modal-close" onclick="closePhoneModal()">&times;</button>
+       </div>
+       <div class="profile-upload-body">
+         <p style="text-align: center; margin-bottom: 20px; color: var(--muted);">Add your phone number to receive SMS notifications about your complaints.</p>
+         <div class="form-group">
+           <label for="phoneNumber" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text);">Phone Number</label>
+           <input type="text" id="phoneNumber" placeholder="09958744151" maxlength="11" pattern="[0-9]*" inputmode="numeric" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.12); background: #0b1226; color: #fff; outline: none; font-size: 1rem;">
+           <p style="font-size: 0.85rem; color: var(--muted); margin-top: 8px;">Format: 11 digits starting with 09 (e.g., 09958744151)</p>
+         </div>
+       </div>
+       <div class="profile-upload-actions">
+         <button class="btn btn--ghost" onclick="closePhoneModal()">Cancel</button>
+         <button class="btn" id="savePhoneBtn">Save Phone Number</button>
        </div>
      </div>
    </div>
@@ -1594,6 +1646,116 @@
       document.querySelector('.upload-progress').style.display = 'none';
     }
 
+    // Phone Number Modal Functions
+    function openPhoneModal() {
+      openModal('phoneModal');
+      // Add event listener for save button
+      document.getElementById('savePhoneBtn').addEventListener('click', savePhoneNumber);
+      
+      // Add input restriction to only allow numbers
+      const phoneInput = document.getElementById('phoneNumber');
+      
+      // Load existing phone number if available
+      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+      if (userData.phone_number) {
+        phoneInput.value = userData.phone_number;
+      }
+      
+      // Remove existing event listeners by cloning the input
+      const newPhoneInput = phoneInput.cloneNode(true);
+      newPhoneInput.value = phoneInput.value; // Preserve the value when cloning
+      phoneInput.parentNode.replaceChild(newPhoneInput, phoneInput);
+      
+      newPhoneInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, ''); // Remove non-digits only
+        // Limit to 11 characters
+        if (value.length > 11) {
+          value = value.substring(0, 11);
+        }
+        e.target.value = value;
+      });
+      
+      // Prevent paste of non-numeric values
+      newPhoneInput.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const paste = (e.clipboardData || window.clipboardData).getData('text');
+        let value = paste.replace(/\D/g, ''); // Remove non-digits
+        if (value.length > 11) {
+          value = value.substring(0, 11);
+        }
+        e.target.value = value;
+      });
+    }
+
+    function closePhoneModal() {
+      closeModal('phoneModal');
+      // Reset the form
+      document.getElementById('phoneNumber').value = '';
+    }
+
+    function savePhoneNumber() {
+      const phoneInput = document.getElementById('phoneNumber');
+      const phoneNumber = phoneInput.value.trim();
+      
+      // Validate phone number format: 11 digits starting with 09
+      const phoneRegex = /^09\d{9}$/;
+      if (!phoneNumber) {
+        showNotification('Please enter a phone number', 'error');
+        return;
+      }
+      if (phoneNumber.length !== 11) {
+        showNotification('Phone number must be exactly 11 digits', 'error');
+        return;
+      }
+      if (!phoneRegex.test(phoneNumber)) {
+        showNotification('Invalid phone number format. Please use 11 digits starting with 09 (e.g., 09958744151)', 'error');
+        return;
+      }
+      
+      // Save phone number to database via API
+      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+      const email = userData.email;
+      
+      if (!email) {
+        showNotification('User email not found. Please login again.', 'error');
+        return;
+      }
+      
+      // Send to backend
+      fetch('/api/user/save-phone-number/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          phone_number: phoneNumber
+        })
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          // Update UI
+          const phoneBadge = document.getElementById('phoneBadge');
+          phoneBadge.textContent = phoneNumber;
+          phoneBadge.classList.add('has-phone');
+          
+          // Save to localStorage
+          userData.phone_number = phoneNumber;
+          localStorage.setItem('userData', JSON.stringify(userData));
+          
+          closePhoneModal();
+          showNotification('Phone number added successfully!', 'success');
+        } else {
+          showNotification('Failed to save phone number: ' + (result.error || 'Unknown error'), 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error saving phone number:', error);
+        showNotification('Failed to save phone number. Please try again.', 'error');
+      });
+    }
+
     function handleFileSelect(event) {
       const file = event.target.files[0];
       if (file) {
@@ -1814,8 +1976,41 @@
         document.getElementById('userEmail').textContent = userData.email || 'user@email.com';
         document.getElementById('userBarangay').textContent = userData.barangay || 'Barangay';
         
-        // Try to load profile picture from database first
+        // Load phone number if available (will be loaded from database below)
+        const phoneBadge = document.getElementById('phoneBadge');
+        if (userData.phone_number) {
+          phoneBadge.textContent = userData.phone_number;
+          phoneBadge.classList.add('has-phone');
+        }
+        
+        // Try to load profile picture and phone number from database first
         if (userData.email) {
+          // Load phone number from database
+          try {
+            const phoneResponse = await fetch('/api/user/get-phone-number/', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                email: userData.email
+              })
+            });
+            
+            const phoneResult = await phoneResponse.json();
+            if (phoneResponse.ok && phoneResult.success && phoneResult.phone_number) {
+              phoneBadge.textContent = phoneResult.phone_number;
+              phoneBadge.classList.add('has-phone');
+              
+              // Update localStorage with phone number from database
+              userData.phone_number = phoneResult.phone_number;
+              localStorage.setItem('userData', JSON.stringify(userData));
+            }
+          } catch (error) {
+            console.error('Error loading phone number from database:', error);
+          }
+          
+          // Load profile picture from database
           try {
             const response = await fetch('/api/user/get-profile-picture/', {
               method: 'POST',

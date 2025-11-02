@@ -68,6 +68,10 @@ urlpatterns = [
     path('api/user/save-profile-picture/', views.save_profile_picture, name='save_profile_picture'),
     path('api/user/get-profile-picture/', views.get_profile_picture, name='get_profile_picture'),
     
+    # Phone number API endpoints
+    path('api/user/save-phone-number/', views.save_phone_number, name='save_phone_number'),
+    path('api/user/get-phone-number/', views.get_phone_number, name='get_phone_number'),
+    
     # User authentication check
     path('api/user/check-auth/', views.check_user_auth, name='check_user_auth'),
     

@@ -21,9 +21,9 @@ class AdminProfileAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ['full_name', 'email', 'barangay', 'email_verified', 'created_at']
+    list_display = ['full_name', 'email', 'barangay', 'phone_number', 'email_verified', 'created_at']
     list_filter = ['barangay', 'email_verified', 'created_at']
-    search_fields = ['full_name', 'email', 'barangay']
+    search_fields = ['full_name', 'email', 'barangay', 'phone_number']
     readonly_fields = ['created_at']
 
 

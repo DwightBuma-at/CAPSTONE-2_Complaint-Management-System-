@@ -68,6 +68,7 @@ class UserProfile(models.Model):
     password = models.CharField(max_length=128, null=True, blank=True)  # Store hashed password
     email_verified = models.BooleanField(default=False)
     profile_picture = models.TextField(blank=True, null=True)  # Store base64 image data
+    phone_number = models.CharField(max_length=15, blank=True, null=True, help_text='User phone number for SMS notifications (format: 09123456789)')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:

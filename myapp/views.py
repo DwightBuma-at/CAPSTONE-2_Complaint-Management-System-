@@ -1219,6 +1219,7 @@ def create_complaint(request):
             complaint_data = {
                 "tracking_id": tracking_id,
                 "user_id": user.id,
+                "user_email": user_profile.email,  # Add user email for notifications
                 "user_full_name": user_full_name,
                 "user_barangay": user_barangay,  # Add user's barangay
                 "barangay": payload["barangay"],
@@ -1539,6 +1540,29 @@ def update_transaction_status(request, tracking_id: str):
                     print(f"📧 Notification sent to {user_email} for complaint {tracking_id}")
                 except Exception as e:
                     print(f"⚠️ Failed to send notification email: {e}")
+                
+                # Send SMS notification if user has phone number
+                try:
+                    from .models import UserProfile
+                    from .sms_utils import send_status_change_sms
+                    
+                    # Get user email from complaint_data for Supabase
+                    if user_email:
+                        user_profile = UserProfile.objects.filter(email__iexact=user_email).first()
+                        if user_profile and user_profile.phone_number:
+                            send_status_change_sms(
+                                phone_number=user_profile.phone_number,
+                                tracking_id=tracking_id,
+                                complaint_type=complaint_data.get('complaint_type', 'Unknown'),
+                                old_status=old_status,
+                                new_status=new_status,
+                                admin_barangay=admin_barangay
+                            )
+                            print(f"📱 SMS notification sent to {user_profile.phone_number} for complaint {tracking_id}")
+                        else:
+                            print(f"⚠️ No phone number found for user {user_email}")
+                except Exception as e:
+                    print(f"⚠️ Failed to send SMS notification: {e}")
             
             return JsonResponse({"ok": True, "status": new_status})
             
@@ -1635,6 +1659,29 @@ def update_transaction_status(request, tracking_id: str):
                     print(f"📧 Notification sent to {user_email} for complaint {tracking_id}")
                 except Exception as e:
                     print(f"⚠️ Failed to send notification email: {e}")
+                
+                # Send SMS notification if user has phone number
+                try:
+                    from .sms_utils import send_status_change_sms
+                    
+                    if complaint.user:
+                        user_profile = UserProfile.objects.get(user=complaint.user)
+                        if user_profile.phone_number:
+                            send_status_change_sms(
+                                phone_number=user_profile.phone_number,
+                                tracking_id=complaint.tracking_id,
+                                complaint_type=complaint.complaint_type,
+                                old_status=old_status,
+                                new_status=new_status,
+                                admin_barangay=admin_barangay
+                            )
+                            print(f"📱 SMS notification sent to {user_profile.phone_number} for complaint {tracking_id}")
+                        else:
+                            print(f"⚠️ No phone number found for user")
+                except UserProfile.DoesNotExist:
+                    print(f"⚠️ UserProfile not found")
+                except Exception as e:
+                    print(f"⚠️ Failed to send SMS notification: {e}")
             else:
                 print(f"⚠️ No user email found for complaint {tracking_id}")
         
@@ -1870,6 +1917,126 @@ def get_profile_picture(request):
             })
     except Exception as e:
         print(f"Django ORM profile picture get error: {e}")
+        return JsonResponse({"error": "Database error"}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def save_phone_number(request):
+    """Save user phone number to database"""
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest("Invalid JSON body")
+
+    email = (payload.get("email") or "").strip().lower()
+    phone_number = payload.get("phone_number", "").strip()
+
+    if not email:
+        return JsonResponse({"error": "Email is required"}, status=400)
+
+    if not phone_number:
+        return JsonResponse({"error": "Phone number is required"}, status=400)
+    
+    # Validate phone number format
+    phone_regex = r'^09\d{9}$'
+    import re
+    if not re.match(phone_regex, phone_number):
+        return JsonResponse({"error": "Invalid phone number format. Please use 11 digits starting with 09 (e.g., 09958744151)"}, status=400)
+
+    # Try Supabase first, fallback to Django ORM
+    if supabase:
+        try:
+            # Check if user exists in user_profiles table
+            response = supabase.table('user_profiles').select('email').eq('email', email).execute()
+            if response.data:
+                # Update existing user profile
+                update_response = supabase.table('user_profiles').update({
+                    'phone_number': phone_number
+                }).eq('email', email).execute()
+                
+                if update_response.data:
+                    return JsonResponse({
+                        "success": True,
+                        "message": "Phone number saved successfully"
+                    })
+                else:
+                    return JsonResponse({"error": "Failed to update phone number"}, status=500)
+            else:
+                return JsonResponse({"error": "User not found"}, status=404)
+        except Exception as e:
+            print(f"Supabase phone number save error: {e}, falling back to Django ORM")
+
+    # Fallback to Django ORM
+    try:
+        user_profile = UserProfile.objects.filter(email__iexact=email).first()
+        if user_profile:
+            user_profile.phone_number = phone_number
+            user_profile.save()
+            return JsonResponse({
+                "success": True,
+                "message": "Phone number saved successfully"
+            })
+        else:
+            return JsonResponse({
+                "error": "User not found in database",
+                "details": "Please ensure you are logged in with a valid account."
+            }, status=404)
+    except Exception as e:
+        print(f"Django ORM phone number save error: {e}")
+        return JsonResponse({
+            "error": "Database error", 
+            "details": str(e)
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def get_phone_number(request):
+    """Get user phone number from database"""
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest("Invalid JSON body")
+
+    email = (payload.get("email") or "").strip().lower()
+
+    if not email:
+        return JsonResponse({"error": "Email is required"}, status=400)
+
+    # Try Supabase first, fallback to Django ORM
+    if supabase:
+        try:
+            response = supabase.table('user_profiles').select('phone_number').eq('email', email).execute()
+            if response.data:
+                phone_number = response.data[0].get('phone_number')
+                return JsonResponse({
+                    "success": True,
+                    "phone_number": phone_number
+                })
+            else:
+                return JsonResponse({
+                    "success": True,
+                    "phone_number": None
+                })
+        except Exception as e:
+            print(f"Supabase phone number get error: {e}, falling back to Django ORM")
+
+    # Fallback to Django ORM
+    try:
+        user_profile = UserProfile.objects.filter(email__iexact=email).first()
+        if user_profile and user_profile.phone_number:
+            return JsonResponse({
+                "success": True,
+                "phone_number": user_profile.phone_number
+            })
+        else:
+            return JsonResponse({
+                "success": True,
+                "phone_number": None
+            })
+    except Exception as e:
+        print(f"Django ORM phone number get error: {e}")
         return JsonResponse({"error": "Database error"}, status=500)
 
 
@@ -2160,7 +2327,7 @@ def send_chat_message(request):
                 description=f"Sent chat message: {message_content[:50]}{'...' if len(message_content) > 50 else ''}",
                 new_value=message_content
             )
-            print(f"📋 Audit log created: {admin_display_name} sent chat message to {tracking_id}")
+            print(f"📋 Audit log created: {admin_display_name} sent chat message to {complaint.tracking_id}")
         except Exception as e:
             # Log the error but don't crash the chat message
             print(f"Warning: Could not log chat activity: {e}")
