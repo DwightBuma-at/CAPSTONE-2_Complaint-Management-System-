@@ -1902,29 +1902,78 @@
       document.getElementById('totalUsers').textContent = '0';
     }
     
-    // Search and Filter Functionality
+    // Search and Filter Functionality for Admins
     document.getElementById('adminSearch').addEventListener('input', filterAdmins);
     document.getElementById('statusFilter').addEventListener('change', filterAdmins);
     
     function filterAdmins() {
-      const search = document.getElementById('adminSearch').value.toLowerCase();
+      const search = document.getElementById('adminSearch').value.toLowerCase().trim();
       const status = document.getElementById('statusFilter').value;
       const adminItems = document.querySelectorAll('.admin-item');
       
+      let visibleCount = 0;
+      
       adminItems.forEach(item => {
-        const name = item.querySelector('.admin-name').textContent.toLowerCase();
-        const barangay = item.querySelector('.admin-barangay').textContent.toLowerCase();
-        const adminStatus = item.querySelector('.admin-status').textContent.toLowerCase();
+        // Get all searchable text content from the admin item
+        const email = item.querySelector('.admin-name')?.textContent.toLowerCase() || '';
+        const barangay = item.querySelector('.admin-barangay')?.textContent.toLowerCase() || '';
+        const userCount = item.querySelector('.admin-users')?.textContent.toLowerCase() || '';
+        const adminStatus = item.querySelector('.admin-status')?.textContent.toLowerCase() || '';
         
-        const matchesSearch = name.includes(search) || barangay.includes(search);
-        const matchesStatus = status === 'all' || adminStatus.includes(status);
+        // Combine all searchable fields
+        const searchableText = `${email} ${barangay} ${userCount}`;
+        
+        // Check if search term matches any field
+        const matchesSearch = search === '' || searchableText.includes(search);
+        const matchesStatus = status === 'all' || adminStatus.includes(status.toLowerCase());
         
         if (matchesSearch && matchesStatus) {
           item.style.display = 'flex';
+          visibleCount++;
         } else {
           item.style.display = 'none';
         }
       });
+      
+      // Show feedback if no results
+      console.log(`Admin search: "${search}" - Found ${visibleCount} results`);
+    }
+    
+    // Search and Filter Functionality for Users
+    document.getElementById('userSearch').addEventListener('input', filterUsers);
+    document.getElementById('userStatusFilter').addEventListener('change', filterUsers);
+    
+    function filterUsers() {
+      const search = document.getElementById('userSearch').value.toLowerCase().trim();
+      const status = document.getElementById('userStatusFilter').value;
+      const userItems = document.querySelectorAll('.user-item');
+      
+      let visibleCount = 0;
+      
+      userItems.forEach(item => {
+        // Get all searchable text content from the user item
+        const fullName = item.querySelector('.user-name')?.textContent.toLowerCase() || '';
+        const email = item.querySelector('.user-email')?.textContent.toLowerCase() || '';
+        const barangay = item.querySelector('.user-barangay')?.textContent.toLowerCase() || '';
+        const userStatus = item.querySelector('.admin-status')?.textContent.toLowerCase() || '';
+        
+        // Combine all searchable fields
+        const searchableText = `${fullName} ${email} ${barangay}`;
+        
+        // Check if search term matches any field
+        const matchesSearch = search === '' || searchableText.includes(search);
+        const matchesStatus = status === 'all' || userStatus.includes(status.toLowerCase());
+        
+        if (matchesSearch && matchesStatus) {
+          item.style.display = 'flex';
+          visibleCount++;
+        } else {
+          item.style.display = 'none';
+        }
+      });
+      
+      // Show feedback if no results
+      console.log(`User search: "${search}" - Found ${visibleCount} results`);
     }
     
     // Notification System
