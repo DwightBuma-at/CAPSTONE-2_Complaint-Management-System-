@@ -865,7 +865,7 @@ function handleImageUpload(event) {
           showLocationFeedback('📍 Photo location outside Davao City. Please select barangay manually.', 'warning');
         }
       } else {
-        showLocationFeedback('📍 No location data found in photo. Please select barangay manually.', 'info');
+        showLocationFeedback('📍 No location data found in photo. Please enable location services for camera or select barangay manually.', 'info');
       }
     });
   }, 500); // 500ms delay to show processing message
@@ -948,10 +948,24 @@ function autoSelectBarangay(barangayName) {
     }
   }
   
-  // If still not found, show message that barangay is not registered
+  // If still not found, check if it's in the full database
   if (!found) {
     console.warn('❌ Barangay not found in registered list:', barangayName);
-    showLocationFeedback(`📍 ${barangayName} is not yet registered in the system. Please select a registered barangay.`, 'warning');
+    
+    // Check if it's in the full database (even without admin)
+    if (davaoCityBarangays[barangayName]) {
+      console.log('✅ Barangay found in full database, allowing selection');
+      // Add the barangay to the select options temporarily
+      const option = document.createElement('option');
+      option.value = barangayName;
+      option.textContent = barangayName;
+      option.selected = true;
+      barangaySelect.appendChild(option);
+      
+      showLocationFeedback(`📍 ${barangayName} detected! Note: This barangay doesn't have a registered admin yet.`, 'warning');
+    } else {
+      showLocationFeedback(`📍 ${barangayName} is not a valid Davao City barangay. Please select a registered barangay.`, 'error');
+    }
   }
 }
 

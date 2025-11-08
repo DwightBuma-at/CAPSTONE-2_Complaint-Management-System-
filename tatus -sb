@@ -1,0 +1,41 @@
+warning: in the working copy of 'myapp/templates/superadmin.html', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/myapp/templates/superadmin.html b/myapp/templates/superadmin.html[m
+[1mindex d4eb125..3b4ce48 100644[m
+[1m--- a/myapp/templates/superadmin.html[m
+[1m+++ b/myapp/templates/superadmin.html[m
+[36m@@ -1,4 +1,5 @@[m
+[31m-﻿<!DOCTYPE html>[m
+[32m+[m[32m﻿{% load static %}[m
+[32m+[m[32m<!DOCTYPE html>[m
+ <html lang="en">[m
+ <head>[m
+   <meta charset="utf-8" />[m
+[36m@@ -40,9 +41,15 @@[m
+     }[m
+     .wrap{max-width:1400px;margin:0 auto;padding:0 20px}[m
+     .nav__inner{display:flex;align-items:center;justify-content:space-between;height:72px;}[m
+[31m-    .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)}[m
+[31m-    .shield{width:38px;height:38px;border-radius:12px;background:conic-gradient(from 210deg,var(--brand),var(--brand-2),var(--brand));box-shadow:0 8px 20px rgba(34,211,238,.28)}[m
+[31m-    .brand span{font-weight:800;letter-spacing:.2px}[m
+[32m+[m[32m    .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text)}[m
+[32m+[m[32m    .brand-logo{[m
+[32m+[m[32m      height:68px;[m
+[32m+[m[32m      width:auto;[m
+[32m+[m[32m      max-width:260px;[m
+[32m+[m[32m      display:block;[m
+[32m+[m[32m      background:transparent;[m
+[32m+[m[32m      object-fit:contain;[m
+[32m+[m[32m    }[m
+     [m
+     /* Main Layout */[m
+     .content{padding:32px 0}[m
+[36m@@ -539,8 +546,7 @@[m
+     <div class="wrap">[m
+       <nav class="nav__inner">[m
+         <a href="#" class="brand" onclick="return false;">[m
+[31m-          <div class="shield"></div>[m
+[31m-          <span>Super Admin</span>[m
+[32m+[m[32m          <img src="{% static 'images/davao logo.png' %}" alt="Davao Life Is Here" class="brand-logo">[m
+         </a>[m
+         <div style="display:flex;gap:12px;align-items:center">[m
+           <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>[m

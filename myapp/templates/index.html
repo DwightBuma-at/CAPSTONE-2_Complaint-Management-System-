@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CMS — Complaint Management System</title>
+  <title>Davao City Complaint Management System — Report • Track • Resolve</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root{--bg:#0b1020;--card:#121a33;--muted:#9aa4bf;--text:#eaf0ff;--brand:#3b82f6;--brand-2:#22d3ee;--accent:#f59e0b;--ring:rgba(59,130,246,.35);--ok:#10b981;--danger:#ef4444;--shadow:0 10px 25px rgba(0,0,0,.35);--radius:18px;}
@@ -28,13 +28,25 @@
     }
     .wrap{max-width:1200px;margin:0 auto;padding:0 20px}
     .nav__inner{display:flex;align-items:center;justify-content:space-between;height:72px;}
-    .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)}
-    .logo{
-      width:38px;height:38px;border-radius:12px;
-      background: conic-gradient(from 210deg, var(--brand), var(--brand-2), var(--brand));
-      box-shadow: 0 6px 18px rgba(34,211,238,.35);
+    .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text)}
+    .brand-logo{
+      height:68px;
+      width:auto;
+      max-width:260px;
+      display:block;
+      padding:0;
+      border-radius:0;
+      background:transparent;
+      box-shadow:none;
+      object-fit:contain;
     }
-    .brand span{font-weight:800;letter-spacing:.2px}
+    .brand span{
+      font-weight:800;
+      letter-spacing:.2px;
+      font-size:1.05rem;
+      color:var(--text);
+      text-transform:uppercase;
+    }
     .nav__inner{display:flex;align-items:center;justify-content:space-between}
     .nav__links{display:flex;gap:26px;align-items:center}
     .nav__links a{color:var(--muted);text-decoration:none;font-weight:600}
@@ -709,7 +721,9 @@
 <body>
 <header class="nav">
   <div class="wrap nav__inner">
-    <a class="brand" href="#top" aria-label="CMS Home"><div class="logo" aria-hidden="true"></div><span>CMS</span></a>
+    <a class="brand" href="#top" aria-label="Davao City Complaint Management System Home">
+      <img src="{% static 'images/davao logo.png' %}" alt="Davao Life Is Here" class="brand-logo">
+    </a>
          <nav class="nav__links" aria-label="Main">
      </nav>
     <div class="nav__auth">
@@ -941,7 +955,7 @@
 <!-- Footer -->
 <footer class="wrap footer">
   <div class="footer-content">
-    <div>© <span id="year"></span> CMS. All rights reserved.</div>
+    <div>© <span id="year"></span> Davao Barangay CMS. All rights reserved.</div>
     <div class="footer-divider"></div>
     <div class="footer-links">
       <a href="#" onclick="openModal('loginModal')">Login</a>

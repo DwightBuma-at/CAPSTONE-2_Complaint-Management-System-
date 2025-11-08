@@ -46,7 +46,7 @@ def test_sendgrid_domain():
                 <p>Hello!</p>
                 <p class="success">This email confirms that SendGrid domain authentication is working properly for dvobarangaycms.vip!</p>
                 <p><strong>Domain:</strong> dvobarangaycms.vip</p>
-                <p><strong>From:</strong> complaintmanagementsystem5@gmail.com</p>
+                <p><strong>From:</strong> complaintmanagementsystem5.new@gmail.com</p>
                 <p><strong>Timestamp:</strong> {timestamp}</p>
                 <p>If you received this email, your SendGrid configuration is working correctly.</p>
             </div>
