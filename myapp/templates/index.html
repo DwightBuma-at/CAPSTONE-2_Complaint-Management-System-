@@ -1787,6 +1787,12 @@
         barangayInput.addEventListener('input', function() {
           const value = this.value.trim();
           
+          // Clear existing error messages while typing
+          const existingError = this.parentNode.parentNode.querySelector('.barangay-error');
+          if (existingError) {
+            existingError.remove();
+          }
+          
           // Clear existing dropdown after a short delay
           clearTimeout(debounceTimer);
           debounceTimer = setTimeout(() => {
@@ -1796,22 +1802,36 @@
             }
           }, 300);
           
-          // Validate as user types
-          if (value.length > 0) {
-            validateBarangayField(this);
-            
-            // Show suggestions for partial matches
-            if (value.length >= 2) {
-              const suggestions = getBarangaySuggestions(value);
+          // Show suggestions for partial matches (don't validate while typing)
+          if (value.length >= 1) {
+            const suggestions = getBarangaySuggestions(value);
+            if (suggestions.length > 0) {
               createBarangayDropdown(this, suggestions);
+              // Reset styling while showing suggestions
+              this.style.borderColor = '';
+              this.style.backgroundColor = '';
+            } else {
+              // No suggestions found - remove dropdown
+              const existingDropdown = this.parentNode.querySelector('.barangay-dropdown');
+              if (existingDropdown) {
+                existingDropdown.remove();
+              }
+              // Only show error if value is long enough to be considered complete
+              if (value.length >= 3) {
+                validateBarangayField(this);
+              } else {
+                // Reset styling for short incomplete input
+                this.style.borderColor = '';
+                this.style.backgroundColor = '';
+              }
             }
           } else {
             // Reset styling when empty
             this.style.borderColor = '';
             this.style.backgroundColor = '';
-            const existingError = this.parentNode.querySelector('.barangay-error');
-            if (existingError) {
-              existingError.remove();
+            const existingDropdown = this.parentNode.querySelector('.barangay-dropdown');
+            if (existingDropdown) {
+              existingDropdown.remove();
             }
           }
         });
@@ -1826,53 +1846,171 @@
           }
         });
         
-        // Validate on blur (when user leaves the field)
+        // Validate on blur (when user leaves the field) - Auto-correct or clear invalid input
         barangayInput.addEventListener('blur', function() {
-          validateBarangayField(this);
+          // Wait a bit to allow dropdown click to register first
+          setTimeout(() => {
+            const value = this.value.trim();
+            if (!value) return;
+            
+            const isValid = validateBarangayField(this);
+            
+            // If invalid, try to find closest match and auto-correct
+            if (!isValid) {
+              const closestMatch = findClosestBarangay(value);
+              
+              if (closestMatch) {
+                // Auto-correct to closest match
+                this.value = closestMatch;
+                validateBarangayField(this);
+                // Show notification
+                const notification = document.createElement('div');
+                notification.style.cssText = 'color: #3b82f6; font-size: 0.875rem; margin-top: 4px; padding: 8px; background: rgba(59, 130, 246, 0.1); border-radius: 6px;';
+                notification.innerHTML = `✓ Auto-corrected to "${closestMatch}"`;
+                const existingError = this.parentNode.parentNode.querySelector('.barangay-error');
+                if (existingError) {
+                  existingError.replaceWith(notification);
+                } else {
+                  this.parentNode.parentNode.appendChild(notification);
+                }
+                setTimeout(() => notification.remove(), 3000);
+              } else {
+                // No close match found, clear the input
+                this.value = '';
+                const existingError = this.parentNode.parentNode.querySelector('.barangay-error');
+                if (existingError) {
+                  existingError.remove();
+                }
+                // Reset styling
+                this.style.borderColor = '';
+                this.style.backgroundColor = '';
+              }
+            }
+          }, 200);
         });
       }
     });
     
-    // Barangay validation function
+    // Official 182 Barangays of Davao City (PSA Registry)
+    const officialBarangays = [
+      "Poblacion 1-A", "Poblacion 10-A", "Poblacion 11-B", "Poblacion 12-B", "Poblacion 13-B", "Poblacion 14-B", "Poblacion 15-B", "Poblacion 16-B", "Poblacion 17-B", "Poblacion 18-B", "Poblacion 19-B",
+      "Poblacion 2-A", "Poblacion 20-B", "Poblacion 21-C", "Poblacion 22-C", "Poblacion 23-C", "Poblacion 24-C", "Poblacion 25-C", "Poblacion 26-C", "Poblacion 27-C", "Poblacion 28-C", "Poblacion 29-C",
+      "Poblacion 3-A", "Poblacion 30-C", "Poblacion 31-D", "Poblacion 32-D", "Poblacion 33-D", "Poblacion 34-D", "Poblacion 35-D", "Poblacion 36-D", "Poblacion 37-D", "Poblacion 38-D", "Poblacion 39-D",
+      "Poblacion 4-A", "Poblacion 40-D", "Poblacion 5-A", "Poblacion 6-A", "Poblacion 7-A", "Poblacion 8-A", "Poblacion 9-A", "Acacia", "Agdao", "Agdao Proper",
+      "Alambre", "Alejandra Navarro (Lasang)", "Alfonso Angliongto Sr.", "Angalan", "Apokororo",
+      "Atan-Awe", "Baganihan", "Bago Aplaya", "Bago Gallera", "Baguio", "Baguio Proper",
+      "Balengaeng", "Baliok", "Bangkas Heights", "Bankerohan", "Bantol", "Baracatan", "Bato",
+      "Bayabas", "Biao", "Biao Escuela", "Biao Joaquin", "Binugao", "Bucana", "Buda", "Buhangin",
+      "Buhangin Proper", "Bunawan Proper", "Cabantian", "Cadalian", "Calinan", "Calinan Proper",
+      "Callawa", "Camansi", "Carmen", "Catalunan Grande", "Catalunan Pequeño", "Catigan",
+      "Cawayan", "Centro (San Juan)", "Colosas", "Communal", "Crossing Bayabas", "Dacudao",
+      "Dalag", "Dalagdag", "Daliao", "Daliaon Plantation", "Datu Salumay", "Dominga", "Dumoy",
+      "Eden", "Fatima (Benowang)", "Gatungan", "Gov. Paciano Bangoy", "Gov. Vicente Duterte",
+      "Gumalang", "Gumitan", "Ilang", "Inayangan", "Indangan", "Kap. Tomas Monteverde Sr.",
+      "Kilate", "Lacson", "Lamanan", "Lampianao", "Langub", "Lapu-Lapu", "Leon Garcia", "Lizada",
+      "Lumiad", "Ma-a", "Mabuhay", "Magsaysay", "Magtuod", "Mahayag", "Malabog", "Malagos",
+      "Malamba", "Mandug", "Mapula", "Marilog", "Marilog Proper", "Matina", "Matina Aplaya",
+      "Matina Crossing", "Matina Pangi", "Megkawayan", "Mintal", "Mudiang", "Mulig", "New Carmen",
+      "Obrero", "Paciano Rizal", "Pampanga", "Panacan", "Panalum", "Pandaitan", "Pangyan",
+      "Paquibato", "Paquibato Proper", "Paradise Embak", "Poblacion", "Rafael Castillo",
+      "Riverside", "Roxas", "Salapawan", "Salaysay", "Saloy", "San Antonio",
+      "San Isidro (Licanan)", "San Miguel", "Sasa", "Sirawan", "Sirib", "Suawan (Tuli)",
+      "Subasta", "Sumimao", "Tacunan", "Talomo", "Talomo Proper", "Talomo River", "Tamayong",
+      "Tambubong", "Tamugan", "Tapak", "Tawan-Tawan", "Tibungco", "Tigatto", "Toril",
+      "Toril Proper", "Tugbok Proper", "Ubalde", "Ula", "Vicente Hizon Sr.", "Waan", "Wangan",
+      "Wilfredo Aquino", "Wines"
+    ];
+
+    // Barangay validation function - STRICT: Only exact matches from official 182 list
     function isValidDavaoCityBarangay(barangayName) {
-      // Normalize the input (trim, lowercase for comparison)
-      const normalizedInput = barangayName.trim().toLowerCase();
-      
+      const normalizedInput = barangayName.trim();
       if (!normalizedInput) return null;
       
-      // Check if the barangay exists in our database (case-insensitive)
-      const barangayKeys = Object.keys(davaoCityBarangays);
-      
-      // First try exact match
-      let foundBarangay = barangayKeys.find(key => 
-        key.toLowerCase() === normalizedInput
+      // STRICT: Only accept exact match (case-insensitive) from official list
+      const foundBarangay = officialBarangays.find(barangay => 
+        barangay.toLowerCase() === normalizedInput.toLowerCase()
       );
-      
-      // If no exact match, try partial match (for user convenience)
-      if (!foundBarangay) {
-        foundBarangay = barangayKeys.find(key => 
-          key.toLowerCase().includes(normalizedInput) || 
-          normalizedInput.includes(key.toLowerCase())
-        );
-      }
       
       return foundBarangay || null;
     }
     
-    // Function to get barangay suggestions based on input
+    // Function to get barangay suggestions based on input - from official 182 list
+    // Handles space-insensitive matching (e.g., "bagoap" matches "Bago Aplaya")
     function getBarangaySuggestions(input) {
-      if (!input || input.length < 2) return [];
+      if (!input || input.length < 1) return [];
       
-      const normalizedInput = input.toLowerCase();
+      const normalizedInput = input.toLowerCase().replace(/\s+/g, ''); // Remove spaces for matching
       const suggestions = [];
       
-      Object.keys(davaoCityBarangays).forEach(barangay => {
-        if (barangay.toLowerCase().includes(normalizedInput)) {
+      officialBarangays.forEach(barangay => {
+        const normalizedBarangay = barangay.toLowerCase().replace(/\s+/g, '');
+        // Check if input matches (space-insensitive)
+        if (normalizedBarangay.includes(normalizedInput) || normalizedInput.includes(normalizedBarangay)) {
           suggestions.push(barangay);
         }
       });
       
+      // Sort by relevance: exact matches first, then by length
+      suggestions.sort((a, b) => {
+        const aNorm = a.toLowerCase().replace(/\s+/g, '');
+        const bNorm = b.toLowerCase().replace(/\s+/g, '');
+        const inputNorm = normalizedInput;
+        
+        // Exact match gets priority
+        if (aNorm === inputNorm) return -1;
+        if (bNorm === inputNorm) return 1;
+        
+        // Then by how early the match starts
+        const aIndex = aNorm.indexOf(inputNorm);
+        const bIndex = bNorm.indexOf(inputNorm);
+        if (aIndex !== bIndex) return aIndex - bIndex;
+        
+        // Finally by length (shorter names first)
+        return a.length - b.length;
+      });
+      
       return suggestions.slice(0, 10); // Limit to 10 suggestions
+    }
+    
+    // Function to find closest match for auto-correction
+    function findClosestBarangay(input) {
+      if (!input || input.length < 2) return null;
+      
+      const normalizedInput = input.toLowerCase().replace(/\s+/g, '');
+      let bestMatch = null;
+      let bestScore = 0;
+      
+      officialBarangays.forEach(barangay => {
+        const normalizedBarangay = barangay.toLowerCase().replace(/\s+/g, '');
+        
+        // Calculate similarity score
+        let score = 0;
+        
+        // Exact match gets highest score
+        if (normalizedBarangay === normalizedInput) {
+          score = 1000;
+        }
+        // Starts with input
+        else if (normalizedBarangay.startsWith(normalizedInput)) {
+          score = 500 + (normalizedInput.length / normalizedBarangay.length) * 100;
+        }
+        // Contains input
+        else if (normalizedBarangay.includes(normalizedInput)) {
+          score = 200 + (normalizedInput.length / normalizedBarangay.length) * 100;
+        }
+        // Input contains barangay (partial match)
+        else if (normalizedInput.includes(normalizedBarangay)) {
+          score = 100 + (normalizedBarangay.length / normalizedInput.length) * 100;
+        }
+        
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = barangay;
+        }
+      });
+      
+      // Only return if score is high enough (at least 50% match)
+      return bestScore >= 100 ? bestMatch : null;
     }
     
     // Function to create dropdown suggestions
@@ -1938,10 +2076,8 @@
     
     // Function to show all valid barangays in a modal
     function showBarangayList() {
-      const barangayKeys = Object.keys(davaoCityBarangays);
-      const district1 = barangayKeys.filter(key => davaoCityBarangays[key].district === 1);
-      const district2 = barangayKeys.filter(key => davaoCityBarangays[key].district === 2);
-      const district3 = barangayKeys.filter(key => davaoCityBarangays[key].district === 3);
+      // Group barangays (simplified - all 182 are shown)
+      const allBarangays = officialBarangays.sort();
       
       const modal = document.createElement('div');
       modal.style.cssText = `
@@ -1977,23 +2113,8 @@
         </div>
         
         <div style="margin-bottom: 20px;">
-          <h4 style="color: var(--brand); margin-bottom: 10px;">District 1 - Poblacion (${district1.length} barangays)</h4>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-bottom: 20px;">
-            ${district1.map(barangay => `<div style="padding: 8px; background: rgba(59, 130, 246, 0.1); border-radius: 6px; font-size: 12px; color: var(--text);">${barangay}</div>`).join('')}
-          </div>
-        </div>
-        
-        <div style="margin-bottom: 20px;">
-          <h4 style="color: var(--brand); margin-bottom: 10px;">District 2 (${district2.length} barangays)</h4>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-bottom: 20px;">
-            ${district2.map(barangay => `<div style="padding: 8px; background: rgba(34, 211, 238, 0.1); border-radius: 6px; font-size: 12px; color: var(--text);">${barangay}</div>`).join('')}
-          </div>
-        </div>
-        
-        <div style="margin-bottom: 20px;">
-          <h4 style="color: var(--brand); margin-bottom: 10px;">District 3 - Talomo (${district3.length} barangays)</h4>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
-            ${district3.map(barangay => `<div style="padding: 8px; background: rgba(245, 158, 11, 0.1); border-radius: 6px; font-size: 12px; color: var(--text);">${barangay}</div>`).join('')}
+            ${allBarangays.map(barangay => `<div style="padding: 8px; background: rgba(59, 130, 246, 0.1); border-radius: 6px; font-size: 12px; color: var(--text);">${barangay}</div>`).join('')}
           </div>
         </div>
         
@@ -2014,7 +2135,7 @@
       });
     }
 
-    // Function to validate barangay field
+    // Function to validate barangay field - Returns true if valid, false if invalid
     function validateBarangayField(inputElement) {
       const barangay = inputElement.value.trim();
       const isValid = isValidDavaoCityBarangay(barangay);
@@ -2025,12 +2146,27 @@
         existingError.remove();
       }
       
+      // Update input styling
+      if (barangay) {
+        if (isValid) {
+          inputElement.style.borderColor = '#10b981';
+          inputElement.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+        } else {
+          inputElement.style.borderColor = '#ef4444';
+          inputElement.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+        }
+      } else {
+        inputElement.style.borderColor = '';
+        inputElement.style.backgroundColor = '';
+      }
+      
       if (barangay && !isValid) {
         // Show error message below the input group
         const errorDiv = document.createElement('div');
         errorDiv.className = 'barangay-error';
+        errorDiv.style.cssText = 'color: #ef4444; font-size: 0.875rem; margin-top: 4px; padding: 8px; background: rgba(239, 68, 68, 0.1); border-radius: 6px;';
         errorDiv.innerHTML = `
-          ⚠️ The barangay "${barangay}" is not part of Davao City. Please select from the official 182 barangays of Davao City.
+          ⚠️ "${barangay}" is not a valid barangay. Please select from the dropdown list to avoid typos.
         `;
         // Append to the form-group container (parent of input-with-button)
         inputElement.parentNode.parentNode.appendChild(errorDiv);
@@ -2038,22 +2174,9 @@
         // Add error styling to input
         inputElement.style.borderColor = '#e74c3c';
         inputElement.style.backgroundColor = '#fdf2f2';
-        inputElement.style.color = '#000000'; /* Keep black text even in error state */
-        
-        return false;
-      } else if (isValid) {
-        // Add success styling
-        inputElement.style.borderColor = '#27ae60';
-        inputElement.style.backgroundColor = '#f2fdf2';
-        inputElement.style.color = '#000000'; /* Keep black text in success state */
-      } else {
-        // Reset styling
-        inputElement.style.borderColor = '';
-        inputElement.style.backgroundColor = '';
-        inputElement.style.color = '#000000'; /* Keep black text in normal state */
       }
       
-      return isValid;
+      return isValid; // Return validation result
     }
 
     // Official Davao City Barangay Database (182 barangays) with accurate coordinates
