@@ -13,24 +13,48 @@ def generate_otp():
 
 
 def send_verification_email(email, otp_code):
-    """Send verification email with OTP - Use SendGrid on Railway, SMTP locally"""
+    """Send verification email with OTP - Use Gmail SMTP (reliable), fallback to SendGrid"""
     import os
     
-    # Use SendGrid on Railway for reliable delivery
-    if os.getenv('RAILWAY_ENVIRONMENT'):
-        print(f"🚂 Railway detected - using SendGrid for {email}")
-        from .sendgrid_email import send_otp_email_sendgrid
-        return send_otp_email_sendgrid(email, otp_code)
+    subject = "Your Email Verification Code - Complaint Management System"
     
-    # Use Gmail SMTP for local development
-    print(f"📧 Local development - using Gmail SMTP for {email}")
+    html_message = f"""<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }}
+        .content {{ padding: 30px; background: #f9f9f9; border: 1px solid #e0e0e0; }}
+        .otp-box {{ font-size: 32px; font-weight: bold; color: #667eea; text-align: center; padding: 20px; background: white; border-radius: 8px; margin: 20px 0; letter-spacing: 4px; }}
+        .footer {{ text-align: center; color: #666; font-size: 12px; padding: 20px; background: #f0f0f0; border-radius: 0 0 8px 8px; }}
+        .warning {{ color: #d9534f; font-weight: bold; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Email Verification</h1>
+        </div>
+        <div class="content">
+            <p>Hello,</p>
+            <p>Welcome to the <strong>Davao City Barangay Complaint Management System</strong>!</p>
+            <p>Your 6-digit verification code is:</p>
+            <div class="otp-box">{otp_code}</div>
+            <p><strong>⏱️ This code expires in 10 minutes.</strong></p>
+            <p>If you didn't request this code, please ignore this email.</p>
+        </div>
+        <div class="footer">
+            <p><span class="warning">❌ Can't find this email?</span> Check your spam/junk folder and mark as "Not Spam".</p>
+            <p>© 2026 Davao City Barangay CMS. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>"""
     
-    subject = "Email Verification - Complaint Management System"
-    
-    message = f"""
-Hello!
+    text_message = f"""Hello!
 
-Thank you for signing up for the Complaint Management System.
+Welcome to the Davao City Barangay Complaint Management System.
 
 Your verification code is: {otp_code}
 
@@ -39,45 +63,36 @@ This code will expire in 10 minutes.
 If you didn't request this verification, please ignore this email.
 
 Best regards,
-CMS Team
-    """.strip()
+CMS Team"""
     
-    import signal
-    import os
-    
-    def timeout_handler(signum, frame):
-        raise TimeoutError("SMTP connection timed out")
-    
+    # Try Gmail SMTP first (most reliable)
     try:
-        print(f"🔍 SMTP Config: Host={settings.EMAIL_HOST}, Port={settings.EMAIL_PORT}, TLS={settings.EMAIL_USE_TLS}")
-        print(f"🔍 Timeout: {getattr(settings, 'EMAIL_TIMEOUT', 10)} seconds")
-        print(f"🔍 Sending from: {settings.DEFAULT_FROM_EMAIL} to: {email}")
-        
-        # Set a hard timeout to prevent worker hangs
-        if os.getenv('RAILWAY_ENVIRONMENT'):
-            signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(5)  # 5-second hard timeout on Railway
-        
+        print(f"📧 Attempting Gmail SMTP to {email}")
         send_mail(
             subject=subject,
-            message=message,
+            message=text_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[email],
+            html_message=html_message,
             fail_silently=False,
         )
-        
-        if os.getenv('RAILWAY_ENVIRONMENT'):
-            signal.alarm(0)  # Cancel the alarm
-        
-        print(f"✅ Email sent successfully via SMTP to {email}")
+        print(f"✅ Email sent successfully via Gmail SMTP to {email}")
         return True
-    except (TimeoutError, Exception) as e:
-        if os.getenv('RAILWAY_ENVIRONMENT'):
-            signal.alarm(0)  # Cancel the alarm
         
-        print(f"❌ SMTP Error sending email to {email}: {e}")
-        print(f"🔍 SMTP Error Details: {type(e).__name__}: {str(e)}")
-        # On local development, SMTP failure is expected sometimes
+    except Exception as smtp_error:
+        print(f"⚠️ Gmail SMTP failed: {type(smtp_error).__name__}: {smtp_error}")
+        
+        # Fallback: Try SendGrid
+        try:
+            if os.getenv('SENDGRID_API_KEY'):
+                from .sendgrid_email import send_email_via_sendgrid
+                if send_email_via_sendgrid(email, subject, html_message):
+                    print(f"✅ Email sent via SendGrid fallback to {email}")
+                    return True
+        except Exception as sendgrid_error:
+            print(f"❌ SendGrid also failed: {sendgrid_error}")
+        
+        print(f"❌ All email methods failed for {email}")
         return False
 
 
