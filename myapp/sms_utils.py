@@ -90,23 +90,23 @@ def send_status_change_sms(phone_number, tracking_id, complaint_type, old_status
         bool: True if sent successfully, False otherwise
     """
     try:
-        # Convert phone number to proper format for PhilSMS API
-        # PhilSMS API expects +63XXXXXXXXXX format
-        if phone_number.startswith('+63'):
+        # Ensure phone number is in proper format for PhilSMS API
+        # PhilSMS API expects 09XXXXXXXXX format (plain Philippine number)
+        if phone_number.startswith('09'):
             # Already in correct format
             formatted_phone = phone_number
-        elif phone_number.startswith('09'):
-            # Convert 09XXXXXXXXX to +63XXXXXXXXXX
-            formatted_phone = '+63' + phone_number[1:]
+        elif phone_number.startswith('+63'):
+            # Convert +639XXXXXXXXX back to 09XXXXXXXXX
+            formatted_phone = '0' + phone_number[3:]
         else:
             print(f"⚠️ Invalid phone number format: {phone_number}")
             return False
         
         # Create SMS message based on status - matching email notifications format and wording
         status_messages = {
-            'Reported': f"""Hello! Your complaint has been updated:
+            'Pending': f"""Hello! Your complaint has been updated:
 Complaint ID: {tracking_id}
-Status: Reported
+Status: Pending
 Updated by: {admin_barangay} Admin
 You can view your complaint details by logging into the system.
 Best regards, CMS Team - {admin_barangay}""",
