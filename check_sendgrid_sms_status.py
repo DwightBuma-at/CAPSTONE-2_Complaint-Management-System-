@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Check SendGrid and PhilSMS Configuration Status
 Run this to see what's configured and what's missing
@@ -6,6 +7,11 @@ Run this to see what's configured and what's missing
 import os
 import sys
 import django
+
+# Set UTF-8 for Windows console output
+if sys.platform == 'win32':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')
 django.setup()
