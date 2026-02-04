@@ -3011,16 +3011,21 @@ def superadmin_list_users(request):
         return JsonResponse({"error": "Superadmin access required"}, status=403)
 
     try:
-        # Get all user profiles
-        user_profiles = UserProfile.objects.all()
+        # Get all user profiles that have associated Django users (non-deleted)
+        user_profiles = UserProfile.objects.filter(user__isnull=False).select_related('user')
         
         users_data = []
         for user_profile in user_profiles:
+            # Verify the user still exists (extra safety check)
+            if not user_profile.user:
+                print(f"⚠️ Skipping orphaned user profile: {user_profile.email}")
+                continue
+            
             # Count complaints submitted by this user
             complaint_count = Complaint.objects.filter(user=user_profile.user).count()
             
             # Debug profile picture data
-            print(f"User {user_profile.email} profile picture: {user_profile.profile_picture[:50] if user_profile.profile_picture else 'None'}...")
+            print(f"✅ User {user_profile.email} profile picture: {user_profile.profile_picture[:50] if user_profile.profile_picture else 'None'}...")
             
             user_data = {
                 "id": user_profile.id,
