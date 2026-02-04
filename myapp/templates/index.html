@@ -598,6 +598,45 @@
     .notification-actions .btn {
       margin-top: 0;
     }
+    /* User Success Modal Specific Styles */
+    #userSuccessModal {
+      z-index: 2000 !important; /* Ensure it appears above other modals */
+    }
+    #userSuccessModal .notification-icon {
+      font-size: 3rem;
+      color: var(--ok);
+      animation: scaleIn 0.5s ease-out;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(16, 185, 129, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      border: 2px solid var(--ok);
+    }
+    @keyframes scaleIn {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+      50% {
+        transform: scale(1.2);
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    #userSuccessModal .notification-header h3 {
+      text-align: center;
+      width: 100%;
+      color: var(--ok);
+    }
+    #userSuccessModal .notification-body {
+      text-align: center;
+    }
     /* Modal responsive */
     @media (max-width: 480px) {
       .otp-actions {
@@ -901,6 +940,24 @@
     </div>
   </div>
 </div>
+<!-- User Account Success Modal -->
+<div id="userSuccessModal" class="modal hidden">
+  <div class="modal-content notification-content">
+    <div class="notification-header" style="flex-direction: column; align-items: center; text-align: center;">
+      <div class="notification-icon">✓</div>
+      <h3 style="margin-top: 16px;">Account Created Successfully!</h3>
+      <button class="modal-close" onclick="closeUserSuccessModal()">&times;</button>
+    </div>
+    <div class="notification-body">
+      <p style="font-size: 1.1rem; margin-bottom: 12px; color: var(--text); font-weight: 600;">Welcome to the Complaint Management System!</p>
+      <p style="margin-bottom: 8px;">Your account has been successfully created.</p>
+      <p style="color: var(--muted); font-size: 0.95rem;">You can now log in and start submitting complaints to your barangay.</p>
+    </div>
+    <div class="notification-actions">
+      <button class="btn btn--full" onclick="closeUserSuccessModal()">Continue to Login</button>
+    </div>
+  </div>
+</div>
 <!-- Hero -->
 <main id="top" class="wrap hero">
       <div class="hero__grid">
@@ -1067,6 +1124,51 @@
     }
     function closeNotification() {
       closeModal('notificationModal');
+    }
+    // User Success Modal Functions
+    function showUserSuccessModal() {
+      console.log('Showing user success modal...');
+      const modal = document.getElementById('userSuccessModal');
+      if (!modal) {
+        console.error('User success modal not found!');
+        // Fallback to notification
+        showNotification('Account created successfully! You can now login.', 'success');
+        return;
+      }
+      
+      // Ensure signup modal is closed first
+      const signupModal = document.getElementById('signupModal');
+      if (signupModal && !signupModal.classList.contains('hidden')) {
+        closeModal('signupModal');
+        // Wait for signup modal to close
+        setTimeout(() => {
+          openUserSuccessModal();
+        }, 350);
+      } else {
+        // Signup modal already closed, show success modal directly
+        openUserSuccessModal();
+      }
+    }
+    
+    function openUserSuccessModal() {
+      const modal = document.getElementById('userSuccessModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        // Force a reflow
+        modal.offsetHeight;
+        setTimeout(() => {
+          modal.classList.add('show');
+        }, 10);
+        document.body.style.overflow = 'hidden';
+        console.log('User success modal shown successfully');
+      }
+    }
+    function closeUserSuccessModal() {
+      closeModal('userSuccessModal');
+      // After closing success modal, open login modal
+      setTimeout(() => {
+        openModal('loginModal');
+      }, 350);
     }
     // Modals now only close via the X button
     // Removed automatic closing on outside click and Escape key
@@ -1263,81 +1365,113 @@
       e.preventDefault();
       const otpCode = document.getElementById('otpCode').value;
       const role = 'user'; // Always user for signup in index.html
+      
+      // Check if signupData exists
+      if (!window.signupData) {
+        console.error('Signup data not found!');
+        showNotification('Session expired. Please start over.', 'error');
+        return;
+      }
+      
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = 'Verifying...';
+      submitBtn.disabled = true;
+      
+      try {
+        console.log('Sending OTP verification request...');
+        const response = await fetch('/api/user/verify-email/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            full_name: window.signupData.name,
+            email: window.signupData.email,
+            barangay: window.signupData.barangay,
+            password: window.signupData.password,
+            otp_code: otpCode
+          })
+        });
+        
+        console.log('Response status:', response.status);
+        
+        // Check if response is ok before parsing JSON
+        let data;
         try {
-          const submitBtn = e.target.querySelector('button[type="submit"]');
-          const originalText = submitBtn.textContent;
-          submitBtn.textContent = 'Verifying...';
-          submitBtn.disabled = true;
+          const responseText = await response.text();
+          console.log('Response text:', responseText);
+          data = JSON.parse(responseText);
+        } catch (jsonError) {
+          console.error('Error parsing JSON response:', jsonError);
+          submitBtn.textContent = originalText;
+          submitBtn.disabled = false;
+          showNotification('Server error. Please try again.', 'error');
+          return;
+        }
+        
+        if (response.ok && (data.success || response.status === 201)) {
+          console.log('Account created successfully!', data);
+          submitBtn.textContent = 'Account Created!';
           
-          const response = await fetch('/api/user/verify-email/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              full_name: window.signupData.name,
-              email: window.signupData.email,
-              barangay: window.signupData.barangay,
-              password: window.signupData.password,
-              otp_code: otpCode
-            })
-          });
+          // Reset forms
+          document.getElementById('signupForm').reset();
+          document.getElementById('otpForm').reset();
+          // Reset form field visibility after form reset
+          const signupForm = document.getElementById('signupForm');
+          const nameField = signupForm.querySelector('#signupName').closest('.form-group');
+          const systemActivationKeyField = signupForm.querySelector('#systemActivationKey')?.closest('.form-group');
+          const adminAccessKeyField = signupForm.querySelector('#adminAccessKey')?.closest('.form-group');
+          const adminMessage = signupForm.querySelector('#adminMessage');
+          // Reset to user form by default
+          if (nameField) nameField.style.display = 'block';
+          if (systemActivationKeyField) {
+            systemActivationKeyField.style.display = 'none';
+          }
+          if (adminAccessKeyField) {
+            adminAccessKeyField.style.display = 'none';
+          }
+          if (adminMessage) {
+            adminMessage.style.display = 'none';
+          }
+          document.getElementById('signupForm').classList.remove('hidden');
+          document.getElementById('otpForm').classList.add('hidden');
+          // Show role toggle again
+          const roleToggle = document.querySelector('#signupModal .role-toggle');
+          if (roleToggle) roleToggle.style.display = 'block';
           
-          const data = await response.json();
+          // Store user data in localStorage before clearing
+          if (window.signupData) {
+            localStorage.setItem('userData', JSON.stringify(window.signupData));
+          }
+          // Clear stored data
+          delete window.signupData;
           
-          if (response.ok) {
-            submitBtn.textContent = 'Account Created!';
-            setTimeout(() => {
-              // Reset forms and close modal
-              document.getElementById('signupForm').reset();
-              document.getElementById('otpForm').reset();
-              // Reset form field visibility after form reset
-              const signupForm = document.getElementById('signupForm');
-              const nameField = signupForm.querySelector('#signupName').closest('.form-group');
-              const systemActivationKeyField = signupForm.querySelector('#systemActivationKey')?.closest('.form-group');
-              const adminAccessKeyField = signupForm.querySelector('#adminAccessKey')?.closest('.form-group');
-              const adminMessage = signupForm.querySelector('#adminMessage');
-              // Reset to user form by default
-              nameField.style.display = 'block';
-              if (systemActivationKeyField) {
-                systemActivationKeyField.style.display = 'none';
-              }
-              if (adminAccessKeyField) {
-                adminAccessKeyField.style.display = 'none';
-              }
-              if (adminMessage) {
-                adminMessage.style.display = 'none';
-              }
-              document.getElementById('signupForm').classList.remove('hidden');
-              document.getElementById('otpForm').classList.add('hidden');
-              // Show role toggle again
-              document.querySelector('#signupModal .role-toggle').style.display = 'block';
-              closeModal('signupModal');
-              submitBtn.textContent = originalText;
-              submitBtn.disabled = false;
-              // Store user data in localStorage before clearing
-              if (window.signupData) {
-                localStorage.setItem('userData', JSON.stringify(window.signupData));
-              }
-              // Clear stored data
-              delete window.signupData;
-              console.log('Account created successfully as:', role);
-              showNotification(data.message, 'success');
-            }, 1000);
-          } else {
+          // Close signup modal first, then show success modal
+          closeModal('signupModal');
+          
+          // Show success modal after a short delay
+          setTimeout(() => {
+            console.log('Showing success modal...');
+            showUserSuccessModal();
             submitBtn.textContent = originalText;
             submitBtn.disabled = false;
-            showNotification(data.error || 'Invalid verification code', 'error');
-            document.getElementById('otpCode').value = '';
-            document.getElementById('otpCode').focus();
-          }
-        } catch (error) {
-          console.error('Error verifying OTP:', error);
-          const submitBtn = e.target.querySelector('button[type="submit"]');
-          submitBtn.textContent = 'Verify & Create Account';
+          }, 500);
+        } else {
+          console.error('Registration failed:', data);
+          submitBtn.textContent = originalText;
           submitBtn.disabled = false;
-          showNotification('Network error. Please try again.', 'error');
+          showNotification(data.error || 'Invalid verification code', 'error');
+          document.getElementById('otpCode').value = '';
+          document.getElementById('otpCode').focus();
         }
+      } catch (error) {
+        console.error('Error verifying OTP:', error);
+        console.error('Error details:', error.message, error.stack);
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        showNotification('Network error. Please try again.', 'error');
+      }
     });
     // Login OTP form submission
     document.getElementById('loginOtpForm').addEventListener('submit', async (e) => {
@@ -2530,4 +2664,3 @@
   </script>
 </body>
 </html>
-

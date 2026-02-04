@@ -444,6 +444,36 @@
     /* User Details Modal Styles */
     .user-details-content{max-width:800px;width:85%;margin:auto;padding:0}
     
+    /* Delete User Confirmation Modal Styles */
+    #deleteUserConfirmModal {
+      z-index: 10001 !important;
+      display: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    #deleteUserConfirmModal.show {
+      display: flex !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      z-index: 10001 !important;
+    }
+    
+    #deleteUserSuccessModal {
+      z-index: 10001 !important;
+      display: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    #deleteUserSuccessModal.show {
+      display: flex !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      z-index: 10001 !important;
+    }
     
     /* Confirmation Modal Styles */
     .confirmation-content{max-width:450px;padding:0}
@@ -1013,6 +1043,11 @@
             </div>
           </div>
         </div>
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
+          <button type="button" class="btn btn-ghost" onclick="closeUserDetailsModal()">Close</button>
+          <button type="button" class="btn btn-danger" onclick="confirmDeleteUser()">🗑️ Delete User</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1098,6 +1133,46 @@
       <div class="confirmation-actions">
         <button class="btn ghost" onclick="closeConfirmation()">NO</button>
         <button class="btn" id="confirmYesBtn">YES</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete User Confirmation Modal -->
+  <div id="deleteUserConfirmModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>⚠️ Delete User</h3>
+        <button class="modal-close" onclick="closeDeleteUserConfirm()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin: 0 0 16px; color: var(--muted); font-size: 1rem; line-height: 1.6;">
+          Are you sure you want to permanently delete user <strong id="deleteUserEmail" style="color: var(--danger);">user@example.com</strong>?
+        </p>
+        <p style="margin: 0; color: var(--muted); font-size: 0.9rem; line-height: 1.5;">
+          This action cannot be undone. The user account and all associated data will be permanently removed from the system.
+        </p>
+      </div>
+      <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
+        <button class="btn btn-ghost" onclick="closeDeleteUserConfirm()">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmAndDeleteUser()" id="deleteConfirmBtn">🗑️ Delete Permanently</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete User Success Modal -->
+  <div id="deleteUserSuccessModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>✅ User Deleted Successfully</h3>
+        <button class="modal-close" onclick="closeDeleteUserSuccess()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin: 0; color: var(--ok); font-size: 1rem; line-height: 1.6;">
+          The user account has been permanently deleted from the system. The email <strong id="deletedUserEmail" style="color: var(--brand);">user@example.com</strong> is now available for new registrations.
+        </p>
+      </div>
+      <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
+        <button class="btn btn-primary" onclick="closeDeleteUserSuccess()">Done</button>
       </div>
     </div>
   </div>
@@ -2753,6 +2828,10 @@
       }
       
       try {
+        // Store user ID in the modal for delete operations
+        const modal = document.getElementById('userDetailsModal');
+        modal.setAttribute('data-user-id', userId);
+        
         // Populate the modal with user data
         document.getElementById('userFullName').textContent = userData.fullName || '-';
         document.getElementById('userEmail').textContent = userData.email || '-';
@@ -2770,7 +2849,6 @@
         }
         
         // Show the modal
-        const modal = document.getElementById('userDetailsModal');
         if (modal) {
           modal.classList.add('show');
           modal.style.display = 'block';
@@ -2792,6 +2870,102 @@
         modal.classList.remove('show');
         modal.style.display = 'none';
         document.body.style.overflow = 'auto';
+      }
+    }
+
+    // Delete User Functions
+    function confirmDeleteUser() {
+      const userEmail = document.getElementById('userEmail').textContent;
+      const userId = document.getElementById('userDetailsModal').getAttribute('data-user-id');
+      
+      if (!userEmail || userEmail === '-') {
+        showNotification('User email not found!', 'error');
+        return;
+      }
+      
+      // Populate confirmation modal
+      document.getElementById('deleteUserEmail').textContent = userEmail;
+      document.getElementById('deleteUserConfirmModal').setAttribute('data-user-id', userId);
+      document.getElementById('deleteUserConfirmModal').setAttribute('data-user-email', userEmail);
+      
+      // Show confirmation modal on top
+      const modal = document.getElementById('deleteUserConfirmModal');
+      modal.classList.add('show');
+      modal.style.display = 'flex';
+      modal.style.opacity = '1';
+      modal.style.visibility = 'visible';
+      modal.style.zIndex = '10001';
+      document.body.style.overflow = 'hidden';
+      
+      console.log('Delete confirmation modal opened');
+    }
+
+    function closeDeleteUserConfirm() {
+      const modal = document.getElementById('deleteUserConfirmModal');
+      if (modal) {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+      }
+    }
+
+    function closeDeleteUserSuccess() {
+      document.getElementById('deleteUserSuccessModal').classList.remove('show');
+      document.getElementById('deleteUserSuccessModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+      
+      // Close the details modal as well
+      closeUserDetailsModal();
+      
+      // Refresh the registered users list
+      loadUsersFromBackend();
+    }
+
+    async function confirmAndDeleteUser() {
+      const confirmBtn = document.getElementById('deleteConfirmBtn');
+      const modal = document.getElementById('deleteUserConfirmModal');
+      const userId = modal.getAttribute('data-user-id');
+      const userEmail = modal.getAttribute('data-user-email');
+      
+      if (!userId) {
+        showNotification('User ID not found!', 'error');
+        return;
+      }
+      
+      // Show loading state
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = '⏳ Deleting...';
+      
+      try {
+        const response = await fetch(`/api/superadmin/delete-user/${userId}/`, {
+          method: 'DELETE',
+          headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to delete user');
+        }
+        
+        // Close confirmation modal
+        closeDeleteUserConfirm();
+        
+        // Update and show success modal
+        document.getElementById('deletedUserEmail').textContent = userEmail;
+        document.getElementById('deleteUserSuccessModal').classList.add('show');
+        document.getElementById('deleteUserSuccessModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        
+        console.log('User deleted successfully:', userId);
+        
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        showNotification(error.message || 'Error deleting user', 'error');
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '🗑️ Delete Permanently';
       }
     }
 

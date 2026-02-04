@@ -602,7 +602,7 @@ def admin_verify_access_key(request):
     request.session['admin_barangay'] = admin_barangay
     
     # Check if this is the superadmin email and redirect accordingly
-    if email == 'complaintmanagementsystem5@gmail.com':
+    if email == 'dacbuma-at@addu.edu.ph':
         redirect_url = "/superadmin.html/"
         success_message = "Superadmin login successful"
     else:
@@ -1175,8 +1175,41 @@ def create_complaint(request):
         user_profile = user.user_profile
         user_full_name = user_profile.full_name
         user_barangay = user_profile.barangay
-    except:
-        return JsonResponse({"error": "User profile not found"}, status=400)
+    except UserProfile.DoesNotExist:
+        # User profile doesn't exist - try to create one with default values
+        # This can happen if user was created before UserProfile was implemented
+        print(f"⚠️ User profile not found for user {user.email}, attempting to create one...")
+        try:
+            # Get user's email and name from User model
+            user_email = user.email or f"user{user.id}@example.com"
+            user_name = user.get_full_name() or user.username or "User"
+            
+            # Try to get barangay from payload or use a default
+            default_barangay = payload.get("barangay", "Unknown")
+            
+            # Create UserProfile
+            user_profile = UserProfile.objects.create(
+                user=user,
+                full_name=user_name,
+                email=user_email,
+                barangay=default_barangay,
+                email_verified=True  # Assume verified if user is logged in
+            )
+            user_full_name = user_profile.full_name
+            user_barangay = user_profile.barangay
+            print(f"✅ Created UserProfile for user {user.email}")
+        except Exception as e:
+            print(f"❌ Failed to create UserProfile: {e}")
+            return JsonResponse({
+                "error": "User profile not found and could not be created. Please contact support or re-register your account.",
+                "details": str(e)
+            }, status=400)
+    except Exception as e:
+        print(f"❌ Error accessing user profile: {e}")
+        return JsonResponse({
+            "error": "Error accessing user profile",
+            "details": str(e)
+        }, status=400)
 
     # Validate that the selected barangay has a registered admin
     # Note: Users can now submit complaints to any barangay that has a registered admin
@@ -2254,7 +2287,7 @@ def superadmin_dashboard(request):
     
     # Check if this is the superadmin email
     admin_email = request.session.get('admin_email', '')
-    if admin_email != 'complaintmanagementsystem5@gmail.com':
+    if admin_email != 'dacbuma-at@addu.edu.ph':
         # Regular admins shouldn't access superadmin page, redirect to admin dashboard
         return redirect('/admin-dashboard.html/')
     
@@ -2897,13 +2930,13 @@ def superadmin_list_admins(request):
         return JsonResponse({"error": "Authentication required"}, status=401)
     
     admin_email = request.session.get('admin_email', '')
-    if admin_email != 'complaintmanagementsystem5@gmail.com':
+    if admin_email != 'dacbuma-at@addu.edu.ph':
         return JsonResponse({"error": "Superadmin access required"}, status=403)
 
     try:
         # Get all admin profiles except superadmin, ordered by latest registration first (newest at top)
         admin_profiles = AdminProfile.objects.exclude(
-            user__email='complaintmanagementsystem5@gmail.com'
+            user__email='dacbuma-at@addu.edu.ph'
         ).select_related('user').order_by('-created_at')
         
         admins_data = []
@@ -2956,7 +2989,7 @@ def superadmin_list_users(request):
         return JsonResponse({"error": "Authentication required"}, status=401)
     
     admin_email = request.session.get('admin_email', '')
-    if admin_email != 'complaintmanagementsystem5@gmail.com':
+    if admin_email != 'dacbuma-at@addu.edu.ph':
         return JsonResponse({"error": "Superadmin access required"}, status=403)
 
     try:
@@ -3007,7 +3040,7 @@ def update_admin_officials(request):
         return JsonResponse({"error": "Authentication required"}, status=401)
     
     admin_email = request.session.get('admin_email', '')
-    if admin_email != 'complaintmanagementsystem5@gmail.com':
+    if admin_email != 'dacbuma-at@addu.edu.ph':
         return JsonResponse({"error": "Superadmin access required"}, status=403)
 
     admin_id = payload.get("admin_id")
@@ -3072,13 +3105,13 @@ def superadmin_stats(request):
         return JsonResponse({"error": "Authentication required"}, status=401)
     
     admin_email = request.session.get('admin_email', '')
-    if admin_email != 'complaintmanagementsystem5@gmail.com':
+    if admin_email != 'dacbuma-at@addu.edu.ph':
         return JsonResponse({"error": "Superadmin access required"}, status=403)
 
     try:
         # Count admins (excluding superadmin)
         total_admins = AdminProfile.objects.exclude(
-            user__email='complaintmanagementsystem5@gmail.com'
+            user__email='dacbuma-at@addu.edu.ph'
         ).count()
         
         # Count users
@@ -3099,7 +3132,7 @@ def superadmin_admin_details(request, admin_id):
     """Get detailed information for a specific admin"""
     try:
         # Check if user is authenticated as superadmin
-        if not request.session.get('admin_authenticated') or request.session.get('admin_email') != 'complaintmanagementsystem5@gmail.com':
+        if not request.session.get('admin_authenticated') or request.session.get('admin_email') != 'dacbuma-at@addu.edu.ph':
             return JsonResponse({'error': 'Authentication required'}, status=401)
         
         # Get admin profile
@@ -3160,3 +3193,44 @@ def superadmin_admin_details(request, admin_id):
             'success': False,
             'error': str(e)
         }, status=500)
+
+
+@require_http_methods(["DELETE"])
+@csrf_exempt
+def superadmin_delete_user(request, user_id):
+    """Delete a user completely from the system (superadmin only)"""
+    try:
+        # Check if user is authenticated as superadmin
+        if not request.session.get('admin_authenticated'):
+            return JsonResponse({'error': 'Unauthorized'}, status=403)
+        
+        # Get the user to delete
+        User = get_user_model()
+        user_to_delete = User.objects.get(id=user_id)
+        
+        # Get user email before deletion for logging
+        user_email = user_to_delete.email
+        
+        # Delete the user (cascades will handle related objects)
+        # Note: Complaints and ChatMessages are kept for audit purposes
+        # Only UserProfile is deleted with the user
+        user_to_delete.delete()
+        
+        print(f"✅ User deleted successfully: {user_email} (ID: {user_id})")
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'User {user_email} has been permanently deleted',
+            'deleted_user_id': user_id,
+            'deleted_user_email': user_email
+        })
+        
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+    
+    except Exception as e:
+        print(f"❌ Error deleting user: {str(e)}")
+        return JsonResponse({
+            'error': str(e)
+        }, status=500)
+

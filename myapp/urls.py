@@ -50,6 +50,7 @@ urlpatterns = [
     path('api/superadmin/stats/', views.superadmin_stats, name='superadmin_stats'),
     path('api/superadmin/admin/<int:admin_id>/', views.superadmin_admin_details, name='superadmin_admin_details'),
     path('api/superadmin/update-officials/', views.update_admin_officials, name='update_admin_officials'),
+    path('api/superadmin/delete-user/<int:user_id>/', views.superadmin_delete_user, name='superadmin_delete_user'),
 
     # Admin complaints and users management
     path('admin-complaints.html/', views.admin_complaints, name='admin_complaints'),
