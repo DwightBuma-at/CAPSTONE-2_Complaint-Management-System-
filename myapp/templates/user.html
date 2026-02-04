@@ -2133,7 +2133,15 @@
         });
         
         if (response.status === 401) {
-          // User is not authenticated, redirect to login
+          // User is not authenticated or account deleted
+          const errorData = await response.json().catch(() => ({}));
+          const errorMessage = errorData.error || '';
+          
+          if (errorMessage.includes('deleted')) {
+            console.log('⚠️ User account has been deleted');
+            alert('Your account has been deleted. You are being logged out.');
+          }
+          
           window.location.href = '/index.html?show_login=true';
           return;
         }

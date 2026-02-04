@@ -990,6 +990,19 @@ def list_complaints(request):
     if not user.is_authenticated:
         return JsonResponse({"error": "Authentication required"}, status=401)
     
+    # Verify user profile still exists (not deleted)
+    try:
+        user_profile = user.user_profile
+        if not user_profile:
+            print(f"⚠️ User {user.email} profile is missing - account may have been deleted")
+            return JsonResponse({"error": "User account no longer exists"}, status=401)
+    except UserProfile.DoesNotExist:
+        print(f"❌ User {user.email} profile deleted - denying access to complaints")
+        return JsonResponse({"error": "User account has been deleted"}, status=401)
+    except:
+        # Admin users might not have user_profile, which is ok
+        pass
+    
     # Try Supabase first, fallback to Django ORM
     if supabase:
         try:
@@ -2084,6 +2097,12 @@ def check_user_auth(request):
     try:
         # Try to get user profile
         user_profile = user.user_profile
+        
+        # Verify user profile still exists (not deleted)
+        if not user_profile:
+            print(f"⚠️ User profile is None for user {user.email} - account may have been deleted")
+            return JsonResponse({"error": "User account no longer exists"}, status=401)
+        
         user_data = {
             "id": user.id,
             "username": user.username,
@@ -2093,6 +2112,10 @@ def check_user_auth(request):
             "barangay": user_profile.barangay,
             "profile_picture": user_profile.profile_picture
         }
+    except UserProfile.DoesNotExist:
+        # User profile was deleted - account no longer exists
+        print(f"❌ User profile deleted for user {user.email} - logging out")
+        return JsonResponse({"error": "User account has been deleted"}, status=401)
     except:
         # User exists but no profile, check if admin
         try:
@@ -2106,14 +2129,9 @@ def check_user_auth(request):
                 "barangay": admin_profile.barangay
             }
         except:
-            # Fallback for users without profiles
-            user_data = {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "name": user.get_full_name() or user.username,
-                "role": "user" if not user.is_staff else "admin"
-            }
+            # Fallback for users without profiles - if we reach here, user is orphaned
+            print(f"⚠️ User {user.email} has no profile or admin profile - account is orphaned")
+            return JsonResponse({"error": "User account configuration error"}, status=401)
     
     return JsonResponse(user_data)
 
