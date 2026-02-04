@@ -3201,22 +3201,30 @@ def superadmin_delete_user(request, user_id):
     """Delete a user completely from the system (superadmin only)"""
     try:
         # Check if user is authenticated as superadmin
-        if not request.session.get('admin_authenticated'):
-            return JsonResponse({'error': 'Unauthorized'}, status=403)
+        admin_email = request.session.get('admin_email', '')
+        if admin_email != 'dacbuma-at@addu.edu.ph':
+            return JsonResponse({'error': 'Unauthorized - Superadmin access required'}, status=403)
         
-        # Get the user to delete
-        User = get_user_model()
-        user_to_delete = User.objects.get(id=user_id)
+        # Get the user profile
+        try:
+            user_profile = UserProfile.objects.get(id=user_id)
+        except UserProfile.DoesNotExist:
+            return JsonResponse({'error': 'User profile not found'}, status=404)
         
         # Get user email before deletion for logging
-        user_email = user_to_delete.email
+        user_email = user_profile.email
+        django_user = user_profile.user
         
-        # Delete the user (cascades will handle related objects)
-        # Note: Complaints and ChatMessages are kept for audit purposes
-        # Only UserProfile is deleted with the user
-        user_to_delete.delete()
+        # Delete the UserProfile first (will cascade delete related auth.User)
+        user_profile.delete()
         
-        print(f"✅ User deleted successfully: {user_email} (ID: {user_id})")
+        # Ensure Django User is deleted too
+        try:
+            django_user.delete()
+        except:
+            pass  # User might already be deleted via cascade
+        
+        print(f"✅ User deleted successfully: {user_email} (Profile ID: {user_id})")
         
         return JsonResponse({
             'success': True,
@@ -3225,11 +3233,10 @@ def superadmin_delete_user(request, user_id):
             'deleted_user_email': user_email
         })
         
-    except User.DoesNotExist:
-        return JsonResponse({'error': 'User not found'}, status=404)
-    
     except Exception as e:
         print(f"❌ Error deleting user: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({
             'error': str(e)
         }, status=500)

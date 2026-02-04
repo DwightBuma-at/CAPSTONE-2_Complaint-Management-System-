@@ -2937,6 +2937,8 @@
       confirmBtn.textContent = '⏳ Deleting...';
       
       try {
+        console.log(`🗑️ Deleting user: ${userEmail} (ID: ${userId})`);
+        
         const response = await fetch(`/api/superadmin/delete-user/${userId}/`, {
           method: 'DELETE',
           headers: {
@@ -2945,10 +2947,16 @@
           }
         });
         
+        console.log(`📡 Delete response status: ${response.status}`);
+        
         if (!response.ok) {
           const error = await response.json();
+          console.error('❌ Delete failed:', error);
           throw new Error(error.error || 'Failed to delete user');
         }
+        
+        const result = await response.json();
+        console.log('✅ Delete successful:', result);
         
         // Close confirmation modal
         closeDeleteUserConfirm();
@@ -2959,10 +2967,10 @@
         document.getElementById('deleteUserSuccessModal').style.display = 'flex';
         document.body.style.overflow = 'hidden';
         
-        console.log('User deleted successfully:', userId);
+        console.log('✅ User deleted successfully:', userId);
         
       } catch (error) {
-        console.error('Error deleting user:', error);
+        console.error('❌ Error deleting user:', error);
         showNotification(error.message || 'Error deleting user', 'error');
         confirmBtn.disabled = false;
         confirmBtn.textContent = '🗑️ Delete Permanently';
